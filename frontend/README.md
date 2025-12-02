@@ -408,10 +408,22 @@ This will start the Vite development server at `http://localhost:5173` with:
 
 ### Backend Integration
 
-The frontend expects the backend API to be running on `http://localhost:8000`. This is configured via proxy in `package.json`:
+The frontend expects the backend API to be running on `http://localhost:8000`. 
 
-```json
-"proxy": "http://localhost:8000"
+**Note:** For proper API proxying in Vite, you should configure the proxy in `vite.config.js`:
+
+```javascript
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
+      }
+    }
+  }
+})
 ```
 
 Make sure to start the backend server before testing API-dependent features.
