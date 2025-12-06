@@ -1,28 +1,28 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { 
-  Bell, 
-  Download, 
-  Play, 
-  Users, 
-  Calendar, 
+import {
+  Bell,
+  Download,
+  Play,
+  Users,
+  Calendar,
   CheckCircle,
   Clock,
-  ChevronRight 
+  ChevronRight
 } from "lucide-react"; // Assuming you use lucide-react, or replace with your icons
 
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* --- SECTION 1: PAGE HEADER --- */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[var(--text-main)]">Teacher dashboard</h1>
             <p className="text-[var(--text-body)] mt-1">Overview of today's attendance and upcoming classes</p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button className="px-4 py-2 bg-white border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--primary-hover)] hover:text-white font-medium transition-colors flex items-center gap-2">
               <Download size={18} />
@@ -37,10 +37,10 @@ export default function Dashboard() {
 
         {/* --- SECTION 2: MAIN GRID LAYOUT --- */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* LEFT COLUMN (Wider - 8 cols) */}
           <div className="lg:col-span-8 space-y-6">
-            
+
             {/* 2.1 Welcome / Active Session Card */}
             <div className="bg-[var(--bg-card)] rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="space-y-4">
@@ -49,8 +49,8 @@ export default function Dashboard() {
                   <p className="text-[var(--text-body)] text-sm">Monday, September 23 • 08:45</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">Next class: Grade 10A • 09:00</span>
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">Room 203</span>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-[var(--text-main)] font-medium">Next class: Grade 10A • 09:00</span>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full  text-[var(--text-main)] font-medium">Room 203</span>
                 </div>
               </div>
 
@@ -76,7 +76,7 @@ export default function Dashboard() {
                   <span className="text-xs bg-blue-500/50 px-2 py-1 rounded text-blue-50">+3% vs last week</span>
                 </div>
               </div>
-              
+
               {/* Stat 2 */}
               <div className="bg-blue-600 text-white rounded-2xl p-5">
                 <p className="text-blue-100 text-sm font-medium mb-1">Absent</p>
@@ -116,14 +116,14 @@ export default function Dashboard() {
 
           {/* RIGHT COLUMN (Narrower - 4 cols) */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* 3.1 Trends Chart Placeholder */}
             <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-[var(--text-main)]">Attendance trends</h3>
                 <span className="text-xs text-[var(--text-body)] bg-gray-100 px-2 py-1 rounded">This week</span>
               </div>
-              
+
               {/* Chart Placeholder Box */}
               <div className="h-40 bg-gray-50 rounded-xl w-full flex items-center justify-center text-gray-300 mb-4 border border-dashed border-gray-200">
                 Chart Area
@@ -146,7 +146,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex justify-between items-end">
                   <div className="text-xs text-[var(--text-body)] flex flex-col gap-1">
-                    <span className="flex items-center gap-1"><Clock size={12}/> 08:00 - 09:00</span>
+                    <span className="flex items-center gap-1"><Clock size={12} /> 08:00 - 09:00</span>
                     <span>Room 203</span>
                   </div>
                   <span className="text-xs font-medium text-[var(--text-body)]">96% attendance</span>
@@ -161,7 +161,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex justify-between items-end">
                   <div className="text-xs text-[var(--text-body)] flex flex-col gap-1">
-                    <span className="flex items-center gap-1"><Clock size={12}/> 09:15 - 10:15</span>
+                    <span className="flex items-center gap-1"><Clock size={12} /> 09:15 - 10:15</span>
                     <span>Lab 2</span>
                   </div>
                   <span className="text-xs font-medium text-blue-600">Starts in 30 min</span>
@@ -176,7 +176,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex justify-between items-end">
                   <div className="text-xs text-[var(--text-body)] flex flex-col gap-1">
-                    <span className="flex items-center gap-1"><Clock size={12}/> 11:00 - 12:00</span>
+                    <span className="flex items-center gap-1"><Clock size={12} /> 11:00 - 12:00</span>
                     <span>Lab 1</span>
                   </div>
                   <span className="text-xs font-medium text-[var(--text-body)]">Attendance not started</span>

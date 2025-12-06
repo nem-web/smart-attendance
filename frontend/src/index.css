@@ -6,39 +6,54 @@
 /* Theme variables (light default) */
 :root {
   /* Backgrounds */
-  --bg-primary: #F8F9FB;    /* The main page background */
-  --bg-card: #FFFFFF;       /* The white card containers */
-  --bg-secondary: #F3F4F6;  /* Light gray for sidebars or inputs */
+  --bg-primary: #F8F9FB;
+  /* The main page background */
+  --bg-card: #FFFFFF;
+  /* The white card containers */
+  --bg-secondary: #F3F4F6;
+  /* Light gray for sidebars or inputs */
 
   /* Text Colors */
-  --text-main: #111827;     /* Darkest text (Headings) */
-  --text-body: #6B7280;     /* Muted text (Dates, subtitles) */
-  --text-on-primary: #FFFFFF; /* White text on blue buttons */
+  --text-main: #0d3180;
+  /* Darkest text (Headings) */
+  --text-body: #6B7280;
+  /* Muted text (Dates, subtitles) */
+  --text-on-primary: #FFFFFF;
+  /* White text on blue buttons */
 
   /* Brand Colors */
-  --primary: #4361EE;       /* The main Blue color */
-  --primary-hover: #cde3ff; /* Slightly darker blue for hover states */
-  
+  --primary: #1e338f;
+  /* The main Blue color */
+  --primary-hover: #cde3ff;
+  /* Slightly darker blue for hover states */
+
   /* Borders */
-  --border-color: #E5E7EB;  /* Subtle grey borders */
+  --border-color: #E5E7EB;
+  /* Subtle grey borders */
 }
 
 /* Modern Dark */
 [data-theme="dark"] {
   /* Backgrounds */
-  --bg-primary: #0F172A;    /* Deep Slate/Navy background */
-  --bg-card: #1E293B;       /* Lighter slate for cards */
-  --bg-secondary: #334155;  /* For inputs/secondary areas */
+  --bg-primary: #0F172A;
+  /* Deep Slate/Navy background */
+  --bg-card: #1E293B;
+  /* Lighter slate for cards */
+  --bg-secondary: #334155;
+  /* For inputs/secondary areas */
 
   /* Text Colors */
-  --text-main: #F8FAFC;     /* Almost white for headings */
-  --text-body: #94A3B8;     /* Light gray for body text */
+  --text-main: #F8FAFC;
+  /* Almost white for headings */
+  --text-body: #94A3B8;
+  /* Light gray for body text */
   --text-on-primary: #FFFFFF;
 
   /* Brand Colors */
-  --primary: #6366F1;       /* A slightly lighter Indigo to pop on dark bg */
-  --primary-hover: #818CF8; 
-  
+  --primary: #6366F1;
+  /* A slightly lighter Indigo to pop on dark bg */
+  --primary-hover: #818CF8;
+
   /* Borders */
   --border-color: #334155;
 }
@@ -46,19 +61,22 @@
 /* Forest theme */
 [data-theme="forest"] {
   /* Backgrounds */
-  --bg-primary: #F0FDF4;    /* Very pale mint */
+  --bg-primary: #F0FDF4;
+  /* Very pale mint */
   --bg-card: #FFFFFF;
   --bg-secondary: #DCFCE7;
 
   /* Text Colors */
-  --text-main: #14532D;     /* Dark Green text */
+  --text-main: #14532D;
+  /* Dark Green text */
   --text-body: #64748B;
   --text-on-primary: #FFFFFF;
 
   /* Brand Colors */
-  --primary: #059669;       /* Emerald Green */
+  --primary: #059669;
+  /* Emerald Green */
   --primary-hover: #047857;
-  
+
   /* Borders */
   --border-color: #BBF7D0;
 }
@@ -66,19 +84,24 @@
 /* Cyber tech theme */
 [data-theme="cyber"] {
   /* Backgrounds */
-  --bg-primary: #120B2E;    /* Deep Violet/Black */
-  --bg-card: #201645;       /* Purple tinted card */
+  --bg-primary: #120B2E;
+  /* Deep Violet/Black */
+  --bg-card: #201645;
+  /* Purple tinted card */
   --bg-secondary: #2E225F;
 
   /* Text Colors */
-  --text-main: #E9D5FF;     /* Light Lavender */
-  --text-body: #A5B4FC;     /* Periwinkle */
+  --text-main: #E9D5FF;
+  /* Light Lavender */
+  --text-body: #A5B4FC;
+  /* Periwinkle */
   --text-on-primary: #120B2E;
 
   /* Brand Colors */
-  --primary: #C084FC;       /* Bright Neon Purple */
+  --primary: #C084FC;
+  /* Bright Neon Purple */
   --primary-hover: #D8B4FE;
-  
+
   /* Borders */
   --border-color: #4C1D95;
 }
@@ -86,7 +109,9 @@
 
 
 /* Basic layout */
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   background: var(--color-bg);
   color: var(--color-text);
@@ -99,15 +124,16 @@ html, body, #root {
 .btn-primary {
   @apply px-6 py-2 rounded-xl text-white font-medium;
   background: var(--color-primary);
-  box-shadow: 0 8px 24px rgba(58,122,254,0.12);
-}
-.btn-ghost {
-  @apply px-4 py-2 rounded-lg border;
-  border-color: rgba(0,0,0,0.06);
-  background: transparent;
-}
-.card {
-  @apply bg-[var(--color-surface)] p-6 rounded-xl shadow-md;
-  border: 1px solid rgba(16,24,40,0.04);
+  box-shadow: 0 8px 24px rgba(58, 122, 254, 0.12);
 }
 
+.btn-ghost {
+  @apply px-4 py-2 rounded-lg border;
+  border-color: rgba(0, 0, 0, 0.06);
+  background: transparent;
+}
+
+.card {
+  @apply bg-[var(--color-surface)] p-6 rounded-xl shadow-md;
+  border: 1px solid rgba(16, 24, 40, 0.04);
+}
