@@ -49,8 +49,8 @@ export default function Dashboard() {
                   <p className="text-[var(--text-body)] text-sm">Monday, September 23 • 08:45</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-[var(--text-main)] font-medium">Next class: Grade 10A • 09:00</span>
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full  text-[var(--text-main)] font-medium">Room 203</span>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full -text-[var(--primary-hover:#152666)] font-medium">Next class: Grade 10A • 09:00</span>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full  text-[var(--primary-hover:#152666)] font-medium">Room 203</span>
                 </div>
               </div>
 
