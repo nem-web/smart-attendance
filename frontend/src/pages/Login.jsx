@@ -12,12 +12,6 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  const TEACHER_EMAIL = "teacher@gmail.com";
-  const TEACHER_PASS = "teacher123";
-
-  const STUDENT_EMAIL = "student@gmail.com";
-  const STUDENT_PASS = "student123";
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");

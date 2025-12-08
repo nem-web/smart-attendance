@@ -24,6 +24,60 @@ export default function Register() {
     setStep(2);
   };
 
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    branch: "",
+    employeeId: "",
+    phone: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    const {name, value} = e.target;
+    setFormData((prev) => ({...prev, [name]: value}));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const payload = {
+        role,
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        branch: role === "student" ? formData.branch : undefined,
+        employeeId: role === "teacher" ? formData.employeeId : undefined,
+        phone: role === "teacher" ? formData.phone : undefined,
+      };
+
+      const res = await fetch("http://127.0.0.1:8000/auth/register", {
+        method: "POST",
+        headers: {"Content-Type" : "application/json"},
+        body: JSON.stringify(payload)
+      });
+
+      if(!res.ok){
+        const data = await res.json();
+        throw new Error(data.detail || "Registration Failed");
+      }
+
+      alert("Account created, please login");
+    }
+    catch (err){
+      setError(err.message);
+    } finally{
+      setLoading(false);
+    }
+  };
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="max-w-5xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
@@ -83,14 +137,19 @@ export default function Register() {
 
             {/* STEP 2: Registration Form */}
             {step === 2 && (
-              <form className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              <form
+               onClick={handleSubmit}
+               className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 
                 {/* Common: Full Name */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-gray-700">Full Name</label>
                   <div className="relative">
                     <input 
-                      type="text" 
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
                       placeholder="John Doe" 
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
                     />
@@ -103,7 +162,10 @@ export default function Register() {
                   <label className="text-sm font-semibold text-gray-700">Email Address</label>
                   <div className="relative">
                     <input 
-                      type="email" 
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange} 
                       placeholder="john@university.edu" 
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
                     />
@@ -117,7 +179,11 @@ export default function Register() {
                   <div className="space-y-1.5">
                     <label className="text-sm font-semibold text-gray-700">Branch</label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10 appearance-none text-gray-600">
+                      <select
+                        name="branch"
+                        value={formData.branch}
+                        onChange={handleChange}
+                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10 appearance-none text-gray-600">
                         <option value="">Select Branch</option>
                         <option value="cse">Computer Science (CSE)</option>
                         <option value="ece">Electronics (ECE)</option>
@@ -134,7 +200,10 @@ export default function Register() {
                       <label className="text-sm font-semibold text-gray-700">Employee ID</label>
                       <div className="relative">
                         <input 
-                          type="text" 
+                          type="text"
+                          name="employeeId"
+                          value={formData.employeeId}
+                          onChange={handleChange} 
                           placeholder="EMP-12345" 
                           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
                         />
@@ -146,6 +215,9 @@ export default function Register() {
                       <div className="relative">
                         <input 
                           type="tel" 
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
                           placeholder="+91 98765 43210" 
                           className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
                         />
@@ -161,6 +233,9 @@ export default function Register() {
                   <div className="relative">
                     <input 
                       type={showPassword ? "text" : "password"} 
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
                       placeholder="Create a password" 
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10 pr-10"
                     />
@@ -175,9 +250,17 @@ export default function Register() {
                   </div>
                 </div>
 
-                <button className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 shadow-md transition-all active:scale-[0.98] mt-2">
-                  Create Account
+                <button
+                 type="submit"
+                 disabled={loading}
+                 className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 shadow-md transition-all active:scale-[0.98] mt-2">
+                  {loading ? "Creating..." : "Create Account"}
                 </button>
+                
+                {error && (
+                  <p className="text-sm text-red-500 text-center mt-1">{error}</p>
+                )}
+
               </form>
             )}
 
