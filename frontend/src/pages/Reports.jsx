@@ -85,11 +85,11 @@ export default function Reports() {
           <p className="text-[var(--text-body)]">Generate and export attendance reports for your classes</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 shadow-sm transition">
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <FileText size={18} />
             Export CSV
           </button>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 shadow-sm transition">
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <Download size={18} />
             Export PDF
           </button>
@@ -103,7 +103,7 @@ export default function Reports() {
             <h3 className="font-bold text-[var(--text-main)]">Report filters</h3>
             <p className="text-sm text-[var(--text-body)]">Choose a date range, classes, and minimum attendance threshold</p>
           </div>
-          <button className="px-6 py-2 bg-[var(--primary)] text-white rounded-full font-medium shadow-sm hover:opacity-90 transition flex items-center gap-2">
+          <button className="px-6 py-2 bg-[var(--primary)] text-white rounded-full font-medium shadow-sm hover:opacity-90 transition flex items-center gap-2 cursor-pointer">
             <Filter size={16} />
             Generate report
           </button>
@@ -160,7 +160,7 @@ export default function Reports() {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
                   />
                 </div>
-                <button className="text-sm text-gray-400 hover:text-[var(--primary)] flex items-center gap-1 transition">
+                <button className="text-sm text-gray-400 hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer">
                   <RotateCcw size={14} />
                   Reset
                 </button>
@@ -178,7 +178,7 @@ export default function Reports() {
             <h3 className="font-bold text-[var(--text-main)]">Report preview</h3>
             <p className="text-sm text-[var(--text-body)]">Summary of student attendance for the selected filters</p>
           </div>
-          <button className="text-sm font-medium text-gray-500 hover:text-[var(--primary)]">View full report</button>
+          <button className="text-sm font-medium text-gray-500 hover:text-[var(--primary)] cursor-pointer">View full report</button>
         </div>
         
         <div className="overflow-x-auto">

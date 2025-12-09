@@ -114,13 +114,13 @@ export default function StudentList() {
           <p className="text-[var(--text-body)]">Browse all students and compare attendance performance</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-white border border-gray-200 text-[var(--text-main)] rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2 transition">
+          <button className="px-4 py-2 bg-white border border-gray-200 text-[var(--text-main)] rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2 transition cursor-pointer">
             <Download size={18} />
             Export list
           </button>
           <button
            onClick={() => navigate('/add-students')}
-           className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] font-medium flex items-center gap-2 shadow-sm transition">
+           className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <Plus size={18} />
             Add student
           </button>
@@ -147,10 +147,10 @@ export default function StudentList() {
 
             {/* Filter Controls */}
             <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
-              <button className="flex items-center gap-1 text-sm font-medium text-gray-600 px-3 py-1.5 hover:bg-gray-100 rounded-lg whitespace-nowrap">
+              <button className="flex items-center gap-1 text-sm font-medium text-gray-600 px-3 py-1.5 hover:bg-gray-100 rounded-lg whitespace-nowrap cursor-pointer">
                 All classes <ChevronDown size={14} />
               </button>
-              <button className="flex items-center gap-1 text-sm font-medium text-gray-600 px-3 py-1.5 hover:bg-gray-100 rounded-lg whitespace-nowrap">
+              <button className="flex items-center gap-1 text-sm font-medium text-gray-600 px-3 py-1.5 hover:bg-gray-100 rounded-lg whitespace-nowrap cursor-pointer">
                 Sort by attendance <ChevronDown size={14} />
               </button>
               
@@ -257,8 +257,8 @@ export default function StudentList() {
             <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
               <span>Showing 1-6 of 45 students</span>
               <div className="flex gap-2">
-                <button className="px-3 py-1 border rounded hover:bg-gray-50">Previous</button>
-                <button className="px-3 py-1 border rounded hover:bg-gray-50">Next</button>
+                <button className="px-3 py-1 border rounded hover:bg-gray-50 cursor-pointer">Previous</button>
+                <button className="px-3 py-1 border rounded hover:bg-gray-50 cursor-pointer">Next</button>
               </div>
             </div>
           </div>

@@ -66,11 +66,11 @@ export default function Login() {
 
             {/* Social Login Buttons */}
             <div className="flex gap-4">
-              <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition">
+              <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition cursor-pointer">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                 <span className="text-sm font-medium text-gray-700">Google</span>
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition">
+              <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition cursor-pointer">
                 <img src="https://www.svgrepo.com/show/475689/twitter-color.svg" alt="Twitter" className="w-5 h-5" />
                 <span className="text-sm font-medium text-gray-700">Twitter</span>
               </button>
@@ -146,7 +146,7 @@ export default function Login() {
                 <p className="text-red-500 text-sm font-medium text-center">{error}</p>
               )}
 
-              <button className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 shadow-md transition-all active:scale-[0.98]">
+              <button className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 shadow-md transition-all active:scale-[0.98] cursor-pointer">
                 Sign in
               </button>
             </form>

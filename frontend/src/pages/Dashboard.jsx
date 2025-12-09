@@ -26,7 +26,7 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-white border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--primary-hover)] hover:text-white font-medium transition-colors flex items-center gap-2">
+            <button className="px-4 py-2 bg-white border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--primary-hover)] hover:text-white font-medium transition-colors flex items-center gap-2 cursor-pointer">
               <Download size={18} />
               Download report
             </button>

@@ -197,8 +197,8 @@ export default function Settings() {
                   </div>
 
                   <div className="pt-8 flex justify-end gap-3 border-t border-gray-100">
-                    <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200">Cancel</button>
-                    <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md">Save changes</button>
+                    <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 cursor-pointer">Cancel</button>
+                    <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">Save changes</button>
                   </div>
                 </div>
               </div>
@@ -212,7 +212,7 @@ export default function Settings() {
                     <h3 className="text-xl font-bold text-slate-800">Profile details</h3>
                     <p className="text-sm text-slate-500 mt-1">Keep your basic information and contact details up to date.</p>
                   </div>
-                  <button className="text-indigo-600 text-sm font-medium hover:underline">View public profile</button>
+                  <button className="text-indigo-600 text-sm font-medium hover:underline cursor-pointer">View public profile</button>
                 </div>
 
                 <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-xl border border-gray-100">
@@ -223,7 +223,7 @@ export default function Settings() {
                     <h4 className="text-lg font-bold text-slate-800">Alex Johnson</h4>
                     <p className="text-sm text-slate-500">Department of Computer Science</p>
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-gray-50 transition shadow-sm">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-gray-50 transition shadow-sm cursor-pointer">
                     <Upload size={16} />
                     Change photo
                   </button>
@@ -257,15 +257,15 @@ export default function Settings() {
                           <button className="hover:text-indigo-900"><X size={14}/></button>
                         </div>
                       ))}
-                      <button className="px-3 py-1.5 border border-dashed border-gray-300 text-gray-500 rounded-full text-sm font-medium hover:border-indigo-400 hover:text-indigo-600 flex items-center gap-1 transition">
+                      <button className="px-3 py-1.5 border border-dashed border-gray-300 text-gray-500 rounded-full text-sm font-medium hover:border-indigo-400 hover:text-indigo-600 flex items-center gap-1 transition cursor-pointer">
                         <Plus size={14} /> Add subject
                       </button>
                    </div>
                 </div>
 
                 <div className="pt-6 flex justify-end gap-3 border-t border-gray-100">
-                  <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200">Cancel</button>
-                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md">Save changes</button>
+                  <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 cursor-pointer">Cancel</button>
+                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">Save changes</button>
                 </div>
               </div>
             )}
@@ -289,7 +289,7 @@ export default function Settings() {
                         <p className="text-sm text-slate-500">Last updated: 3 days ago via Mobile App</p>
                       </div>
                    </div>
-                   <button className="px-4 py-2 bg-white border border-gray-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm flex items-center gap-2">
+                   <button className="px-4 py-2 bg-white border border-gray-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm flex items-center gap-2 cursor-pointer">
                      <RefreshCw size={16} /> Re-calibrate
                    </button>
                 </div>
@@ -342,7 +342,7 @@ export default function Settings() {
                       <h5 className="text-sm font-semibold text-rose-900">Reset recognition model</h5>
                       <p className="text-xs text-rose-600 mt-1">This will clear all learned face patterns for this profile.</p>
                     </div>
-                    <button className="px-4 py-2 bg-white border border-rose-200 text-rose-600 rounded-lg text-sm font-medium hover:bg-rose-100 transition shadow-sm flex items-center gap-2">
+                    <button className="px-4 py-2 bg-white border border-rose-200 text-rose-600 rounded-lg text-sm font-medium hover:bg-rose-100 transition shadow-sm flex items-center gap-2 cursor-pointer">
                       <Trash2 size={16} /> Reset data
                     </button>
                   </div>
@@ -350,8 +350,8 @@ export default function Settings() {
 
                  {/* Footer Buttons */}
                  <div className="pt-6 flex justify-end gap-3 border-t border-gray-100">
-                  <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200">Discard</button>
-                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md">Apply settings</button>
+                  <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 cursor-pointer">Discard</button>
+                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">Apply settings</button>
                 </div>
 
               </div>
@@ -371,10 +371,10 @@ export default function Settings() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-white border border-gray-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2 shadow-sm transition">
+                    <button className="px-4 py-2 bg-white border border-gray-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2 shadow-sm transition cursor-pointer">
                       <Share2 size={16} /> Share appreciation
                     </button>
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 shadow-sm transition">
+                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 shadow-sm transition cursor-pointer">
                       <Sparkles size={16} /> Send thanks
                     </button>
                   </div>

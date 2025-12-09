@@ -68,11 +68,11 @@ export default function Analytics() {
           <p className="text-[var(--text-body)]">Track attendance trends over time and compare classes</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] font-medium flex items-center gap-2 shadow-sm transition">
+          <button className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <Download size={18} />
             Export analytics
           </button>
-          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center gap-2 shadow-sm transition">
+          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <FileText size={18} />
             Generate report
           </button>

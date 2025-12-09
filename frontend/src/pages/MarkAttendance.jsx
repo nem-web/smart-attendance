@@ -73,7 +73,7 @@ export default function MarkAttendance() {
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           <div className="flex flex-col gap-1 w-full sm:w-64">
             <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">Class</label>
-            <select className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-[var(--text-main)] focus:ring-2 focus:ring-indigo-500 outline-none">
+            <select className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-[var(--text-main)] focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
               <option>CSE 3A • Data Structures</option>
               <option>CSE 3B • Algorithms</option>
             </select>
@@ -264,7 +264,7 @@ export default function MarkAttendance() {
                  <span>• 3 late</span>
                  <span>• 10 absent</span>
               </div>
-              <button className="w-full py-3 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl font-semibold shadow-md transition flex items-center justify-center gap-2">
+              <button className="w-full py-3 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl font-semibold shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
                 Confirm attendance
                 <Check size={18} />
               </button>
