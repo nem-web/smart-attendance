@@ -1,14 +1,13 @@
 import React, { useState } from "react";
-import {
-  Download,
-  FileText,
-  ChevronDown,
-  RotateCcw,
+import { 
+  Download, 
+  FileText, 
+  Calendar, 
+  ChevronDown, 
+  RotateCcw, 
   Search,
   Filter
 } from "lucide-react";
-import DateRange from '../components/DateRange.jsx';
-import 'react-datepicker/dist/react-datepicker.css';
 
 // --- Mock Data for Report Preview ---
 const REPORT_DATA = [
@@ -78,7 +77,7 @@ export default function Reports() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-
+      
       {/* --- HEADER --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -111,10 +110,21 @@ export default function Reports() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-
-          <DateRange
-            onChange={(date) => setStartDate(date)}
-          />
+          
+          {/* Date Range */}
+          <div className="md:col-span-4 space-y-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date range</label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input type="text" placeholder="Start date" className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+              <div className="relative flex-1">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input type="text" placeholder="End date" className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+            </div>
+          </div>
 
           {/* Classes Selector */}
           <div className="md:col-span-4 space-y-2">
@@ -131,31 +141,31 @@ export default function Reports() {
 
           {/* Threshold Slider */}
           <div className="md:col-span-4 space-y-2 flex flex-col justify-end h-full pb-1">
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Threshold (minimum %)</label>
-              <span className="text-sm font-bold text-[var(--primary)]">{threshold}%</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative h-2 bg-gray-200 rounded-full">
-                <div
-                  className="absolute top-0 left-0 h-full bg-[var(--primary)] rounded-full"
-                  style={{ width: `${threshold}%` }}
-                ></div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={threshold}
-                  onChange={(e) => setThreshold(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-              </div>
-              <button className="text-sm text-gray-400 hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer">
-                <RotateCcw size={14} />
-                Reset
-              </button>
-            </div>
-            <p className="text-[10px] text-gray-400 mt-1">Show students below {threshold}% attendance</p>
+             <div className="flex justify-between items-center mb-2">
+               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Threshold (minimum %)</label>
+               <span className="text-sm font-bold text-[var(--primary)]">{threshold}%</span>
+             </div>
+             <div className="flex items-center gap-4">
+                <div className="flex-1 relative h-2 bg-gray-200 rounded-full">
+                  <div 
+                    className="absolute top-0 left-0 h-full bg-[var(--primary)] rounded-full" 
+                    style={{width: `${threshold}%`}}
+                  ></div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={threshold} 
+                    onChange={(e) => setThreshold(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                  />
+                </div>
+                <button className="text-sm text-gray-400 hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer">
+                  <RotateCcw size={14} />
+                  Reset
+                </button>
+             </div>
+             <p className="text-[10px] text-gray-400 mt-1">Show students below {threshold}% attendance</p>
           </div>
 
         </div>
@@ -170,7 +180,7 @@ export default function Reports() {
           </div>
           <button className="text-sm font-medium text-gray-500 hover:text-[var(--primary)] cursor-pointer">View full report</button>
         </div>
-
+        
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
             <thead className="bg-white">
@@ -207,22 +217,22 @@ export default function Reports() {
 
         {/* Footer */}
         <div className="bg-gray-50 p-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
-          <span>Showing top 5 of 132 students • Sorted by lowest attendance</span>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>≥ 85%</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span>75-84%</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-              <span>{"< 75%"}</span>
-            </div>
-          </div>
+           <span>Showing top 5 of 132 students • Sorted by lowest attendance</span>
+           
+           <div className="flex items-center gap-4">
+             <div className="flex items-center gap-1.5">
+               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+               <span>≥ 85%</span>
+             </div>
+             <div className="flex items-center gap-1.5">
+               <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+               <span>75-84%</span>
+             </div>
+             <div className="flex items-center gap-1.5">
+               <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+               <span>{"< 75%"}</span>
+             </div>
+           </div>
         </div>
       </div>
 
