@@ -20,62 +20,53 @@ import OAuthCallback from "./pages/OAuthCallback.jsx";
 
 function RedirectToHome() {
   const storedUser = localStorage.getItem("user");
-  const user = storedUser ?  JSON.parse(storedUser) : null;
+  const user = storedUser ? JSON.parse(storedUser) : null;
 
-  if(!user) return <Navigate to={"/login"} />
+  if (!user) return <Navigate to={"/login"} />
 
-  if(user.role === "Teacher") return <Navigate to={"/dashboard"} />
-  if(user.role === "Student") return <Navigate to={"/student-dashboard"} />
+  if (user.role === "Teacher") return <Navigate to={"/dashboard"} />
+  if (user.role === "Student") return <Navigate to={"/student-dashboard"} />
 
   return <Navigate to={"/login"} />
 }
 
 
 
-const studentRoutes = [
-  "/student-dashboard",
-  "/student-subjects",
-  "/student-forecast",
-  "/student-profile",
-  "/login",
-  "/register"
-];
+
 
 export default function App() {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
 
-  const hideNavbar = studentRoutes.includes(location.pathname);
-  
 
 
   return (
     <div className="min-h-screen">
-      {!hideNavbar && <Header theme={theme} setTheme={setTheme} />}
+      <Header theme={theme} setTheme={setTheme} />
 
       <div className="p-6">
         <Routes>
-          <Route path="/" element={<RedirectToHome/>} />
-          <Route path="/dashboard" element={<Dashboard/>} />
-          <Route path="/attendance" element={<MarkAttendance/>}/>
-          <Route path="/students" element={<StudentList/>}/>
-          <Route path="/analytics" element={<Analytics/>}/>
-          <Route path="/reports" element={<Reports/>}/>
-          <Route path="/settings" element={<Settings/>}/>
-          <Route path="/add-students" element={<AddStudents/>}/>
-          <Route path="/login" element={<Login/>}/>
-          <Route path="/register" element={<Register/>}/>
-          <Route path="*" element={<div>404 Not Found</div>} />
+          <Route path="/" element={<RedirectToHome />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/attendance" element={<MarkAttendance />} />
+          <Route path="/students" element={<StudentList />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/add-students" element={<AddStudents />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
           {/* Students routes */}
-          <Route path="/student-dashboard" element={<StudentDashboard/>}/>
-          <Route path="/student-subjects" element={<StudentSubjects/>}/>
-          <Route path="/student-forecast" element={<StudentForecast/>}/>
-          <Route path="/student-profile" element={<StudentProfile/>}/>
+          <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/student-subjects" element={<StudentSubjects />} />
+          <Route path="/student-forecast" element={<StudentForecast />} />
+          <Route path="/student-profile" element={<StudentProfile />} />
 
           <Route path="/oauth-callback" element={<OAuthCallback />} />
-
+          <Route path="*" element={<div>404 Not Found</div>} />
         </Routes>
+
       </div>
     </div>
   );

@@ -101,22 +101,22 @@ export default function Dashboard() {
             {/* 2.3 Quick Actions Row (Light Gray Cards) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               <Link to="/students" className="block">
-              <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
-                <div className="font-semibold text-[var(--text-main)] mb-1">View student list</div>
-                <div className="text-xs text-[var(--text-body)]">Search, filter and manage profiles</div>
-              </div>
+                <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
+                  <div className="font-semibold text-[var(--text-main)] mb-1">View student list</div>
+                  <div className="text-xs text-[var(--text-body)]">Search, filter and manage profiles</div>
+                </div>
               </Link>
               <Link to="/attendance" className="block">
-              <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
-                <div className="font-semibold text-[var(--text-main)] mb-1">Go to attendance</div>
-                <div className="text-xs text-[var(--text-body)]">Open live marking screen</div>
-              </div>
+                <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
+                  <div className="font-semibold text-[var(--text-main)] mb-1">Go to attendance</div>
+                  <div className="text-xs text-[var(--text-body)]">Open live marking screen</div>
+                </div>
               </Link>
               <Link to="/" className="block">
-              <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
-                <div className="font-semibold text-[var(--text-main)] mb-1">Manage schedule</div>
-                <div className="text-xs text-[var(--text-body)]">Edit classes and timetables</div>
-              </div>
+                <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
+                  <div className="font-semibold text-[var(--text-main)] mb-1">Manage schedule</div>
+                  <div className="text-xs text-[var(--text-body)]">Edit classes and timetables</div>
+                </div>
               </Link>
             </div>
 
