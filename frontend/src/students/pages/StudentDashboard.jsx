@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Bell, 
   Shield, 
@@ -46,6 +46,17 @@ export default function StudentDashboard() {
     },
   ];
 
+  const [username, setUsername] = useState("");
+    useEffect(() => {
+      const stored = localStorage.getItem("user");
+      if (!stored) return; 
+  
+      try {
+        const userObj = JSON.parse(stored);
+        setUsername(userObj.name);
+      } catch {}
+    }, []);
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans text-slate-800">
@@ -59,7 +70,7 @@ export default function StudentDashboard() {
         <header className="px-6 py-5 bg-white border-b border-gray-100 md:bg-transparent md:border-none sticky top-0 z-10 flex justify-between items-center">
           <div>
             <p className="text-xs text-gray-500 font-medium md:hidden">Student portal</p>
-            <h1 className="text-xl md:text-2xl font-bold text-slate-900">Hi, Riya 👋</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">Hi, {username} 👋</h1>
           </div>
           <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition relative">
             <Bell size={22} />

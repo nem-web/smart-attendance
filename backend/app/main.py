@@ -17,6 +17,8 @@ from .api.routes.students import router as students_router
 from .api.routes.attendance import router as attendance_router
 
 from app.api.routes import teacher_settings as settings_router
+from app.core.cloudinary_config import cloudinary
+
 
 
 def create_app() -> FastAPI:
@@ -49,7 +51,6 @@ def create_app() -> FastAPI:
     
     # serve static files (avatars)
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
-    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
     return app
 

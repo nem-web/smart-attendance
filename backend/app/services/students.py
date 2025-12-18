@@ -9,14 +9,6 @@ subjects_col = db["subjects"]
 
 
 async def get_student_profile(user_id: str):
-    """
-    Build a complete student profile by merging data from:
-    - users collection
-    - students collection
-    - attendance summary
-    - populated subjects
-    """
-
     # 1. Get user document
     user = await users_col.find_one({"_id": ObjectId(user_id)})
     if not user:
@@ -58,6 +50,7 @@ async def get_student_profile(user_id: str):
         "year": student.get("year"),
         "subjects": subjects,              # ✅ populated & serialized
         "avatarUrl": student.get("avatarUrl"),
+        "image_url": student.get("image_url"),
         "attendance": attendance_summary,
         "recent_attendance": attendance_summary["recent_attendance"],
     }

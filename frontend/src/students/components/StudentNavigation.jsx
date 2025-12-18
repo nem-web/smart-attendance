@@ -1,7 +1,8 @@
 // StudentNavigation.jsx
+import {CircleUser, LogOut} from "lucide-react";
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Home, BookOpen, TrendingUp, User } from "lucide-react";
 
 const navItems = [
@@ -47,6 +48,19 @@ function MobileItem({ icon: Icon, label, active, path }) {
 
 /* ---------------------- MAIN NAVIGATION ---------------------- */
 export default function StudentNavigation({ activePage = "home" }) {
+  const [username, setUsername] = useState("");
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored) return; 
+
+    try {
+      const userObj = JSON.parse(stored);
+      setUsername(userObj.name);
+    } catch {}
+  }, []);
+
+  const navigate = useNavigate();
+
   return (
     <>
       {/* DESKTOP SIDEBAR */}
@@ -68,17 +82,24 @@ export default function StudentNavigation({ activePage = "home" }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100 mb-10">
+        <div className="flex items-center justify-between p-4 border-t border-gray-100 mb-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-              R
+            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+              <CircleUser size={24} strokeWidth={2} />
             </div>
             <div>
-              <p className="text-sm font-bold">Riya</p>
+              <p className="text-sm font-bold">{username}</p>
               <p className="text-xs text-gray-500">Student</p>
             </div>
           </div>
+          <div className="logout">
+            <LogOut className="cursor-pointer"  onClick={()=>{
+              localStorage.setItem("user", null);
+              navigate("/");
+            }}/>
+          </div>
         </div>
+
       </aside>
 
       {/* MOBILE BOTTOM NAVBAR */}

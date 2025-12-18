@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient  } from "@tanstack/react-query";
 import { fetchMyStudentProfile } from "../../api/auth.js";
-import {fetchAvailableSubjects, addSubjectToStudent } from "../../api/students.js"
+import {fetchAvailableSubjects, addSubjectToStudent, removeSubjectFromStudent } from "../../api/students.js"
 
 import { 
   ArrowLeft, 
@@ -25,6 +25,7 @@ import { useRef } from "react";
 
 export default function StudentProfile() {
   const [open, setOpen] = useState(false);
+  const [selectedSub, setSelectedSub] = useState(null);
 
   const {data, isLoading, isError, error} = useQuery({
     queryKey: ["myStudentProfile"],
@@ -56,15 +57,25 @@ export default function StudentProfile() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: removeSubjectFromStudent,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["myStudentProfile"]);
+      setSelectedSub(null);
+    }
+  });
 
+  
+  
   if (isLoading) return <div>Loading Profile...</div>;
   if (isError){
     return <div>Error loading profile: {error?.message || "Please login"}</div>;
   }
   if(!data) return <div>No Profile found..</div>;
-
+  
   const {student, class: classDoc, professor, attendance_summary} = data;
-  console.log(data)
+  const img = data.image_url;
+  // console.log(data, img)
 
 
   return (
@@ -96,7 +107,7 @@ export default function StudentProfile() {
               <div className="relative group cursor-pointer">
                 <div className="w-24 h-24 rounded-full bg-slate-100 border-4 border-white shadow-sm overflow-hidden">
                   <img 
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya" 
+                    src={img} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
                   />
@@ -116,7 +127,7 @@ export default function StudentProfile() {
                       <span className="text-sm text-slate-500">Computer Science</span>
                     </div>
                   </div>
-                  <button className="text-xs font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition mt-3 sm:mt-0 border border-gray-200 flex items-center gap-2">
+                  <button className="text-xs font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition mt-3 sm:mt-0 border border-gray-200 flex items-center gap-2 cursor-not-allowed">
                     <Edit2 size={12} />
                     Edit details
                   </button>
@@ -162,12 +173,31 @@ export default function StudentProfile() {
                   Upload a clear, high-quality photo. This will be used for face recognition during attendance.
                 </p>
               </div>
-              <button
-                onClick={() => fileRef.current.click()}
-               className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-gray-50 transition shadow-sm active:scale-95 text-slate-600 cursor-pointer">
-                <Upload size={14} />
-                Upload photo
-              </button>
+              {img ? (
+                <div className="flex flex-col items-center">
+                  <img
+                    src={img}
+                    alt="Face preview"
+                    className="w-20 h-20 object-cover border border-gray-200 shadow-sm"
+                  />
+
+                  <button
+                    onClick={() => fileRef.current.click()}
+                    className="mt-2 text-xs font-medium text-blue-600 underline hover:text-blue-700 cursor-pointer"
+                  >
+                    Replace photo
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileRef.current.click()}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-gray-50 transition shadow-sm active:scale-95 text-slate-600 cursor-pointer"
+                >
+                  <Upload size={14} />
+                  Upload photo
+                </button>
+              )}
+
             </div>
             <div className="bg-gray-50 text-slate-500 text-[10px] px-3 py-2 rounded-lg inline-block font-medium border border-gray-100">
               Tips: Use good lighting, look straight at the camera, avoid masks, caps, or filters.
@@ -261,12 +291,23 @@ export default function StudentProfile() {
               {data.subjects?.map((sub) => (
                 <div
                   key={sub._id}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm shadow-blue-200"
+                  onClick={()=> setSelectedSub(sub._id)}
+                  className="relative bg-blue-500 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm shadow-blue-200 cursor-pointer group"
                 >
                   <BookOpen size={14} className="opacity-80" />
                   {sub.name}
                   {sub.code && (
                     <span className="opacity-70">({sub.code})</span>
+                  )}
+
+                  {selectedSub == sub._id && (
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      const ok = window.confirm(`Delete subject ${sub.name}`);
+                      if(ok) deleteMutation.mutate(sub._id);
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition" 
+                    >x</button>
                   )}
                 </div>
               ))}

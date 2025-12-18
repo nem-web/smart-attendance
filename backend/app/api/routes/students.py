@@ -8,11 +8,9 @@ from ...db.mongo import db
 from ...core.security import get_current_user
 from app.services.students import get_student_profile
 
+from cloudinary.uploader import upload
+
 router = APIRouter(prefix="/students", tags=["students"])
-
-UPLOAD_DIR = "uploads/students"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 
 # ============================
 # GET MY PROFILE
@@ -61,14 +59,15 @@ async def upload_image_url(
 
     student_user_id = ObjectId(current_user["id"])
 
-    ext = file.filename.split(".")[-1]
-    filename = f"{current_user['id']}_{uuid.uuid4()}.{ext}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    upload_result = upload(
+        file.file,
+        folder = "student_faces",
+        public_id = str(current_user["id"]),
+        overwite=True,
+        resource_type="image"
+    )
 
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
-
-    image_url = f"/uploads/students/{filename}"
+    image_url = upload_result.get("secure_url")
 
     await db.students.update_one(
         {"user_id": student_user_id},
@@ -131,3 +130,32 @@ async def add_subject(
     )
 
     return {"message": "Subject added successfully"}
+
+
+# ============================
+# DELETE SUBJECT TO STUDENT
+# ============================
+@router.delete("/me/remove-subject/{subject_id}")
+async def remove_subject(
+    subject_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user.get("role") != "student":
+        raise HTTPException(status_code=403, detail="Not a student")
+    
+    subject_oid = ObjectId(subject_id)
+    user_oid = ObjectId(current_user["id"])
+    
+    subject = await db.subjects.find_one({"_id": subject_oid})
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
+    
+    result = await db.students.update_one(
+        {"user_id": user_oid},
+        {"$pull": {"subjects": subject_oid}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Subject not assigned to student")
+    
+    return {"message": "Subject removed successfully"}

@@ -34,3 +34,8 @@ export const addSubjectToStudent = async (subjectid) => {
     params: {subject_id: subjectid}
   });
 };
+
+export async function removeSubjectFromStudent (subjectId) {
+  const res = await api.delete(`/students/me/remove-subject/${subjectId}`);
+  return res.data;
+};
