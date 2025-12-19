@@ -172,7 +172,7 @@ async def get_subject_students(
     
     # students collection
     students_map = {
-        str(s["userId"]): s
+        str(s["user_id"]): s
         async for s in db.students.find({"user_id": {"$in": student_user_ids}})
     }
     

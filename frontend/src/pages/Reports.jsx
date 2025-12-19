@@ -1,71 +1,39 @@
-import React, { useState } from "react";
-import {
-  Download,
-  FileText,
-  ChevronDown,
-  RotateCcw,
+import React, { useState, useEffect } from "react";
+import { 
+  Download, 
+  FileText, 
+  Calendar, 
+  ChevronDown, 
+  RotateCcw, 
   Search,
   Filter
 } from "lucide-react";
+import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
 import DateRange from '../components/DateRange.jsx';
 import 'react-datepicker/dist/react-datepicker.css';
 
-// --- Mock Data for Report Preview ---
-const REPORT_DATA = [
-  {
-    id: "ST-1042",
-    name: "Aarav Sharma",
-    grade: "Grade 10A",
-    total: 42,
-    attended: 40,
-    percentage: 95,
-    status: "Excellent",
-    color: "green"
-  },
-  {
-    id: "ST-1018",
-    name: "Meera Nair",
-    grade: "Grade 9B",
-    total: 40,
-    attended: 35,
-    percentage: 88,
-    status: "Good",
-    color: "green"
-  },
-  {
-    id: "ST-1120",
-    name: "Rahul Verma",
-    grade: "Grade 11C",
-    total: 38,
-    attended: 29,
-    percentage: 76,
-    status: "Watch",
-    color: "amber"
-  },
-  {
-    id: "ST-1099",
-    name: "Sara Khan",
-    grade: "Grade 12B",
-    total: 36,
-    attended: 24,
-    percentage: 67,
-    status: "At risk",
-    color: "red"
-  },
-  {
-    id: "ST-1075",
-    name: "Vikram Iyer",
-    grade: "Grade 10B",
-    total: 39,
-    attended: 27,
-    percentage: 69,
-    status: "At risk",
-    color: "red"
-  }
-];
 
 export default function Reports() {
-  const [threshold, setThreshold] = useState(70);
+  const [threshold, setThreshold] = useState(75);
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [students, setStudents] = useState([]);
+
+  // const [selectedFilter, setSelectedFilter] = useState("All");
+
+  // Simulating the fetch call you had
+  useEffect(() => {
+    fetchMySubjects().then(setSubjects);
+  }, []);
+
+  useEffect(() => {
+    if(!selectedSubject) return;
+    fetchSubjectStudents(selectedSubject).then(setStudents);
+  }, [selectedSubject])
+
+  const verifiedStudents = students.filter(
+    (s) => s.verified === true
+  );
 
   const getStatusColor = (color) => {
     switch (color) {
@@ -75,6 +43,30 @@ export default function Reports() {
       default: return "bg-gray-100 text-gray-700";
     }
   };
+
+  const enhancedStudents = verifiedStudents.map(s => {
+    const present = s.attendance?.present || 0;
+    const absent = s.attendance?.absent || 0;
+
+    const total = present + absent;
+    const percentage = total === 0 ? 0 : Math.round((present / total) * 100);
+
+    const status = percentage >= threshold ? "OK" : "At Risk";
+    const color = percentage >= threshold 
+        ? "green"
+        : percentage >= threshold - 10
+        ? "amber"
+        : "red";
+
+    return {
+      ...s,
+      total,
+      percentage,
+      status,
+      color
+    };
+  });
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -120,10 +112,17 @@ export default function Reports() {
           <div className="md:col-span-4 space-y-2">
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Classes</label>
             <div className="relative">
-              <select className="w-full pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
-                <option>Grade 9-12 (4 selected)</option>
-                <option>Grade 10A Only</option>
-                <option>All Classes</option>
+              <select
+                value={selectedSubject || ""}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="w-full pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+              >
+                <option disabled value="">Select subject</option>
+                {subjects.map(s => (
+                  <option key={s._id} value={s._id}>
+                    {s.name} ({s.code})
+                  </option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
             </div>
@@ -150,7 +149,7 @@ export default function Reports() {
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
               </div>
-              <button className="text-sm text-gray-400 hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer">
+              <button onClick={()=> setThreshold(75)} className="text-sm text-gray-400 hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer">
                 <RotateCcw size={14} />
                 Reset
               </button>
@@ -183,16 +182,16 @@ export default function Reports() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {REPORT_DATA.map((row) => (
+              {enhancedStudents.map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div>
                       <div className="font-semibold text-[var(--text-main)]">{row.name}</div>
-                      <div className="text-xs text-gray-400">ID: {row.id} • {row.grade}</div>
+                      <div className="text-xs text-gray-400">ID: {row.roll} • {row.branch.toUpperCase()}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.total}</td>
-                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attended}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attendance.present + row.attendance.absent}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attendance.present}</td>
                   <td className="px-6 py-4 text-sm font-bold text-[var(--text-main)]">{row.percentage}%</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(row.color)}`}>
