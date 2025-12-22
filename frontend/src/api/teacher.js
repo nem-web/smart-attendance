@@ -15,3 +15,8 @@ export const verifyStudent = (subjectId, studentId) =>
 
 export const deleteStudent = (subjectId, studentId) =>
   api.delete(`/settings/teachers/subjects/${subjectId}/students/${studentId}`);
+
+export const fetchTeacherProfile = async () => {
+  const res = await api.get("/settings");
+  return res.data;
+}

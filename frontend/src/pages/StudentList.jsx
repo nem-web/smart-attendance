@@ -10,7 +10,7 @@ import {
   ArrowDownRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
+import { fetchMySubjects, fetchSubjectStudents, fetchTeacherProfile } from "../api/teacher";
 
 export default function StudentList() {
   const [subjects, setSubjects] = useState([]);
@@ -19,6 +19,21 @@ export default function StudentList() {
 
   const [selectedFilter, setSelectedFilter] = useState("All");
   const navigate = useNavigate();
+
+  const [thresholds, setThresholds] = useState({
+    safeVal: 90,     // fallback
+    warningVal: 75   // fallback
+  });
+
+  useEffect(() => {
+    fetchTeacherProfile().then(profile => {
+      setThresholds({
+        safeVal: profile.safeVal || 90,
+        warningVal: profile.warningVal || 75
+      });
+    });
+  }, []);
+
 
   // Simulating the fetch call you had
   useEffect(() => {
@@ -30,9 +45,29 @@ export default function StudentList() {
     fetchSubjectStudents(selectedSubject).then(setStudents);
   }, [selectedSubject])
 
-  const verifiedStudents = students.filter(
-    (s) => s.verified === true
-  );
+  const filteredStudents = students
+  .filter(s => s.verified === true)
+  .filter(student => {
+    const present = student.attendance?.present ?? 0;
+    const absent = student.attendance?.absent ?? 0;
+    const total = present + absent;
+    const percentage = total > 0 ? (present / total) * 100 : 0;
+
+    if (selectedFilter === "High") {
+      return percentage >= thresholds.safeVal;
+    }
+    if (selectedFilter === "Medium") {
+      return (
+        percentage >= thresholds.warningVal &&
+        percentage < thresholds.safeVal
+      );
+    }
+    if (selectedFilter === "Low") {
+      return percentage < thresholds.warningVal;
+    }
+    return true; // All
+  });
+
 
 
   // Helper to get color classes
@@ -116,17 +151,22 @@ export default function StudentList() {
               
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
 
-              {["All", "High (> 90%)", "Medium (75-90%)", "Low (< 75%)"].map((filter) => (
+              {[
+                { key: "All", label: "All" },
+                { key: "High", label: `High (≥ ${thresholds.safeVal}%)` },
+                { key: "Medium", label: `Medium (${thresholds.warningVal}-${thresholds.safeVal - 1}%)` },
+                { key: "Low", label: `Low (< ${thresholds.warningVal}%)` }
+              ].map((filter) => (
                 <button 
-                  key={filter}
-                  onClick={() => setSelectedFilter(filter)}
+                  key={filter.key}
+                  onClick={() => setSelectedFilter(filter.key)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                    selectedFilter === filter 
+                    selectedFilter === filter.key 
                       ? "bg-indigo-100 text-indigo-700" 
                       : "text-gray-500 hover:bg-gray-50"
                   }`}
                 >
-                  {filter}
+                  {filter.label}
                 </button>
               ))}
             </div>
@@ -146,7 +186,7 @@ export default function StudentList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {verifiedStudents.map((student) => {
+                  {filteredStudents.map((student) => {
                     const present = student.attendance?.present ?? 0;
                     const absent = student.attendance?.absent ?? 0;
                     const total = present + absent;
@@ -157,12 +197,15 @@ export default function StudentList() {
                     let status = "Moderate";
                     let trend = 0;
 
-                    if (percentage >= 90) {
+                    if (percentage >= thresholds.safeVal) {
                       color = "green";
                       status = "Excellent";
-                    } else if (percentage < 75) {
+                    } else if (percentage < thresholds.warningVal) {
                       color = "red";
                       status = "At risk";
+                    } else{
+                      color = "amber";
+                      status = "Moderate";
                     }
 
                     return (

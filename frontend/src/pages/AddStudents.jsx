@@ -22,6 +22,11 @@ export default function AddStudents() {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
+  const [selectedYear, setSelectedYear] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
 
   const [unverifiedCount, setUnverifiedCount] = useState(0)
 
@@ -38,7 +43,18 @@ export default function AddStudents() {
 
   const filteredStudents = students
     .filter((s) => {
-      if (filterType === "Unverified only") return s.verified === false;
+      if (filterType === "Unverified only" && s.verified === true) return false;
+
+      // Year filter
+      if(selectedYear && String(s.year) !== selectedYear) return false;
+      
+      // Search filter (name or Roll)
+      if(appliedSearch){
+        const q = appliedSearch.toLowerCase();
+        const nameMatch = s.name?.toLowerCase().includes(q);
+        const rollMatch = s.roll?.toLowerCase().startsWith(q);
+        if (!nameMatch && !rollMatch) return false;
+      }
       return true;
     })
     .map((s, idx) => ({
@@ -47,7 +63,8 @@ export default function AddStudents() {
       roll: s.roll,           
       year: s.year,           
       branch: s.branch.toUpperCase(),
-      status: s.verified ? "Verified" : "Unverified",
+      verified: s.verified,
+      status: !s.verified ? "Unverified" : s.avatar ? "All set" : "Waiting image",
       addedTime: "Just now",
       avatar: s.avatar,
       hasImage: true,
@@ -56,7 +73,7 @@ export default function AddStudents() {
 
   useEffect(() => {
     setUnverifiedCount(
-      filteredStudents.filter(s => s.status === "Unverified").length
+      filteredStudents.filter(s => s.verified === false).length
     );
   }, [filteredStudents]);
 
@@ -73,6 +90,49 @@ export default function AddStudents() {
     await deleteStudent(selectedSubject, studentId);
     fetchSubjectStudents(selectedSubject).then(setStudents);
   };
+
+  const handleVerifyAllVisible = async () => {
+    if (!selectedSubject){
+      alert("Please select a subject first.");
+      return;
+    }
+
+    // Only unverified visible students
+    const toVerify = filteredStudents.filter((s) => !s.verified);
+    if(toVerify.length === 0) {
+      alert("No unverified students to verify.");
+      return;
+    }
+
+    if (!confirm(`Verify all ${toVerify.length} visible students?`)) return;
+
+    try {
+      await Promise.all(
+        toVerify.map((s)=> verifyStudent(selectedSubject,s.id))
+      );
+
+      // Refresh once after all updates
+      fetchSubjectStudents(selectedSubject).then(setStudents);
+
+    } catch (err) {
+      console.log(err);
+      alert("Some students could not be verified. Please try again.");
+    }
+  }
+
+  const handleRefresh = () => {
+    if (!selectedSubject) return;
+    fetchSubjectStudents(selectedSubject).then(setStudents);
+  };
+
+  const suggestionStudents = students.filter((s) => {
+    if(!searchInput) return false;
+
+    const q = searchInput.toLowerCase();
+    return (
+      s.name?.toLowerCase().includes(q) || String(s.roll)?.toLowerCase().startsWith(q)
+    )
+  })
 
 
   return (
@@ -91,11 +151,11 @@ export default function AddStudents() {
             <p className="text-gray-500 text-sm">Students who added subjects in their profile appear here automatically. Review and verify them for face-recognition attendance.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2 transition shadow-sm">
+            <button onClick={handleRefresh} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2 transition shadow-sm">
               <RefreshCw size={16} />
               Refresh
             </button>
-            <button className="px-4 py-2 bg-[#4F46E5] text-white rounded-lg text-sm font-medium hover:bg-[#4338ca] flex items-center gap-2 shadow-md transition">
+            <button onClick={handleVerifyAllVisible} className="px-4 py-2 bg-[#4F46E5] text-white rounded-lg text-sm font-medium hover:bg-[#4338ca] flex items-center gap-2 shadow-md transition">
               <CheckCircle size={16} />
               Verify all visible
             </button>
@@ -111,9 +171,43 @@ export default function AddStudents() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input 
                   type="text" 
+                  value={searchInput}
+                  onChange={(e) => {
+                    setSearchInput(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter"){
+                      setAppliedSearch(searchInput.trim());
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  onBlur={()=> setTimeout(() => setShowSuggestions(false), 150)}
                   placeholder="Search by name or roll number" 
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
+                {showSuggestions && searchInput && filteredStudents.length > 0 && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-md max-h-60 overflow-y-auto">
+                    {suggestionStudents.slice(0,6).map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={()=> {
+                          setSearchInput(s.roll);
+                          setAppliedSearch(s.roll);
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                      >
+                        <div className="font-medium text-gray-800">
+                          {s.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Roll: {s.roll} • Year: {s.year}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="md:col-span-4 space-y-1.5">
@@ -137,10 +231,16 @@ export default function AddStudents() {
             <div className="md:col-span-3 space-y-1.5">
               <label className="text-xs font-semibold text-gray-500">Year</label>
               <div className="relative">
-                <select className="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700">
-                  <option>All years</option>
-                  <option>1st Year</option>
-                  <option>2nd Year</option>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700">
+                  <option value="">All years</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                  <option value="5">5th Year</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
               </div>
@@ -172,7 +272,7 @@ export default function AddStudents() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-gray-100 flex justify-between items-center">
             <div>
-              <h3 className="font-bold text-gray-900 text-lg">Unverified students</h3>
+              <h3 className="font-bold text-gray-900 text-lg">{filterType === "Unverified only" ? "Unverified students" : "All student requests"}</h3>
               <p className="text-sm text-gray-500">Review face images, details, and linked subjects before allowing them into attendance sessions.</p>
             </div>
             <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
@@ -209,21 +309,30 @@ export default function AddStudents() {
                     <td className="px-6 py-4 text-sm text-gray-600">{student.year}</td>
                     <td className="px-6 py-4 text-sm text-gray-800 max-w-[200px]">{student.branch}</td>
                     <td className="px-6 py-4">
-                      {student.status === "Unverified" ? (
-                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                           <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                           Unverified
-                         </span>
-                      ) : (
+                      {student.status === "Unverified" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          Unverified
+                        </span>
+                      )}
+
+                      {student.status === "Waiting image" && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
-                           <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                           Waiting image
-                         </span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                          Waiting image
+                        </span>
+                      )}
+
+                      {student.status === "All set" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          <Check size={12} />
+                          All set
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {!student.verified && (
+                        {student.verified === false && (
                           <button
                             onClick={() => handleVerify(student.id)}
                             className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition shadow-sm"
@@ -232,12 +341,14 @@ export default function AddStudents() {
                           </button>
                         )}
 
-                        <button
-                          onClick={() => handleDelete(student.id)}
-                          className="px-3 py-1.5 border border-rose-200 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-50 transition"
-                        >
-                          <X size={14} />
-                        </button>
+                        {student.verified === false && (
+                          <button
+                            onClick={() => handleDelete(student.id)}
+                            className="px-3 py-1.5 border border-rose-200 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-50 transition"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
 
