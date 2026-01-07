@@ -13,7 +13,7 @@ export default function Login() {
               routing="path"
               path="/login"
               signUpUrl="/register"
-              afterSignInUrl="/dashboard"
+              afterSignInUrl="/"
               appearance={{
                 elements: {
                   rootBox: "w-full",

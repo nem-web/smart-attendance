@@ -1,6 +1,6 @@
 // frontend/src/App.jsx
-import React from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import Dashboard from "./pages/Dashboard";
 import MarkAttendance from "./pages/MarkAttendance";
@@ -13,16 +13,48 @@ import Settings from "./pages/Settings";
 import AddStudents from "./pages/AddStudents";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import CompleteProfile from "./pages/CompleteProfile";
 import StudentDashboard from "./students/pages/StudentDashboard.jsx"
 import StudentSubjects from "./students/pages/StudentSubjects.jsx";
 import StudentForecast from "./students/pages/StudentForecast.jsx";
 import StudentProfile from "./students/pages/StudentProfile.jsx"
+import { getUserProfile } from "./api/userProfile";
 
 // Protected Route component
 function ProtectedRoute({ children }) {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded, user } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [profileChecked, setProfileChecked] = useState(false);
   
-  if (!isLoaded) {
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (isLoaded && isSignedIn && user) {
+        // Skip profile check if we're already on complete-profile page
+        if (location.pathname === "/complete-profile") {
+          setProfileChecked(true);
+          return;
+        }
+
+        try {
+          // Check if user has completed their profile
+          await getUserProfile(user.id);
+          setProfileChecked(true);
+        } catch (error) {
+          // Profile not found, redirect to complete-profile
+          if (error.response?.status === 404) {
+            navigate("/complete-profile", { replace: true });
+          } else {
+            setProfileChecked(true);
+          }
+        }
+      }
+    };
+
+    checkProfile();
+  }, [isLoaded, isSignedIn, user, navigate, location.pathname]);
+  
+  if (!isLoaded || !profileChecked) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
@@ -35,30 +67,59 @@ function ProtectedRoute({ children }) {
 
 function RedirectToHome() {
   const { user, isSignedIn, isLoaded } = useUser();
+  const [loading, setLoading] = useState(true);
+  const [targetRoute, setTargetRoute] = useState(null);
   
-  if (!isLoaded) {
+  useEffect(() => {
+    const determineRoute = async () => {
+      if (!isLoaded) return;
+      
+      if (!isSignedIn) {
+        setTargetRoute("/login");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Try to get user profile from backend
+        const profile = await getUserProfile(user.id);
+        
+        // Redirect based on profile role
+        if (profile.role === "teacher") {
+          setTargetRoute("/dashboard");
+        } else if (profile.role === "student") {
+          setTargetRoute("/student-dashboard");
+        } else {
+          setTargetRoute("/complete-profile");
+        }
+      } catch (error) {
+        // Profile not found, redirect to complete profile
+        if (error.response?.status === 404) {
+          setTargetRoute("/complete-profile");
+        } else {
+          // Fallback to checking Clerk metadata (only publicMetadata for security)
+          const userRole = user?.publicMetadata?.role;
+          if (userRole === "teacher") {
+            setTargetRoute("/dashboard");
+          } else if (userRole === "student") {
+            setTargetRoute("/student-dashboard");
+          } else {
+            setTargetRoute("/complete-profile");
+          }
+        }
+      }
+      
+      setLoading(false);
+    };
+
+    determineRoute();
+  }, [isLoaded, isSignedIn, user]);
+  
+  if (!isLoaded || loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (!isSignedIn) {
-    return <Navigate to="/login" />;
-  }
-
-  // Get role from user's metadata
-  // publicMetadata is accessible on the client and should be used for role
-  // unsafeMetadata is checked as fallback for compatibility during migration
-  const userRole = user?.publicMetadata?.role || user?.unsafeMetadata?.role;
-
-  if (userRole === "teacher") {
-    return <Navigate to="/dashboard" />;
-  }
-  
-  if (userRole === "student") {
-    return <Navigate to="/student-dashboard" />;
-  }
-
-  // Default redirect if no role is set
-  return <Navigate to="/dashboard" />;
+  return <Navigate to={targetRoute} replace />;
 }
 
 const studentRoutes = [
@@ -67,7 +128,8 @@ const studentRoutes = [
   "/student-forecast",
   "/student-profile",
   "/login",
-  "/register"
+  "/register",
+  "/complete-profile"
 ];
 
 export default function App() {
@@ -85,6 +147,7 @@ export default function App() {
           <Route path="/" element={<RedirectToHome/>} />
           <Route path="/login" element={<Login/>}/>
           <Route path="/register" element={<Register/>}/>
+          <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile/></ProtectedRoute>}/>
           
           {/* Protected Teacher Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard/></ProtectedRoute>} />

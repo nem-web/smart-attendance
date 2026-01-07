@@ -14,7 +14,7 @@ export default function Register() {
               routing="path"
               path="/register"
               signInUrl="/login"
-              afterSignUpUrl="/dashboard"
+              afterSignUpUrl="/complete-profile"
               appearance={{
                 elements: {
                   rootBox: "w-full",

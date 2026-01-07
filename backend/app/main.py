@@ -15,6 +15,7 @@ from .core.config import APP_NAME, ORIGINS
 from .api.routes.auth import router as auth_router
 from .api.routes.students import router as students_router
 from .api.routes.attendance import router as attendance_router
+from .api.routes.user_profiles import router as user_profiles_router
 
 from app.api.routes import teacher_settings as settings_router
 from app.core.cloudinary_config import cloudinary
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(students_router)
     app.include_router(attendance_router)
     app.include_router(settings_router.router)
+    app.include_router(user_profiles_router)
     
     # serve static files (avatars)
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
