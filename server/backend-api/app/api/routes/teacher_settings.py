@@ -38,7 +38,7 @@ async def get_settings(
 
     profile = {
         "id": user_id,
-        "name": teacher.get("profile", {}).get("name", user.get("name", "")),
+        "name": user.get("name", ""),
         "email": user.get("email", ""),
         "phone": teacher.get("profile", {}).get("phone", ""),
         "role": "teacher",
