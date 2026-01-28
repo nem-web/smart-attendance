@@ -23,7 +23,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
     if len(payload.password.encode("utf-8")) > 72:
         raise HTTPException(
             status_code=400,
-            detail="Password too long. Please use atmost 72 characters"
+            detail="Password too long. Please use at most 72 characters"
         )
     
     # Check existing user
@@ -41,55 +41,64 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
         "email": payload.email,
         "password_hash": hash_password(payload.password),
         "role": payload.role,
-        "is_verified": True, # Temporarily passing true 
-        "verification_token":"", # Temporarily passing empty
+        "is_verified": False,  # Changed to False for email verification flow
+        "verification_token": verification_token,  # Store the actual token
         "verification_expiry": verification_expiry,
-        "created_at" : datetime.utcnow(),
+        "created_at": datetime.utcnow(),
     }
     
     # Add role specific data
-    
-    if payload.role == "student" :
+    if payload.role == "student":
         user_doc["branch"] = payload.branch
         user_doc["roll"] = payload.roll
         user_doc["year"] = payload.year
         
-    elif payload.role == "teacher" :
+    elif payload.role == "teacher":
         user_doc["employee_id"] = payload.employee_id
         user_doc["phone"] = payload.phone
-        
-    # Insert into users collection   
+
+    # Insert into users collection
     try:
         result = await db.users.insert_one(user_doc)
         created_user_id = result.inserted_id
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to create user") from e
-    
+
     # Insert into role specific collections
     try:
         if payload.role == "student":
             student_doc = {
                 "userId": created_user_id,
                 "name": payload.name,
-                "email": payload.name,
+                "email": payload.email,
                 "branch": payload.branch,
                 "created_at": datetime.utcnow(),
             }
             await db.students.insert_one(student_doc)
+
         elif payload.role == "teacher":
             if not payload.employee_id:
                 raise HTTPException(status_code=400, detail="Employee ID required")
             if not payload.phone:
                 raise HTTPException(status_code=400, detail="Phone number required")
+
             teacher_doc = {
                 "userId": created_user_id,
+                "name": payload.name,
+                "email": payload.email,
                 "employee_id": payload.employee_id,
-                "phone": payload.phone,
+                "profile": {
+                    "phone": payload.phone,
+                    "subjects": []
+                },
                 "created_at": datetime.utcnow(),
             }
 
             await db.teachers.insert_one(teacher_doc)
-            
+
+    except HTTPException:
+        await db.users.delete_one({"_id": created_user_id})
+        raise
     except Exception as e:
         await db.users.delete_one({"_id": created_user_id})
         raise HTTPException(
@@ -97,7 +106,6 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
             detail=f"Failed to create role-specific record: {str(e)}"
         )
 
-    
     # Build Verification link
     verify_link = f"{BACKEND_BASE_URL}/auth/verify-email?token={verification_token}"
     
@@ -106,14 +114,12 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
         verification_link=verify_link,
     )
 
-    
     token = create_jwt(
         user_id=str(created_user_id),
         role=payload.role,
         email=payload.email
     )
 
-    
     return {
         "user_id": str(result.inserted_id),
         "email": payload.email,
@@ -121,7 +127,6 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
         "name": payload.name,
         "token": token
     }
-        
 
 
 @router.post("/login", response_model=UserResponse)
@@ -157,16 +162,14 @@ async def login(payload: LoginRequest):
         "email": email,
         "role": user["role"],
         "name": user["name"],
-        "token": token     # ← VERY IMPORTANT
+        "token": token
     }
 
-    
-    
-# Verify email route
 
+# Verify email route
 @router.get("/verify-email")
 async def verify_email(token: str = Query(...)):
-    user = await db.users.find_one({"verification_token":token})
+    user = await db.users.find_one({"verification_token": token})
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
     
@@ -227,7 +230,7 @@ async def google_callback(request: Request):
             detail="Please verify your email before logging in."
         )
 
-    # ✅ CREATE JWT (MATCH NORMAL LOGIN)
+    # CREATE JWT (MATCH NORMAL LOGIN)
     jwt_token = create_jwt(
         user_id=str(user["_id"]),
         role=user["role"],

@@ -1,6 +1,6 @@
 # backend/app/api/routes/settings.py
 from app.db.mongo import db
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from pathlib import Path
 from datetime import datetime
 import aiofiles
@@ -16,7 +16,7 @@ from app.utils.utils import serialize_bson
 from app.api.deps import get_current_teacher
 from app.services.subject_service import add_subject_for_teacher
 from app.db.subjects_repo import get_subjects_by_ids
-from bson import ObjectId
+from bson import ObjectId, errors as bson_errors
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -26,19 +26,26 @@ async def _ensure_indexes():
     await create_index_once()
     await ensure_subject_indexes()
 
+def validate_object_id(id_str: str, field_name: str = "id") -> ObjectId:
+    """Helper to validate and convert string to ObjectId"""
+    try:
+        return ObjectId(id_str)
+    except (bson_errors.InvalidId, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid {field_name} format"
+        )
+
 # ---------------- GET SETTINGS ----------------
 @router.get("", response_model=dict)
-async def get_settings(
-    current=Depends(get_current_teacher),
-):
+async def get_settings(current: dict = Depends(get_current_teacher)):
     user_id = current["id"]
     user = current["user"]
     teacher = current["teacher"]
     
-
     profile = {
         "id": user_id,
-        "name": teacher.get("profile", {}).get("name", user.get("name", "")),
+        "name": user.get("name", ""),
         "email": user.get("email", ""),
         "phone": teacher.get("profile", {}).get("phone", ""),
         "role": "teacher",
@@ -52,7 +59,6 @@ async def get_settings(
     
     subject_ids = teacher.get("profile", {}).get("subjects", [])
     populated_subjects = await get_subjects_by_ids(subject_ids)
-    print(subject_ids, populated_subjects)
     
     doc["profile"]["subjects"] = populated_subjects
     
@@ -62,41 +68,128 @@ async def get_settings(
 @router.patch("", response_model=dict)
 async def patch_settings_route(
     payload: dict,
-    current=Depends(get_current_teacher),
+    current: dict = Depends(get_current_teacher),
 ):
-    if not payload:
-        raise HTTPException(status_code=400, detail="Empty payload")
+    if not payload or not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Invalid payload")
 
-    updated = await patch_settings(current["id"], payload)
-    return serialize_bson(updated)
+    user_id = validate_object_id(current["id"])
+    now = datetime.utcnow()
+    
+    # Extract fields that need to sync across collections
+    user_updates = {}
+    teacher_updates = {}
+    
+    if "name" in payload:
+        user_updates["name"] = payload["name"]
+        teacher_updates["name"] = payload["name"]
+        
+    if "email" in payload:
+        user_updates["email"] = payload["email"]
+        teacher_updates["email"] = payload["email"]
+
+    # Update users collection
+    if user_updates:
+        await db.users.update_one(
+            {"_id": user_id},
+            {"$set": {**user_updates, "updated_at": now}}
+        )
+
+    # ✅ FIXED: Update teachers collection (supports both userId and user_id schemas)
+    if teacher_updates:
+        result = await db.teachers.update_one(
+            {
+                "$or": [
+                    {"userId": user_id},
+                    {"user_id": user_id}
+                ]
+            },
+            {"$set": {**teacher_updates, "updated_at": now}}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Teacher profile not found")
+
+    # Clean payload for teacher-specific settings
+    cleaned_payload = {
+        k: v for k, v in payload.items() 
+        if k not in ("name", "email")
+    }
+
+    if cleaned_payload:
+        await patch_settings(current["id"], cleaned_payload)
+    
+    # ✅ FIXED: Return fresh data (query supports both field names)
+    fresh_user = await db.users.find_one({"_id": user_id})
+    fresh_teacher = await db.teachers.find_one(
+        {"$or": [{"userId": user_id}, {"user_id": user_id}]}
+    )
+    
+    if not fresh_user or not fresh_teacher:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Construct response with fresh data
+    profile = {
+        "id": user_id,
+        "name": fresh_user.get("name", ""),
+        "email": fresh_user.get("email", ""),
+        "phone": fresh_teacher.get("profile", {}).get("phone", ""),
+        "role": "teacher",
+        "employee_id": fresh_teacher.get("employee_id"),
+        "subjects": fresh_teacher.get("profile", {}).get("subjects", []),
+        "department": fresh_teacher.get("department"),
+        "avatarUrl": fresh_teacher.get("avatarUrl"),
+    }
+    
+    doc = await ensure_settings_for_user(user_id, profile)
+    
+    subject_ids = fresh_teacher.get("profile", {}).get("subjects", [])
+    populated_subjects = await get_subjects_by_ids(subject_ids)
+    doc["profile"]["subjects"] = populated_subjects
+    
+    return serialize_bson(doc)
 
 # ---------------- PUT SETTINGS ----------------
 @router.put("", response_model=dict)
 async def put_settings_route(
     payload: dict,
-    current=Depends(get_current_teacher),
+    current: dict = Depends(get_current_teacher),
 ):
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Invalid payload format")
+    
     updated = await replace_settings(current["id"], payload)
     return serialize_bson(updated)
 
 # ---------------- AVATAR UPLOAD ----------------
 UPLOAD_DIR = Path("app/static/avatars")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 @router.post("/upload-avatar", response_model=dict)
 async def upload_avatar(
     file: UploadFile = File(...),
-    current=Depends(get_current_teacher),
+    current: dict = Depends(get_current_teacher),
 ):
     ext = Path(file.filename).suffix.lower()
     if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
         raise HTTPException(status_code=400, detail="Unsupported file type")
-
+    
+    allowed_content_types = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed_content_types:
+        raise HTTPException(status_code=400, detail="Invalid file content type")
+    
+    contents = await file.read()
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Max 5MB")
+    
     fname = f"{current['id']}_{int(datetime.utcnow().timestamp())}{ext}"
     dest = UPLOAD_DIR / fname
 
-    async with aiofiles.open(dest, "wb") as out:
-        await out.write(await file.read())
+    try:
+        async with aiofiles.open(dest, "wb") as out:
+            await out.write(contents)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
     avatar_url = f"/static/avatars/{fname}"
 
@@ -113,7 +206,7 @@ async def upload_avatar(
 @router.post("/add-subject", response_model=dict)
 async def add_subject(
     payload: dict,
-    current = Depends(get_current_teacher)
+    current: dict = Depends(get_current_teacher)
 ):
     name = payload.get("name")
     code = payload.get("code")
@@ -129,138 +222,140 @@ async def add_subject(
     
     return serialize_bson(subject)
 
-
-@router.get("/teachers/me/subjects")
+@router.get("/my-subjects", response_model=list)
 async def get_my_subjects(current_user: dict = Depends(get_current_teacher)):
-    # if current_user.get("role") != "teacher":
-    #     raise HTTPException(status_code=403, detail="not a teacher")
-    
-    prof_id = ObjectId(current_user["id"])
+    prof_id = validate_object_id(current_user["id"])
     
     subjects = await db.subjects.find(
         {"professor_ids": prof_id}
-    ).to_list(None)
+    ).to_list(length=100)
     
     return [
         {
             "_id": str(s["_id"]),
             "name": s["name"],
-            "code": s.get("code")
+            "code": s.get("code"),
+            "student_count": len(s.get("students", []))
         }
         for s in subjects
     ]
     
 # GET STUDENTS OF A SUBJECT
-@router.get("/teachers/subjects/{subject_id}/students")
+@router.get("/subjects/{subject_id}/students", response_model=list)
 async def get_subject_students(
     subject_id: str,
     current_user: dict = Depends(get_current_teacher)
 ):
-    # if current_user.get("role") != "teacher":
-    #     raise HTTPException(status_code=403, detail="not a teacher")
+    prof_id = validate_object_id(current_user["id"])
+    subj_id = validate_object_id(subject_id, "subject_id")
     
+    # SECURITY: Ensure teacher teaches this subject
     subject = await db.subjects.find_one(
-        {"_id": ObjectId(subject_id)},
-        {"students": 1}
+        {
+            "_id": subj_id,
+            "professor_ids": prof_id
+        },
+        {"students": 1, "name": 1}
     )
     
     if not subject:
-        raise HTTPException(404, "Subject not found")
+        raise HTTPException(status_code=404, detail="Subject not found or access denied")
     
     subject_students = subject.get("students", [])
+    if not subject_students:
+        return []
+    
     student_user_ids = [s["student_id"] for s in subject_students]
     
-    # students collection
-    students_map = {
-        str(s["userId"]): s
-        async for s in db.students.find({"userId": {"$in": student_user_ids}})
-    }
+    students_cursor = db.students.find({"userId": {"$in": student_user_ids}})
+    users_cursor = db.users.find({"_id": {"$in": student_user_ids}})
     
-    # user's collections
+    students_map = {
+        str(s["userId"]): s 
+        async for s in students_cursor
+    }
     users = {
-        str(u["_id"]) : u
-        async for u in db.users.find({"_id": {"$in": student_user_ids}})
+        str(u["_id"]): u 
+        async for u in users_cursor
     }
     
     response = []
-    
     for s in subject_students:
         uid = str(s["student_id"])
         user = users.get(uid)
-        student_doc = students_map.get(uid)
-        
         if not user:
             continue
+            
+        student_doc = students_map.get(uid, {})
         
         response.append({
             "student_id": uid,
-            "name": user.get("name"),
-            "roll": user.get("roll"),      # ✅ now exists
-            "year": user.get("year"),      # ✅ now exists
+            "name": user.get("name", "Unknown"),
+            "roll": user.get("roll"),
+            "year": user.get("year"),
             "branch": user.get("branch"),
-            "embeddings": student_doc.get("face_embeddings") if student_doc else [],
-            "avatar": student_doc.get("image_url") if student_doc else None,
+            "embeddings": student_doc.get("face_embeddings", []),
+            "avatar": student_doc.get("image_url"),
             "verified": s.get("verified", False),
-            "attendance": s.get("attendance", {
-                "present": 0,
-                "absent": 0
-            }),
+            "attendance": s.get("attendance", {"present": 0, "absent": 0}),
         })
     
     return response
 
-
-@router.post("/teachers/subjects/{subject_id}/students/{student_id}/verify")
+@router.post("/subjects/{subject_id}/students/{student_id}/verify")
 async def verify_student(
     subject_id: str,
     student_id: str,
     current_user: dict = Depends(get_current_teacher)
 ):
-    prof_id = ObjectId(current_user["id"])
+    prof_id = validate_object_id(current_user["id"])
+    subj_id = validate_object_id(subject_id, "subject_id")
+    stud_id = validate_object_id(student_id, "student_id")
     
     result = await db.subjects.update_one(
         {
-            "_id": ObjectId(subject_id),
+            "_id": subj_id,
             "professor_ids": prof_id,
-            "students.student_id": ObjectId(student_id)
+            "students.student_id": stud_id
         },
         {
-            "$set":{"students.$.verified": True}
+            "$set": {"students.$.verified": True, "updated_at": datetime.utcnow()}
         }
     )
     
     if result.modified_count == 0:
-        raise HTTPException(404, "Student or subject not found")
+        exists = await db.subjects.find_one({"_id": subj_id})
+        if not exists:
+            raise HTTPException(status_code=404, detail="Subject not found")
+        raise HTTPException(status_code=404, detail="Student not enrolled in this subject")
     
-    return {"message": "Student Verified"}
+    return {"message": "Student verified successfully"}
 
-
-
-@router.delete("/teachers/subjects/{subject_id}/students/{student_id}")
+@router.delete("/subjects/{subject_id}/students/{student_id}")
 async def remove_student(
     subject_id: str,
     student_id: str,
     current_user: dict = Depends(get_current_teacher)
 ):
-    prof_id = ObjectId(current_user["id"])
-    subject_oid = ObjectId(subject_id)
-    student_oid = ObjectId(student_id)
-
-    # 1️⃣ Remove from subject.students
+    prof_id = validate_object_id(current_user["id"])
+    subj_id = validate_object_id(subject_id, "subject_id")
+    stud_id = validate_object_id(student_id, "student_id")
+    
+    subject = await db.subjects.find_one(
+        {"_id": subj_id, "professor_ids": prof_id},
+        {"_id": 1}
+    )
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found or access denied")
+    
     await db.subjects.update_one(
-        {
-            "_id": subject_oid,
-            "professor_ids": prof_id,
-        },
-        {
-            "$pull": {"students": {"student_id": student_oid}}
-        }
+        {"_id": subj_id},
+        {"$pull": {"students": {"student_id": stud_id}}}
     )
 
-    # 2️⃣ Remove subject from student.subjects
     await db.students.update_one(
-        {"userId": student_oid},
-        {"$pull": {"subjects": subject_oid}}
+        {"userId": stud_id},
+        {"$pull": {"subjects": subj_id}}
     )
 
     return {"message": "Student removed from subject"}
