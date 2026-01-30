@@ -84,14 +84,31 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
 
             teacher_doc = {
                 "userId": created_user_id,
-                "name": payload.name,
-                "email": payload.email,
-                "employee_id": payload.employee_id,
-                "profile": {
-                    "phone": payload.phone,
-                    "subjects": []
+                "subjects": [],
+                "avatarUrl": None,
+                "department": None,
+                "settings": {
+                    "theme": "Light",
+                    "notifications": {
+                        "push": True,
+                        "inApp": True,
+                        "sound": False,
+                    },
+                    "emailPreferences": {
+                        
+                    },
+                    "thresholds": {
+                        "warningVal": 75,
+                        "safeVal": 85,
+                    },
+                    "faceSettings": {
+                        "sensitivity": 80,
+                        "liveness": True,
+                    },
                 },
-                "created_at": datetime.utcnow(),
+                "createdAt": datetime.utcnow(),
+                "updatedAt": datetime.utcnow(),
+                
             }
 
             await db.teachers.insert_one(teacher_doc)

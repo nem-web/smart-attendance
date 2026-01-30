@@ -3,14 +3,10 @@ from app.db.mongo import db
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from pathlib import Path
 from datetime import datetime
-import aiofiles
 
-from app.services.teacher_settings_service import (
-    ensure_settings_for_user,
-    patch_settings,
-    replace_settings,
-)
-from app.db.teacher_settings_repo import create_index_once
+from app.core.cloudinary_config import cloudinary
+from cloudinary.uploader import upload
+
 from app.db.subjects_repo import ensure_indexes as ensure_subject_indexes
 from app.utils.utils import serialize_bson
 from app.api.deps import get_current_teacher
@@ -20,11 +16,6 @@ from bson import ObjectId, errors as bson_errors
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
-# ensure DB index
-@router.on_event("startup")
-async def _ensure_indexes():
-    await create_index_once()
-    await ensure_subject_indexes()
 
 def validate_object_id(id_str: str, field_name: str = "id") -> ObjectId:
     """Helper to validate and convert string to ObjectId"""
@@ -40,32 +31,37 @@ def validate_object_id(id_str: str, field_name: str = "id") -> ObjectId:
 @router.get("", response_model=dict)
 async def get_settings(current: dict = Depends(get_current_teacher)):
     user_id = current["id"]
+    
+    # fetched in dependency
     user = current["user"]
     teacher = current["teacher"]
     
+    # 1. Subject ids population
+    subject_ids = teacher.get("subjects", [])
+    subjects = await get_subjects_by_ids(subject_ids)
+    
     profile = {
         "id": user_id,
+        
+        # Identity (Users collection)
         "name": user.get("name", ""),
         "email": user.get("email", ""),
-        "phone": teacher.get("profile", {}).get("phone", ""),
         "role": "teacher",
-        "employee_id": teacher.get("employee_id"),
-        "subjects": teacher.get("profile", {}).get("subjects", []),
-        "department": teacher.get("department"),
+        "phone": user.get("phone", ""),
+        "employee_id": user.get("employee_id"),
+        
+        # Settings & Subjects
         "avatarUrl": teacher.get("avatarUrl"),
+        "department": teacher.get("department"),
+        "subjects": subjects,
+        
+        "settings": teacher.get("settings", {}),
     }
-
-    doc = await ensure_settings_for_user(user_id, profile)
     
-    subject_ids = teacher.get("profile", {}).get("subjects", [])
-    populated_subjects = await get_subjects_by_ids(subject_ids)
-    
-    doc["profile"]["subjects"] = populated_subjects
-    
-    return serialize_bson(doc)
+    return serialize_bson(profile)
 
 # ---------------- PATCH SETTINGS ----------------
-@router.patch("", response_model=dict)
+@router.patch("")
 async def patch_settings_route(
     payload: dict,
     current: dict = Depends(get_current_teacher),
@@ -78,75 +74,58 @@ async def patch_settings_route(
     
     # Extract fields that need to sync across collections
     user_updates = {}
-    teacher_updates = {}
-    
-    if "name" in payload:
-        user_updates["name"] = payload["name"]
-        teacher_updates["name"] = payload["name"]
-        
-    if "email" in payload:
-        user_updates["email"] = payload["email"]
-        teacher_updates["email"] = payload["email"]
+    for field in ("name", "email", "phone", "employee_id"):
+        if field in payload:
+            user_updates[field] = payload[field]
 
     # Update users collection
     if user_updates:
         await db.users.update_one(
             {"_id": user_id},
-            {"$set": {**user_updates, "updated_at": now}}
+            {"$set": {**user_updates, "updatedAt": now}}
         )
 
-    # ✅ FIXED: Update teachers collection (supports both userId and user_id schemas)
+     # ---------------- TEACHERS COLLECTION ----------------
+    teacher_updates = {}
+
+    if "department" in payload:
+        teacher_updates["department"] = payload["department"]
+
+    if "settings" in payload and isinstance(payload["settings"], dict):
+        teacher_updates["settings"] = payload["settings"]
+
     if teacher_updates:
         result = await db.teachers.update_one(
-            {
-                "$or": [
-                    {"userId": user_id},
-                    {"user_id": user_id}
-                ]
-            },
-            {"$set": {**teacher_updates, "updated_at": now}}
+            {"userId": user_id},
+            {"$set": {**teacher_updates, "updatedAt": now}}
         )
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Teacher profile not found")
 
-    # Clean payload for teacher-specific settings
-    cleaned_payload = {
-        k: v for k, v in payload.items() 
-        if k not in ("name", "email")
-    }
-
-    if cleaned_payload:
-        await patch_settings(current["id"], cleaned_payload)
-    
-    # ✅ FIXED: Return fresh data (query supports both field names)
+     # ---------------- RETURN FRESH DATA ----------------
     fresh_user = await db.users.find_one({"_id": user_id})
-    fresh_teacher = await db.teachers.find_one(
-        {"$or": [{"userId": user_id}, {"user_id": user_id}]}
-    )
-    
+    fresh_teacher = await db.teachers.find_one({"userId": user_id})
+
     if not fresh_user or not fresh_teacher:
         raise HTTPException(status_code=404, detail="Profile not found")
-    
-    # Construct response with fresh data
+
+    subject_ids = fresh_teacher.get("subjects", [])
+    subjects = await get_subjects_by_ids(subject_ids)
+
     profile = {
-        "id": user_id,
+        "id": str(user_id),
         "name": fresh_user.get("name", ""),
         "email": fresh_user.get("email", ""),
-        "phone": fresh_teacher.get("profile", {}).get("phone", ""),
+        "phone": fresh_user.get("phone", ""),
+        "employee_id": fresh_user.get("employee_id"),
         "role": "teacher",
-        "employee_id": fresh_teacher.get("employee_id"),
-        "subjects": fresh_teacher.get("profile", {}).get("subjects", []),
         "department": fresh_teacher.get("department"),
         "avatarUrl": fresh_teacher.get("avatarUrl"),
+        "subjects": subjects,
+        "settings": fresh_teacher.get("settings", {}),
     }
     
-    doc = await ensure_settings_for_user(user_id, profile)
-    
-    subject_ids = fresh_teacher.get("profile", {}).get("subjects", [])
-    populated_subjects = await get_subjects_by_ids(subject_ids)
-    doc["profile"]["subjects"] = populated_subjects
-    
-    return serialize_bson(doc)
+    return serialize_bson(profile)
 
 # ---------------- PUT SETTINGS ----------------
 @router.put("", response_model=dict)
@@ -161,17 +140,16 @@ async def put_settings_route(
     return serialize_bson(updated)
 
 # ---------------- AVATAR UPLOAD ----------------
-UPLOAD_DIR = Path("app/static/avatars")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-@router.post("/upload-avatar", response_model=dict)
+@router.post("/upload-avatar")
 async def upload_avatar(
     file: UploadFile = File(...),
     current: dict = Depends(get_current_teacher),
 ):
-    ext = Path(file.filename).suffix.lower()
-    if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
+    ext = file.filename.split(".")[-1].lower()
+    if ext not in {"jpg", "jpeg", "png", "webp"}:
         raise HTTPException(status_code=400, detail="Unsupported file type")
     
     allowed_content_types = {"image/jpeg", "image/png", "image/webp"}
@@ -182,27 +160,35 @@ async def upload_avatar(
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Max 5MB")
     
-    fname = f"{current['id']}_{int(datetime.utcnow().timestamp())}{ext}"
-    dest = UPLOAD_DIR / fname
-
+    
     try:
-        async with aiofiles.open(dest, "wb") as out:
-            await out.write(contents)
+        upload_result = cloudinary.uploader.upload(
+            contents,
+            folder="teachers/avtars",
+            public_id=str(current["id"]),
+            overwrite=True,
+            resource_type="image",
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Cloudinary upload failed: {str(e)}")
 
-    avatar_url = f"/static/avatars/{fname}"
+    avatarUrl = upload_result["secure_url"]
 
-    updated = await patch_settings(
-        current["id"],
-        {"profile": {"avatarUrl": avatar_url}},
+    # Update to teachers schema directly
+    teacher_id = ObjectId(current["id"])
+    result = await db.teachers.update_one(
+        {"userId": teacher_id},
+        {"$set": {"avatarUrl": avatarUrl}}
     )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Teacher not found")
 
     return {
-        "avatarUrl": avatar_url,
-        "settings": serialize_bson(updated),
+        "avatarUrl": avatarUrl,
     }
-    
+
+
+# Add - Subject 
 @router.post("/add-subject", response_model=dict)
 async def add_subject(
     payload: dict,
