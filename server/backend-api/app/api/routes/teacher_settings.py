@@ -208,7 +208,8 @@ async def add_subject(
     
     return serialize_bson(subject)
 
-@router.get("/my-subjects", response_model=list)
+# ---------- My subjects ----------------
+@router.get("/teachers/me/subjects", response_model=list)
 async def get_my_subjects(current_user: dict = Depends(get_current_teacher)):
     prof_id = validate_object_id(current_user["id"])
     
@@ -227,7 +228,7 @@ async def get_my_subjects(current_user: dict = Depends(get_current_teacher)):
     ]
     
 # GET STUDENTS OF A SUBJECT
-@router.get("/subjects/{subject_id}/students", response_model=list)
+@router.get("/teachers/subjects/{subject_id}/students", response_model=list)
 async def get_subject_students(
     subject_id: str,
     current_user: dict = Depends(get_current_teacher)
@@ -288,7 +289,7 @@ async def get_subject_students(
     
     return response
 
-@router.post("/subjects/{subject_id}/students/{student_id}/verify")
+@router.post("/teachers/subjects/{subject_id}/students/{student_id}/verify")
 async def verify_student(
     subject_id: str,
     student_id: str,
@@ -317,7 +318,7 @@ async def verify_student(
     
     return {"message": "Student verified successfully"}
 
-@router.delete("/subjects/{subject_id}/students/{student_id}")
+@router.delete("/teachers/subjects/{subject_id}/students/{student_id}")
 async def remove_student(
     subject_id: str,
     student_id: str,
