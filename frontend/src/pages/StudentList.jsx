@@ -16,8 +16,9 @@ export default function StudentList() {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
-
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
+  const [sortOrder, setSortOrder] = useState("desc"); // "asc" or "desc"
   const navigate = useNavigate();
 
   // Simulating the fetch call you had
@@ -33,6 +34,52 @@ export default function StudentList() {
   const verifiedStudents = students.filter(
     (s) => s.verified === true
   );
+
+  // Helper function to calculate attendance percentage
+  const calculateAttendancePercentage = (student) => {
+    const present = student.attendance?.present ?? 0;
+    const absent = student.attendance?.absent ?? 0;
+    const total = present + absent;
+    return total > 0 ? Math.round((present / total) * 100) : 0;
+  };
+
+  // Filter students based on search term and attendance filter
+  const filteredStudents = verifiedStudents.filter((student) => {
+    // Search filter
+    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.roll.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+
+    // Attendance filter
+    if (selectedFilter === "All") return true;
+    
+    const percentage = calculateAttendancePercentage(student);
+    
+    switch (selectedFilter) {
+      case "High (> 90%)":
+        return percentage > 90;
+      case "Medium (75-90%)":
+        return percentage >= 75 && percentage <= 90;
+      case "Low (< 75%)":
+        return percentage < 75;
+      default:
+        return true;
+    }
+  });
+
+  // Sort students by attendance percentage
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
+    const percentageA = calculateAttendancePercentage(a);
+    const percentageB = calculateAttendancePercentage(b);
+    
+    return sortOrder === "desc" ? percentageB - percentageA : percentageA - percentageB;
+  });
+
+  // Toggle sort order
+  const handleSortToggle = () => {
+    setSortOrder(prev => prev === "desc" ? "asc" : "desc");
+  };
 
 
   // Helper to get color classes
@@ -91,6 +138,8 @@ export default function StudentList() {
               <input 
                 type="text" 
                 placeholder="Search by name or ID" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
@@ -110,8 +159,15 @@ export default function StudentList() {
                 ))}
               </select>
 
-              <button className="flex items-center gap-1 text-sm font-medium text-gray-600 px-3 py-1.5 hover:bg-gray-100 rounded-lg whitespace-nowrap cursor-pointer">
-                Sort by attendance <ChevronDown size={14} />
+              <button 
+                onClick={handleSortToggle}
+                className="flex items-center gap-1 text-sm font-medium text-gray-600 px-3 py-1.5 hover:bg-gray-100 rounded-lg whitespace-nowrap cursor-pointer"
+              >
+                Sort by attendance 
+                <ChevronDown 
+                  size={14} 
+                  className={`transition-transform ${sortOrder === "asc" ? "rotate-180" : ""}`} 
+                />
               </button>
               
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
@@ -146,18 +202,31 @@ export default function StudentList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {verifiedStudents.map((student) => {
-                    const present = student.attendance?.present ?? 0;
-                    const absent = student.attendance?.absent ?? 0;
-                    const total = present + absent;
-                    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+                  {sortedStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-12 text-center">
+                        <div className="text-gray-500">
+                          <p className="text-lg font-medium">No students found</p>
+                          <p className="text-sm mt-1">
+                            {searchTerm && selectedFilter !== "All" 
+                              ? `No students match "${searchTerm}" with filter "${selectedFilter}"`
+                              : searchTerm
+                              ? `No students match "${searchTerm}"`
+                              : `No students match the selected filter "${selectedFilter}"`}
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedStudents.map((student) => {
+                      const percentage = calculateAttendancePercentage(student);
 
                     // derive UI-only values (NO design change)
                     let color = "amber";
                     let status = "Moderate";
                     let trend = 0;
 
-                    if (percentage >= 90) {
+                    if (percentage > 90) {
                       color = "green";
                       status = "Excellent";
                     } else if (percentage < 75) {
@@ -238,15 +307,16 @@ export default function StudentList() {
                         </td>
                       </tr>
                     );
-                  })}
+                  })
+                  )}
                 </tbody>
 
               </table>
             </div>
             
-            {/* Pagination Footer (Mock) */}
+            {/* Pagination Footer */}
             <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-              <span>Showing 1-6 of 45 students</span>
+              <span>Showing {sortedStudents.length} of {verifiedStudents.length} students</span>
               <div className="flex gap-2">
                 <button className="px-3 py-1 border rounded hover:bg-gray-50 cursor-pointer">Previous</button>
                 <button className="px-3 py-1 border rounded hover:bg-gray-50 cursor-pointer">Next</button>
