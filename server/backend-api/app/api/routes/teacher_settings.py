@@ -2,7 +2,7 @@
 from app.db.mongo import db
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime,UTC
 
 from app.core.cloudinary_config import cloudinary
 from cloudinary.uploader import upload
@@ -70,7 +70,7 @@ async def patch_settings_route(
         raise HTTPException(status_code=400, detail="Invalid payload")
 
     user_id = validate_object_id(current["id"])
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     
     # Extract fields that need to sync across collections
     user_updates = {}
@@ -306,7 +306,7 @@ async def verify_student(
             "students.student_id": stud_id
         },
         {
-            "$set": {"students.$.verified": True, "updated_at": datetime.utcnow()}
+            "$set": {"students.$.verified": True, "updated_at": datetime.now(UTC)}
         }
     )
     

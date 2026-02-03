@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,UTC
 from bson import ObjectId
 from app.db.mongo import db
 
@@ -16,7 +16,7 @@ async def create_subject(name: str, code: str, professor_id: ObjectId):
         "name": name,
         "code": code,
         "professor_ids": [professor_id],
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(UTC)
     }
     
     res = await db[COLLECTION].insert_one(doc)

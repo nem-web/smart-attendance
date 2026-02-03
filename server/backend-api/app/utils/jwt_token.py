@@ -1,6 +1,6 @@
 import os
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,UTC
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
@@ -10,8 +10,8 @@ def create_jwt(user_id: str, role: str, email: str = None):
         "user_id": user_id,          # ✅ FIXED
         "role": role,
         "email": email,
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(days=30),
+        "iat": datetime.now(UTC),
+        "exp": datetime.now(UTC)+ timedelta(days=30),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
