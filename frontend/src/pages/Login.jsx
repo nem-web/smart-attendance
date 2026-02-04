@@ -18,7 +18,10 @@ export default function Login() {
   const googleLogin = () => {
     window.location.href = `${apiUrl}/auth/google`;
   };
-
+  // facebook login 
+  const facebookLogin = () => {
+    window.location.href = `${apiUrl}/auth/facebook`;
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -79,6 +82,10 @@ export default function Login() {
               <button onClick={googleLogin} className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                 <span className="text-sm font-medium text-gray-700">Google</span>
+              </button>
+              <button onClick={facebookLogin} className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition">
+                <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" className="w-5 h-5" />
+                <span className="text-sm font-medium text-gray-700">Facebook</span>
               </button>
               <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition">
                 <img src="https://www.svgrepo.com/show/475689/twitter-color.svg" alt="Twitter" className="w-5 h-5" />
