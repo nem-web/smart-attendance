@@ -27,8 +27,8 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
             detail="Password too long. Please use at most 72 characters"
         )
     
-    # Check existing fb_user
-    existing = await db.fb_users.find_one({"email": payload.email})
+    # Check existing user
+    existing = await db.users.find_one({"email": payload.email})
     
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -37,7 +37,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
     verification_token = secrets.token_urlsafe(32)
     verification_expiry = datetime.now(UTC) + timedelta(hours=24)
     
-    fb_user_doc = {
+    user_doc = {
         "name": payload.name,
         "email": payload.email,
         "password_hash": hash_password(payload.password),
@@ -47,18 +47,18 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
         "verification_expiry": verification_expiry,
         "created_at": datetime.now(UTC),
     }
-    # Insert into fb_users collection
+    # Insert into users collection
     try:
-        result = await db.fb_users.insert_one(fb_user_doc)
-        created_fb_user_id = result.inserted_id
+        result = await db.users.insert_one(user_doc)
+        created_user_id = result.inserted_id
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to create fb_user") from e
+        raise HTTPException(status_code=500, detail="Failed to create user") from e
 
     # Insert into role specific collections
     try:
         if payload.role == "student":
             student_doc = {
-                "fb_userId": created_fb_user_id,
+                "userId": created_user_id,
                 "name": payload.name,
                 "email": payload.email,
                 "branch": payload.branch,
@@ -75,7 +75,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
                 raise HTTPException(status_code=400, detail="Phone number required")
 
             teacher_doc = {
-                "fb_userId": created_fb_user_id,
+                "userId": created_user_id,
                 "employee_id":payload.employee_id,
                 "phone":payload.phone,
                 "subjects": [],
@@ -108,10 +108,10 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
             await db.teachers.insert_one(teacher_doc)
 
     except HTTPException:
-        await db.fb_users.delete_one({"_id": created_fb_user_id})
+        await db.users.delete_one({"_id": created_user_id})
         raise
     except Exception as e:
-        await db.fb_users.delete_one({"_id": created_fb_user_id})
+        await db.users.delete_one({"_id": created_user_id})
         raise HTTPException(
             status_code=500,
             detail=f"Failed to create role-specific record: {str(e)}"
@@ -132,13 +132,13 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
     )
 
     token = create_jwt(
-        fb_user_id=str(created_fb_user_id),
+        user_id=str(created_user_id),
         role=payload.role,
         email=payload.email
     )
 
     return {
-        "fb_user_id": str(result.inserted_id),
+        "user_id": str(result.inserted_id),
         "email": payload.email,
         "role": payload.role,
         "name": payload.name,
@@ -151,34 +151,34 @@ async def login(payload: LoginRequest):
     email = payload.email
     password = payload.password
     
-    fb_user = await db.fb_users.find_one({"email": payload.email})
+    user = await db.users.find_one({"email": payload.email})
 
-    # 1. Find fb_user with this email
-    if not fb_user:
-        raise HTTPException(status_code=401, detail="fb_user not found")
+    # 1. Find user with this email
+    if not user:
+        raise HTTPException(status_code=401, detail="user not found")
     
-    # 2. Verify the password of the fb_user
-    if not verify_password(payload.password, fb_user["password_hash"]):
+    # 2. Verify the password of the user
+    if not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Wrong Password")
 
-    # 3. Check if fb_user is verified or not
-    if not fb_user.get("is_verified", False):
+    # 3. Check if user is verified or not
+    if not user.get("is_verified", False):
         raise HTTPException(status_code=403, detail="Please verify your email first..")
     
     # 4. Generate JWT token
     token = create_jwt(
-        fb_user_id=str(fb_user["_id"]),
-        role=fb_user["role"],
-        email=fb_user["email"]
+        user_id=str(user["_id"]),
+        role=user["role"],
+        email=user["email"]
     )
     
     print(token)
 
     return {
-        "fb_user_id": str(fb_user["_id"]),
+        "user_id": str(user["_id"]),
         "email": email,
-        "role": fb_user["role"],
-        "name": fb_user["name"],
+        "role": user["role"],
+        "name": user["name"],
         "token": token
     }
 
@@ -186,8 +186,8 @@ async def login(payload: LoginRequest):
 # Verify email route
 @router.get("/verify-email")
 async def verify_email(token: str = Query(...)):
-    fb_user = await db.fb_users.find_one({"verification_token": token})
-    if not fb_user:
+    user = await db.users.find_one({"verification_token": token})
+    if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
     
     # Check expiry
@@ -199,8 +199,8 @@ async def verify_email(token: str = Query(...)):
         if expires_at and expires_at <  datetime.now(UTC):
             raise HTTPException(status_code=400, detail="Verification link expired")
     
-    await db.fb_users.update_one(
-        {"_id": fb_user["_id"]},
+    await db.users.update_one(
+        {"_id": user["_id"]},
         {
             "$set": {"is_verified": True},
             "$unset": {"verification_token": "", "verification_expiry": ""},
@@ -229,23 +229,23 @@ async def google_callback(request: Request):
     token = await oauth.google.authorize_access_token(request)
 
     resp = await oauth.google.get(
-        "https://www.googleapis.com/oauth2/v3/fb_userinfo",
+        "https://www.googleapis.com/oauth2/v3/userinfo",
         token=token
     )
-    google_fb_user = resp.json()
+    google_user = resp.json()
 
-    email = google_fb_user.get("email")
+    email = google_user.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="Unable to read email from Google account")
 
-    fb_user = await db.fb_users.find_one({"email": email})
-    if not fb_user:
+    user = await db.users.find_one({"email": email})
+    if not user:
         raise HTTPException(
             status_code=400,
             detail="No account associated with this Google email. Please sign up first."
         )
 
-    if not fb_user.get("is_verified", False):
+    if not user.get("is_verified", False):
         raise HTTPException(
             status_code=403,
             detail="Please verify your email before logging in."
@@ -253,9 +253,9 @@ async def google_callback(request: Request):
 
     # CREATE JWT (MATCH NORMAL LOGIN)
     jwt_token = create_jwt(
-        fb_user_id=str(fb_user["_id"]),
-        role=fb_user["role"],
-        email=fb_user["email"]
+        user_id=str(user["_id"]),
+        role=user["role"],
+        email=user["email"]
     )
 
     FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
@@ -263,10 +263,10 @@ async def google_callback(request: Request):
     redirect_url = (
         f"{FRONTEND_BASE_URL}/oauth-callback"
         f"#token={quote(jwt_token)}"
-        f"&fb_user_id={quote(str(fb_user['_id']))}"
-        f"&email={quote(fb_user['email'])}"
-        f"&role={quote(fb_user['role'])}"
-        f"&name={quote(fb_user['name'])}"
+        f"&user_id={quote(str(user['_id']))}"
+        f"&email={quote(user['email'])}"
+        f"&role={quote(user['role'])}"
+        f"&name={quote(user['name'])}"
     )
 
     return RedirectResponse(url=redirect_url)
