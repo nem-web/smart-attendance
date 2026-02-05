@@ -296,6 +296,9 @@ async def facebook_callback(request:Request):
     user=await db.users.find_one({"email":email})
     if not user:
         raise HTTPException(400,"No account associated with this facebook email")
+    if not user.get("is_verified", False):
+        raise HTTPException(403,detail="Please verify your email before logging in."
+        )
     jwt_token=create_jwt(
         user_id=str(user["_id"]),
         role=user["role"],
