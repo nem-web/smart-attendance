@@ -58,7 +58,7 @@ export default function App() {
           <Route path="/students" element={<StudentList/>}/>
           <Route path="/analytics" element={<Analytics/>}/>
           <Route path="/reports" element={<Reports/>}/>
-          <Route path="/ManageSchedule" element={<ManageSchedule />} />
+          <Route path="/manage-schedule" element={<ManageSchedule />} />
           <Route path="/settings" element={<Settings/>}/>
           <Route path="/add-students" element={<AddStudents/>}/>
           <Route path="/login" element={<Login/>}/>
