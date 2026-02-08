@@ -156,7 +156,7 @@ async def login(payload: LoginRequest):
 
     # 1. Find user with this email
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="user not found")
     
     # 2. Verify the password of the user
     if not verify_password(payload.password, user["password_hash"]):
@@ -190,6 +190,7 @@ async def verify_email(token: str = Query(...)):
         raise HTTPException(status_code=400, detail="Invalid or expired token")
     
     # Check expiry
+
     expires_at = user.get("verification_expiry")
     if expires_at:
         if expires_at.tzinfo is None:
@@ -258,6 +259,51 @@ async def google_callback(request: Request):
 
     FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
 
+    redirect_url = (
+        f"{FRONTEND_BASE_URL}/oauth-callback"
+        f"#token={quote(jwt_token)}"
+        f"&user_id={quote(str(user['_id']))}"
+        f"&email={quote(user['email'])}"
+        f"&role={quote(user['role'])}"
+        f"&name={quote(user['name'])}"
+    )
+
+    return RedirectResponse(url=redirect_url)
+oauth.register(
+    name="facebook",
+    client_id=os.getenv("FACEBOOK_CLIENT_ID"),
+    client_secret=os.getenv("FACEBOOK_CLIENT_SECRET"),
+    authorize_url="https://www.facebook.com/v24.0/dialog/oauth",
+    access_token_url="https://graph.facebook.com/v24.0/oauth/access_token",
+    client_kwargs={"scope": "email public_profile"},
+)
+@router.get("/facebook")
+async def facebook_login(request: Request):
+    redirect_uri = os.getenv("FACEBOOK_REDIRECT_URI")
+    return await oauth.facebook.authorize_redirect(request, redirect_uri)
+@router.get("/facebook/callback")
+async def facebook_callback(request:Request):
+    token= await oauth.facebook.authorize_access_token(request)
+    response=await oauth.facebook.get(
+        "https://graph.facebook.com/me?fields=id,name,email",
+        token=token
+    )
+    fb_user=response.json()
+    email=fb_user.get("email")
+    if not email:
+        raise HTTPException(400,"Facebook account has no email")
+    user=await db.users.find_one({"email":email})
+    if not user:
+        raise HTTPException(400,"No account associated with this facebook email")
+    if not user.get("is_verified", False):
+        raise HTTPException(403,detail="Please verify your email before logging in."
+        )
+    jwt_token=create_jwt(
+        user_id=str(user["_id"]),
+        role=user["role"],
+        email=user["email"]
+    )
+    FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
     redirect_url = (
         f"{FRONTEND_BASE_URL}/oauth-callback"
         f"#token={quote(jwt_token)}"
