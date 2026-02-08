@@ -1,4 +1,4 @@
-import React from "react";
+import React ,{useState,useEffect} from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Bell,
@@ -13,6 +13,14 @@ import {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const data = localStorage.getItem("user");
+    if (data) {
+      setUser(JSON.parse(data));
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
@@ -47,7 +55,7 @@ export default function Dashboard() {
             <div className="bg-[var(--bg-card)] rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text-main)]">Good morning, Alex</h2>
+                  <h2 className="text-xl font-bold text-[var(--text-main)]">Good morning, {user?.name || "Teacher"}</h2>
                   <p className="text-[var(--text-body)] text-sm">Monday, September 23 • 08:45</p>
                 </div>
                 <div className="flex items-center gap-3">
