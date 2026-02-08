@@ -1,4 +1,6 @@
+import logging
 import os
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,24 +20,32 @@ from app.api.routes import teacher_settings as settings_router
 from app.core.cloudinary_config import cloudinary
 from app.services.ml_client import ml_client
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(APP_NAME)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await ml_client.close()
+    logger.info("ML client closed")
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title=APP_NAME)
+    app = FastAPI(title=APP_NAME, lifespan=lifespan)
 
-    # CORS
+    # CORS – use config ORIGINS so production can override via CORS_ORIGINS env
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "https://sa-gl.vercel.app",     # frontend (Vercel)
-            "https://studentcheck.vercel.app",
-            "http://localhost:5173",        # local dev
-        ],
+        allow_origins=ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # SessionMiddleware MUST be added before routers so authlib can use request.session reliably
     app.add_middleware(
         SessionMiddleware,
@@ -43,7 +53,7 @@ def create_app() -> FastAPI:
         session_cookie="session",
         max_age=14 * 24 * 3600,
         same_site="lax",
-        https_only = False,
+        https_only=False,
     )
 
     # Routers

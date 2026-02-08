@@ -172,8 +172,6 @@ async def login(payload: LoginRequest):
         role=user["role"],
         email=user["email"]
     )
-    
-    print(token)
 
     return {
         "user_id": str(user["_id"]),

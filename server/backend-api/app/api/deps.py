@@ -17,7 +17,13 @@ async def get_current_teacher(
     
     token = credentials.credentials
 
-    payload = decode_jwt(token)
+    try:
+        payload = decode_jwt(token)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

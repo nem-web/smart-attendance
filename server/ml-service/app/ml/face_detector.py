@@ -7,14 +7,16 @@ NUM_JITTERS = 3
 
 mp_face = mp.solutions.face_detection
 _detector = mp_face.FaceDetection(
-  model_selection = 0,
-  min_detection_confidence = 0.6
+    model_selection=0,
+    min_detection_confidence=0.6,
 )
 
-def detect_faces(image: np.ndarray):
-  
-    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    result = _detector.process(rgb)
+def detect_faces(image: np.ndarray) -> list[tuple[int, int, int, int]]:
+    """Detect faces in image. Expects RGB (e.g. from PIL Image.convert('RGB'))."""
+    # API sends RGB from PIL; MediaPipe expects RGB — use as-is.
+    if image.ndim == 2:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+    result = _detector.process(image)
     
     if not result.detections:
       return []

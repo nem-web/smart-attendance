@@ -3,27 +3,32 @@ from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 from typing import List
 
-
 load_dotenv()
 
 APP_NAME = "Smart Attendance API"
 
-# CORS origins
-ORIGINS = [
+# CORS origins (can override via env as comma-separated in production)
+_default_origins = [
     "http://localhost:5173",
     "https://sa-gl.vercel.app",
     "https://studentcheck.vercel.app",
     "http://127.0.0.1:5173",
 ]
+ORIGINS: List[str] = (
+    [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+    or _default_origins
+)
 
 
 class Settings(BaseSettings):
-    MONGO_URI: str = os.getenv("MONGO_URI")
-    JWT_SECRET: str = os.getenv("JWT_SECRET")
-    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM")
-    
-class Config:
-    env_file = ".env"
+    MONGO_URI: str = ""
+    JWT_SECRET: str = ""
+    JWT_ALGORITHM: str = "HS256"
+
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
+
 
 settings = Settings()
 

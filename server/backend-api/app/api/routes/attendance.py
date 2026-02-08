@@ -1,17 +1,17 @@
-from fastapi import APIRouter, HTTPException
-from typing import Dict, List
 import base64
-from bson import ObjectId
+import logging
 from datetime import date
+from typing import Dict, List
 
+from bson import ObjectId
+from fastapi import APIRouter, HTTPException
+
+from app.core.config import ML_CONFIDENT_THRESHOLD, ML_UNCERTAIN_THRESHOLD
 from app.db.mongo import db
 from app.services.ml_client import ml_client
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
-
-# distance thresholds
-CONFIDENT_TH = 0.50
-UNCERTAIN_TH = 0.60
 
 
 @router.post("/mark")
@@ -104,8 +104,8 @@ async def mark_attendance(payload: Dict):
         match_response = await ml_client.batch_match(
             detected_faces=[{"embedding": face["embedding"]} for face in detected_faces],
             candidate_embeddings=candidate_embeddings,
-            confident_threshold=CONFIDENT_TH,
-            uncertain_threshold=UNCERTAIN_TH
+            confident_threshold=ML_CONFIDENT_THRESHOLD,
+            uncertain_threshold=ML_UNCERTAIN_THRESHOLD,
         )
         
         if not match_response.get("success"):
@@ -124,33 +124,31 @@ async def mark_attendance(payload: Dict):
 
     # Build results
     results = []
-    
-    print(f"Faces detected: {len(detected_faces)}")
+    logger.info("Faces detected: %d", len(detected_faces))
 
     for i, (face, match) in enumerate(zip(detected_faces, matches)):
         student_id = match.get("student_id")
         distance = match.get("distance")
         status = match.get("status")  # "present" or "unknown"
-        
+
         # Find student details
         best_match = None
         if student_id:
             best_match = next((s for s in students if str(s["userId"]) == student_id), None)
-        
-        # Determine status based on distance
-        if distance < CONFIDENT_TH:
+
+        # Determine status based on config thresholds
+        if distance < ML_CONFIDENT_THRESHOLD:
             status = "present"
-        elif distance < UNCERTAIN_TH:
+        elif distance < ML_UNCERTAIN_THRESHOLD:
             status = "uncertain"
         else:
             status = "unknown"
             best_match = None
-        
-        print(
-            "MATCH:",
+
+        logger.debug(
+            "Match: %s distance=%.4f",
             best_match["name"] if best_match else "NONE",
-            "distance:",
-            distance
+            distance,
         )
         
         # Get user details
@@ -203,9 +201,7 @@ async def confirm_attendance(payload: Dict):
     subject_id = payload.get("subject_id")
     present_students: List[str] = payload.get("present_students", [])
     absent_students: List[str] = payload.get("absent_students", [])
-    
-    print("absent students", absent_students)
-    
+
     if not subject_id:
         raise HTTPException(status_code=400, detail="subject_id required")
     

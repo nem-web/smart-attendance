@@ -1,13 +1,17 @@
+import logging
+
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from app.core.config import settings  # adjust import if different
+from app.core.config import settings
 
+logger = logging.getLogger(__name__)
 security = HTTPBearer(auto_error=False)
 
 JWT_SECRET = settings.JWT_SECRET
 JWT_ALGORITHM = settings.JWT_ALGORITHM
+
 
 def decode_jwt_token(token: str):
     try:
@@ -21,7 +25,7 @@ def decode_jwt_token(token: str):
         )
         return payload
     except JWTError as e:
-        print("JWT decode error:", e)
+        logger.debug("JWT decode error: %s", e)
         return None
 
 
@@ -32,8 +36,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
     token = credentials.credentials
     payload = decode_jwt_token(token)
-    # print(settings.JWT_SECRET)
-    
+
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
 

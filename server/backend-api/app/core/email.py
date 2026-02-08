@@ -1,10 +1,16 @@
+import logging
 import smtplib
 from email.message import EmailMessage
+
 import httpx
-# from .config import SMTP_HOST, SMTP_PASS, SMTP_PORT, SMTP_USER
+
 from .config import brevo_settings
 from ..utils.email_template import verification_email_template
+
+logger = logging.getLogger(__name__)
 BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+
+
 class BrevoEmailService:
     @staticmethod
     async def send_verification_email(to_email:str,user:str,verification_link:str):
@@ -29,7 +35,7 @@ class BrevoEmailService:
                 response=await client.post(BREVO_URL,json=payload,headers=headers)
                 response.raise_for_status()
             except httpx.HTTPError as e:
-                print("Failed to send email",str(e))
+                logger.warning("Failed to send email: %s", e)
 
 
 

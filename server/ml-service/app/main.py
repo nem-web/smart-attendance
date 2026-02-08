@@ -56,15 +56,16 @@ async def root():
 async def health():
     """Health check endpoint"""
     uptime = time.time() - service_start_time
-    
-    # Check if models are loaded
+
+    # Check if ML dependencies are available (MediaPipe, OpenCV, NumPy)
     models_loaded = True
     try:
-        import face_recognition
+        import cv2
+        import mediapipe as mp
         import numpy as np
     except ImportError:
         models_loaded = False
-    
+
     return HealthResponse(
         status="healthy" if models_loaded else "degraded",
         service=settings.SERVICE_NAME,
