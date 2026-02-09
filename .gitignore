@@ -10,12 +10,6 @@
 Thumbs.db
 
 # =========================
-# GIT
-# =========================
-.git/
-.gitignore
-
-# =========================
 # PYTHON (server)
 # =========================
 server/.venv/
@@ -59,28 +53,10 @@ frontend/.cache/
 *.swo
 
 # =========================
-# DOCKER
-# =========================
-**/.dockerignore
-docker-compose.yml
-
-# =========================
-# SYSTEM
+# SYSTEM FILES
 # =========================
 *.zip
 *.tar
 *.gz
 *.rar
-
-# Python
-venv/
-__pycache__/
-*.pyc
-
-# Node
-node_modules/
-dist/
-
-# Env files
-.env
 
