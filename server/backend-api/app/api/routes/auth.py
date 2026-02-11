@@ -5,6 +5,7 @@ from bson import ObjectId
 from datetime import datetime, timedelta,UTC,timezone
 import secrets
 import os
+import logging
 from app.utils.jwt_token import create_jwt
 from urllib.parse import quote
 
@@ -14,6 +15,8 @@ from ...core.security import hash_password, verify_password
 from ...core.email import BrevoEmailService
 from ...core.config import BACKEND_BASE_URL
 from ...db.mongo import db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 oauth = OAuth()
@@ -153,7 +156,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
 
 @router.post("/login", response_model=UserResponse)
 async def login(payload: LoginRequest):
-    print(f"Login request received for email: {payload.email}")
+    logger.info(f"Login request received for email: {payload.email}")
     email = payload.email
     password = payload.password
     
@@ -249,11 +252,15 @@ async def google_callback(request: Request):
             detail="No account associated with this Google email. Please sign up first."
         )
 
+    # Google OAuth users are automatically verified
+    # Skip email verification check for OAuth logins
     if not user.get("is_verified", False):
-        raise HTTPException(
-            status_code=403,
-            detail="Please verify your email before logging in."
+        # Auto-verify the user on first Google login
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"is_verified": True}}
         )
+        logger.info(f"Auto-verified Google OAuth user: {email}")
 
     # CREATE JWT (MATCH NORMAL LOGIN)
     jwt_token = create_jwt(
