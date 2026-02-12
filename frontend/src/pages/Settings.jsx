@@ -204,6 +204,38 @@ export default function Settings() {
     }
   }
 
+  async function handleSaveSettings() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      // Construct the settings object matching the backend structure
+      const payload = {
+        settings: {
+          theme,
+          notifications,
+          emailPreferences: _emailPreferences, // pass current state
+          thresholds: {
+            warningVal,
+            safeVal,
+          },
+          faceSettings: {
+            sensitivity,
+            liveness,
+          },
+        },
+      };
+
+      await patchSettings(payload);
+      // We could reload settings here if needed, or just assume success
+      // alert("Settings saved successfully"); 
+    } catch (err) {
+      console.error("Save settings failed", err);
+      setSaveError(err.message || "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // subject handlers - FIXED: removed .profile nesting
   async function handleAddSubject(data) {
     try {
@@ -417,8 +449,11 @@ export default function Settings() {
                   <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200">
                     Cancel
                   </button>
-                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md">
-                    Save changes
+                  <button 
+                    onClick={handleSaveSettings}
+                    disabled={saving}
+                    className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md">
+                    {saving ? "Saving..." : "Save changes"}
                   </button>
                 </div>
               </div>
@@ -519,8 +554,11 @@ export default function Settings() {
                     <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 cursor-pointer">
                       Cancel
                     </button>
-                    <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">
-                      Save changes
+                    <button 
+                      onClick={handleSaveSettings}
+                      disabled={saving}
+                      className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">
+                      {saving ? "Saving..." : "Save changes"}
                     </button>
                   </div>
                 </div>
@@ -827,8 +865,11 @@ export default function Settings() {
                   <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 cursor-pointer">
                     Discard
                   </button>
-                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">
-                    Apply settings
+                  <button 
+                    onClick={handleSaveSettings}
+                    disabled={saving}
+                    className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">
+                    {saving ? "Saving..." : "Apply settings"}
                   </button>
                 </div>
               </div>

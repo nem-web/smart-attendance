@@ -93,7 +93,13 @@ async def patch_settings_route(
         teacher_updates["department"] = payload["department"]
 
     if "settings" in payload and isinstance(payload["settings"], dict):
-        teacher_updates["settings"] = payload["settings"]
+        # Flatten settings to dot notation for partial updates
+        for section, values in payload["settings"].items():
+            if isinstance(values, dict):
+                for key, value in values.items():
+                    teacher_updates[f"settings.{section}.{key}"] = value
+            else:
+                teacher_updates[f"settings.{section}"] = values
 
     if teacher_updates:
         result = await db.teachers.update_one(
