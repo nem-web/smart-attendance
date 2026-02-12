@@ -60,7 +60,7 @@ def create_app() -> FastAPI:
     # SessionMiddleware MUST be added before routers so authlib can use request.session reliably  # noqa: E501
     app.add_middleware(
         SessionMiddleware,
-        secret_key=os.getenv("SESSION_SECRET_KEY", "kuch-to12hai-mujhse-raita"),
+        secret_key=os.getenv("SESSION_SECRET_KEY", "temporary-dev-secret-key"),
         session_cookie="session",
         max_age=14 * 24 * 3600,
         same_site="lax",
