@@ -1,5 +1,5 @@
 // StudentNavigation.jsx
-import {CircleUser, LogOut, CalendarDays} from "lucide-react";
+import {CircleUser, LogOut} from "lucide-react";
 
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -10,7 +10,6 @@ const navItems = [
   { id: "subjects", label: "Subjects", icon: BookOpen, path: "/student-subjects" },
   { id: "forecast", label: "Forecast", icon: TrendingUp, path: "/student-forecast" },
   { id: "profile", label: "Profile", icon: User, path: "/student-profile" },
-  { id: "schedule", label: "Schedule", icon: CalendarDays, path: "/manage-schedule" },
 ];
 
 /* ---------------------- DESKTOP NAV ITEM ---------------------- */

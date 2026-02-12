@@ -8,6 +8,7 @@ Main backend API service for the Smart Attendance System. Handles all business l
 - **Student Management**: CRUD operations for student profiles
 - **Attendance Management**: Mark and track attendance
 - **Subject/Class Management**: Manage subjects and enrolled students
+- **Schedule Management**: Weekly timetable, recurring schedules, holidays
 - **Teacher Settings**: Manage teacher preferences
 - **Email Notifications**: Automated email notifications
 - **Image Upload**: Cloudinary integration for face images
@@ -52,9 +53,10 @@ Frontend → Backend API → ML Service
 - `POST /mark` - Mark attendance with classroom photo
 - `POST /confirm` - Confirm attendance after review
 
-### Teacher Settings (`/api/teacher-settings`)
-- `GET /` - Get teacher settings
-- `PUT /` - Update teacher settings
+### Teacher Settings & Schedule (`/api/settings`)
+- `GET /api/settings` – Get teacher profile, settings, and schedule
+- `PATCH /api/settings` – Partially update teacher settings
+- `PUT /api/settings` – Update teacher settings including full schedule
 
 ## Local Development
 

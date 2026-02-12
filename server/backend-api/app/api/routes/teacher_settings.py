@@ -338,6 +338,8 @@ async def get_subject_students(
                 "roll": student_doc.get("roll"),
                 +"year": student_doc.get("year"),
                 +"branch": student_doc.get("branch"),
+                "year": student_doc.get("year"),
+                "branch": student_doc.get("branch"),
                 "embeddings": student_doc.get("face_embeddings", []),
                 "avatar": student_doc.get("image_url"),
                 "verified": s.get("verified", False),
