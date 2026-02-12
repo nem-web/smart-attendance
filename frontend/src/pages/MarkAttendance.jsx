@@ -157,7 +157,7 @@ export default function MarkAttendance() {
   // -------------------------------
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
+    <div className="min-h-screen bg-[var(--bg-secondary)] p-6 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
         
         {/* --- HEADER SECTION --- */}
@@ -171,7 +171,7 @@ export default function MarkAttendance() {
               <Clock size={16} />
               <span>09:00 - 10:00</span>
             </div>
-            <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 bg-white transition cursor-pointer">
+            <button className="flex items-center gap-2 px-3 py-1.5 border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] bg-[var(--bg-card)] transition cursor-pointer">
               <Settings size={16} />
               <span className="session-settings" onClick={()=>navigate("/settings")}>Session settings</span>
             </button>
@@ -185,7 +185,7 @@ export default function MarkAttendance() {
             <select
                 value={selectedSubject || ""}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="flex items-center gap-1 text-sm font-medium text-gray-600 px-3 py-1.5 hover:bg-gray-100 rounded-lg whitespace-nowrap cursor-pointer"
+                className="w-full px-3 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-main)] focus:ring-2 focus:ring-[var(--primary)] outline-none cursor-pointer"
               >
                 <option disabled value="">Select subject</option>
                 {subjects.map(s => (
@@ -197,7 +197,7 @@ export default function MarkAttendance() {
           </div>
           <div className="flex flex-col gap-1 w-full sm:w-48">
             <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">Date</label>
-            <input type="date" className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-[var(--text-main)] outline-none" defaultValue="2025-03-12" />
+            <input type="date" className="w-full p-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-[var(--text-main)] outline-none" defaultValue="2025-03-12" />
           </div>
         </div>
 
@@ -208,8 +208,8 @@ export default function MarkAttendance() {
           <div className="lg:col-span-8 space-y-3">
             <div className="flex justify-between items-center px-1">
               <h3 className="font-semibold text-[var(--text-main)]">Camera feed</h3>
-              <span className="px-2.5 py-0.5 bg-green-100 text-green-700 text-xs font-bold uppercase rounded-full flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse"></span>
+              <span className="px-2.5 py-0.5 text-xs font-bold uppercase rounded-full flex items-center gap-1.5" style={{backgroundColor: "color-mix(in srgb, var(--emerald-500) 18%, transparent)", color: "var(--emerald-500)",}}>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: "var(--emerald-500)" }} />
                 Live • Active
               </span>
             </div>
@@ -223,7 +223,6 @@ export default function MarkAttendance() {
                 mirrored={true}
                 className="w-full h-full object-cover"
               />
-
 
               {/* REAL FACE OVERLAY */}
               <FaceOverlay faces={detections} videoRef={webcamRef} />
@@ -250,26 +249,26 @@ export default function MarkAttendance() {
           </div>
 
           {/* RIGHT: DETECTED STUDENTS LIST (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col h-full min-h-[500px] bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="lg:col-span-4 flex flex-col h-full min-h-[500px] bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-sm overflow-hidden">
             
             {/* List Header */}
-            <div className="p-4 border-b border-gray-100 space-y-4">
+            <div className="p-4 border-b border-[var(--border-color)] space-y-4">
               <div>
                 <h3 className="font-semibold text-[var(--text-main)]">Detected students</h3>
                 <p className="text-xs text-[var(--text-body)]">Auto-marking based on face recognition</p>
               </div>
 
               {/* Tabs */}
-              <div className="flex p-1 bg-gray-50 rounded-lg">
+              <div className="flex p-1 bg-[var(--bg-secondary)] rounded-lg">
                 <button 
                   onClick={() => setActiveTab("Present")}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "Present" ? "bg-[var(--primary)] text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "Present" ? "bg-[var(--primary)] text-[var(--text-on-primary)] shadow-sm" : "text-[var(--text-body)] opacity-70 hover:opacity-100"}`}
                 >
                   Present (32)
                 </button>
                 <button 
                   onClick={() => setActiveTab("All")}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "All" ? "bg-[var(--primary)] text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "All" ? "bg-[var(--primary)] text-[var(--text-on-primary)] shadow-sm" : "text-[var(--text-body)] opacity-70 hover:opacity-100"}`}
                 >
                   All students (45)
                 </button>
@@ -277,11 +276,11 @@ export default function MarkAttendance() {
 
               {/* Search */}
               <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
                 <input 
                   type="text" 
                   placeholder="Search by name or roll no." 
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[var(--primary)]"
+                  className="w-full pl-9 pr-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)]"
                 />
               </div>
             </div>
@@ -292,13 +291,12 @@ export default function MarkAttendance() {
                 presentStudents.map((s) => (
                   <div
                     key={s.studentId}
-                    className="p-3 rounded-xl bg-green-50 border border-green-200 flex items-center justify-between"
-                  >
+                    className="p-3 rounded-xl border flex items-center justify-between"style={{backgroundColor: "color-mix(in srgb, var(--emerald-500) 12%, transparent)", borderColor: "color-mix(in srgb, var(--emerald-500) 30%, transparent)"}}>
                     <div>
                       <h4 className="text-sm font-bold">{s.name}</h4>
-                      <p className="text-xs text-green-600">{s.roll}</p>
+                      <p className="text-xs" style={{ color: "var(--emerald-500)" }}>{s.roll}</p>
                     </div>
-                    <span className="px-2 py-0.5 bg-green-500 text-white text-[10px] rounded-full font-bold">
+                    <span className="px-2 py-0.5 text-[10px] rounded-full font-bold" style={{ backgroundColor: "var(--emerald-500)", color: "var(--text-on-primary)" }}>
                       Present
                     </span>
                   </div>
@@ -308,20 +306,17 @@ export default function MarkAttendance() {
                 Object.entries(attendanceMap).map(([id, s]) => (
                   <div
                     key={id}
-                    className="p-3 rounded-xl bg-white border border-gray-100 flex items-center justify-between"
+                    className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-between"
                   >
                     <div>
                       <h4 className="text-sm font-semibold">{s.name}</h4>
-                      <p className="text-xs text-gray-500">{s.roll}</p>
+                      <p className="text-xs text-[var(--text-body)] opacity-70">{s.roll}</p>
                     </div>
-                    <span
-                      className={`px-2 py-0.5 text-white text-[10px] rounded-full font-bold ${
-                        s.status === "present"
-                          ? "bg-green-500"
-                          : "bg-gray-400"
-                      }`}
-                    >
-                      {s.status}
+                    <span className="px-2 py-0.5 text-[10px] rounded-full font-bold" style={
+                       s.status === "present"
+                       ? { backgroundColor: "var(--emerald-500)", color: "var(--text-on-primary)" }
+                       : { backgroundColor: "color-mix(in srgb, var(--text-body) 25%, transparent)", color: "var(--text-body)" }}>
+                       {s.status}
                     </span>
                   </div>
                 ))}
@@ -329,7 +324,7 @@ export default function MarkAttendance() {
 
 
             {/* Sticky Footer */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
+            <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
               <div className="flex justify-between items-center text-xs mb-3">
                 <span>{presentStudents.length} present</span>
                 <span>• {absentStudents.length} absent</span>
@@ -338,8 +333,8 @@ export default function MarkAttendance() {
               <button disabled={attendanceSubmitted} onClick={handleConfirmAttendance} className={`w-full py-3 rounded-xl font-semibold shadow-md transition flex items-center justify-center gap-2
                 ${
                   attendanceSubmitted
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white"
+                    ? "bg-[var(--border-color)] text-[var(--text-body)] cursor-not-allowed"
+                    : "bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--text-on-primary)]"
                 }
               `}>
                 {attendanceSubmitted ? "Attendance Submitted" : "Confirm Attendance"}

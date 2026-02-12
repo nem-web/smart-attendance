@@ -36,7 +36,7 @@ export default function ManageSchedule() {
             <button className="px-4 py-2.5 text-[var(--text-body)] hover:text-[var(--text-main)] font-medium transition">
               Discard changes
             </button>
-            <button className="px-6 py-2.5 bg-[var(--primary)] hover:opacity-90 text-white rounded-xl font-semibold shadow-sm transition active:scale-95">
+            <button className="px-6 py-2.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--text-on-primary)] rounded-xl font-semibold shadow-sm transition active:scale-95">
               Save schedule
             </button>
           </div>
@@ -58,7 +58,7 @@ export default function ManageSchedule() {
                 <button className="flex items-center gap-2 text-[var(--text-body)] text-sm font-medium hover:bg-[var(--bg-card)] px-3 py-1.5 rounded-lg transition border border-transparent hover:border-[var(--border-color)]">
                   <Copy size={16} /> Duplicate day
                 </button>
-                <button className="flex items-center gap-2 bg-[var(--primary)] text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition shadow-sm">
+                <button className="flex items-center gap-2 bg-[var(--primary)] text-[var(--text-on-primary)] px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--primary-hover)] transition shadow-sm">
                   <Plus size={16} /> Add class
                 </button>
               </div>
@@ -73,7 +73,7 @@ export default function ManageSchedule() {
                   onClick={() => setActiveDay(day)}
                   className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                     activeDay === day 
-                      ? "bg-[var(--primary)] text-white shadow-sm" 
+                      ? "bg-[var(--primary)] text-[var(--text-on-primary)] shadow-sm" 
                       : "text-[var(--text-body)] hover:text-[var(--text-main)]"
                   }`}
                 >
@@ -93,7 +93,7 @@ export default function ManageSchedule() {
                 </div>
                 <div className="flex justify-between items-end">
                   <p className="text-sm text-[var(--text-body)]">Room 203 · Teacher: Alex Johnson</p>
-                  <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Active</span>
+                  <span className="bg-emerald-500 text-[var(--text-on-primary)] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Active</span>
                 </div>
               </div>
 
@@ -114,7 +114,7 @@ export default function ManageSchedule() {
                 </div>
                 <div className="flex justify-between items-end">
                   <p className="text-sm text-[var(--text-body)]">Lab 2 · Teacher: Alex Johnson</p>
-                  <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Active</span>
+                  <span className="bg-emerald-500 text-[var(--text-on-primary)] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Active</span>
                 </div>
               </div>
 
@@ -135,7 +135,7 @@ export default function ManageSchedule() {
                 </div>
                 <div className="flex justify-between items-end">
                   <p className="text-sm text-[var(--text-body)]">Lab 1 · Teacher: Alex Johnson</p>
-                  <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Pending</span>
+                  <span className="bg-amber-500 text-[var(--text-on-primary)] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">Pending</span>
                 </div>
               </div>
 
@@ -183,9 +183,9 @@ export default function ManageSchedule() {
                 {calendarDays.map((day, idx) => {
                   let cellClass = "h-8 w-8 flex items-center justify-center rounded-lg text-[var(--text-main)] hover:bg-[var(--bg-secondary)] cursor-pointer transition";
                   
-                  if (day === 1) cellClass = "h-8 w-8 flex items-center justify-center rounded-lg bg-[var(--primary)] text-white font-bold shadow-md"; // Selected
-                  else if ([4, 10, 11, 17, 22, 26].includes(day)) cellClass = "h-8 w-8 flex items-center justify-center rounded-lg bg-emerald-500 text-white font-medium shadow-sm"; // Active/Green
-                  else if (day === 12 || day === 25) cellClass = "h-8 w-8 flex items-center justify-center rounded-lg bg-[var(--primary)] text-white font-medium opacity-60"; // Blueish
+                  if (day === 1) cellClass = "h-8 w-8 flex items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--text-on-primary)] font-bold shadow-md"; // Selected
+                  else if ([4, 10, 11, 17, 22, 26].includes(day)) cellClass = "h-8 w-8 flex items-center justify-center rounded-lg bg-emerald-500 text-[var(--text-on-primary)] font-medium shadow-sm"; // Active/Green
+                  else if (day === 12 || day === 25) cellClass = "h-8 w-8 flex items-center justify-center rounded-lg bg-[var(--primary)] text-[var(--text-on-primary)] font-medium opacity-60"; // Blueish
 
                   return (
                     <div key={idx} className="flex justify-center">

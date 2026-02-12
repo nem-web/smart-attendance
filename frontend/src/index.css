@@ -12,6 +12,8 @@
   /* The white card containers */
   --bg-secondary: #F3F4F6;
   /* Light gray for sidebars or inputs */
+  --bg-hover: #e5e7eb;   /* equivalent to gray-200 */
+
 
   /* Text Colors */
   --text-main: #0d3180;
@@ -21,15 +23,42 @@
   --text-on-primary: #FFFFFF;
   /* White text on blue buttons */
 
+  /*stat colors */
+  --stat-bg: #2563eb;        /* same as blue-600 */
+  --stat-text: #ffffff;
+  --stat-muted: #bfdbfe;     /* similar to blue-100 */
+
   /* Brand Colors */
   --primary: #1e338f;
   /* The main Blue color */
+  --primary-light: var(--stat-bg);
+  /* the lighter blue color */
   --primary-hover: #cde3ff;
   /* Slightly darker blue for hover states */
 
   /* Borders */
   --border-color: #E5E7EB;
   /* Subtle grey borders */
+
+  /* for errors */
+  --danger: #ef4444;
+
+  /* Status Colors */
+  --success: #16a34a;
+  --success-bg: #dcfce7;
+
+  --info: #2563eb;
+  --info-bg: #dbeafe;
+
+  --warning: #f59e0b;
+  --warning-bg: #ffedd5;
+
+  --emerald-500: #10B981;
+  --amber-500: #F59E0B;
+  --rose-500: #EF4444;
+
+
+
 }
 
 /* Modern Dark */
@@ -41,6 +70,8 @@
   /* Lighter slate for cards */
   --bg-secondary: #334155;
   /* For inputs/secondary areas */
+  --bg-hover: #475569;   /* darker neutral for dark mode */
+
 
   /* Text Colors */
   --text-main: #F8FAFC;
@@ -49,13 +80,35 @@
   /* Light gray for body text */
   --text-on-primary: #FFFFFF;
 
+  /*stat colors */
+  --stat-bg: #3b82f6;        /* lighter blue for dark mode */
+  --stat-text: #ffffff;
+  --stat-muted: #93c5fd;
+
   /* Brand Colors */
   --primary: #6366F1;
   /* A slightly lighter Indigo to pop on dark bg */
+  --primary-light: var(--stat-bg);
   --primary-hover: #818CF8;
 
   /* Borders */
   --border-color: #334155;
+
+  --success: #22c55e;
+  --success-bg: #052e1a;
+
+  --info: #60a5fa;
+  --info-bg: #0c1f3a;
+
+  --warning: #fbbf24;
+  --warning-bg: #3a2a05;
+
+  --emerald-500: #34D399;  /* emerald-400 (brighter for dark bg) */
+  --amber-500: #FBBF24;    /* amber-400 */
+  --rose-500: #FB7185;     /* rose-400 */
+
+
+
 }
 
 /* Forest theme */
@@ -72,13 +125,25 @@
   --text-body: #64748B;
   --text-on-primary: #FFFFFF;
 
+  /* stat colors */
+  --stat-bg: #16a34a;       /* green-600-ish */
+  --stat-text: #ffffff;
+  --stat-muted: #bbf7d0;
+
   /* Brand Colors */
   --primary: #059669;
   /* Emerald Green */
+  --primary-light: var(--stat-bg);
+  /*lighter green*/
   --primary-hover: #047857;
 
   /* Borders */
   --border-color: #BBF7D0;
+
+  --emerald-500: #16A34A;  /* slightly deeper green */
+  --amber-500: #D97706;    /* warm earthy amber */
+  --rose-500: #DC2626;     /* deeper red */
+
 }
 
 /* Cyber tech theme */
@@ -97,13 +162,25 @@
   /* Periwinkle */
   --text-on-primary: #120B2E;
 
+  /* stat colors */
+  --stat-bg: #A78BFA;       /* purple-400-ish */
+  --stat-text: #120B2E;
+  --stat-muted: #ddd6fe;
+
   /* Brand Colors */
   --primary: #C084FC;
   /* Bright Neon Purple */
+  --primary-light: var(--stat-bg);
+  /* lighter purple */
   --primary-hover: #D8B4FE;
 
   /* Borders */
   --border-color: #4C1D95;
+
+  --emerald-500: #2DD4BF;  /* teal-400 (neon vibe) */
+  --amber-500: #FACC15;    /* yellow-400 (glowy) */
+  --rose-500: #F472B6;     /* pink-400 (cyber feel) */
+
 }
 
 
@@ -113,8 +190,9 @@ html,
 body,
 #root {
   height: 100%;
-  background: var(--color-bg);
-  color: var(--color-text);
+  /* background: var(--color-bg);changed */
+  background: var(--bg-primary);
+  color: var(--text-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
@@ -122,18 +200,27 @@ body,
 
 /* small reusable components */
 .btn-primary {
-  @apply px-6 py-2 rounded-xl text-white font-medium;
-  background: var(--color-primary);
+  @apply px-6 py-2 rounded-xl font-medium;
+  color: var(--text-on-primary);
+  /* background: var(--color-primary);changed */
+  background: var(--primary);
   box-shadow: 0 8px 24px rgba(58, 122, 254, 0.12);
 }
 
 .btn-ghost {
   @apply px-4 py-2 rounded-lg border;
-  border-color: rgba(0, 0, 0, 0.06);
+  /* border-color: rgba(0, 0, 0, 0.06); */
+  border-color: var(--border-color);
+  color: var(--text-main);
   background: transparent;
 }
 
-.card {
+/* .card {
   @apply bg-[var(--color-surface)] p-6 rounded-xl shadow-md;
   border: 1px solid rgba(16, 24, 40, 0.04);
+} .......changed*/
+.card {
+  @apply p-6 rounded-xl shadow-md;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
 }
