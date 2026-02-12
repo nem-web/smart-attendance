@@ -33,9 +33,7 @@ async def save_daily_summary(
     percentage = round((present / total) * 100, 2) if total > 0 else 0.0
 
     filter_q = {
-        "classId": class_id,
-        "subjectId": subject_id,
-        "date": record_date,
+        "subjectId": subject_id
     }
 
     update_doc = {
