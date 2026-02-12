@@ -1,7 +1,6 @@
 /* eslint-disable */
 import React from "react";
 
-/* eslint-disable react-hooks/rules-of-hooks */
 export default function FaceOverlay({ faces, videoRef }) {
   // eslint-disable-next-line react/prop-types
   if (!videoRef.current) return null;

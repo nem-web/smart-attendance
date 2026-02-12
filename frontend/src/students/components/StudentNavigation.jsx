@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { 
   LayoutDashboard, 
   CalendarDays, 
@@ -12,14 +12,10 @@ import { getCurrentUser } from "../../api/auth";
 
 export default function StudentNavigation() {
   const location = useLocation();
-  const [studentName, setStudentName] = useState("Student");
-
-  useEffect(() => {
+  const [studentName] = useState(() => {
     const user = getCurrentUser();
-    if (user && user.full_name) {
-      setStudentName(user.full_name);
-    }
-  }, []);
+    return user && user.full_name ? user.full_name : "Student";
+  });
 
   const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/student/dashboard" },
