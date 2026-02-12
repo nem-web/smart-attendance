@@ -145,7 +145,7 @@ export default function Login() {
                      className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
                     <span className="text-sm text-gray-500 select-none">Remember me</span>
                   </label>
-                  <Link to="/forget-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">
+                  <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">
                     Forgot password?
                   </Link>
                 </div>
