@@ -14,6 +14,7 @@ const navItems = [
 ];
 
 /* ---------------------- DESKTOP NAV ITEM ---------------------- */
+// eslint-disable-next-line no-unused-vars
 function DesktopItem({ icon: Icon, label, active, path }) {
   return (
     <Link
@@ -31,6 +32,7 @@ function DesktopItem({ icon: Icon, label, active, path }) {
 }
 
 /* ---------------------- MOBILE NAV ITEM ---------------------- */
+// eslint-disable-next-line no-unused-vars
 function MobileItem({ icon: Icon, label, active, path }) {
   return (
     <Link
@@ -50,12 +52,14 @@ function MobileItem({ icon: Icon, label, active, path }) {
 /* ---------------------- MAIN NAVIGATION ---------------------- */
 export default function StudentNavigation({ activePage = "home" }) {
   const [username, setUsername] = useState("");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (!stored) return; 
 
     try {
       const userObj = JSON.parse(stored);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUsername(userObj.name);
     } catch {}
   }, []);

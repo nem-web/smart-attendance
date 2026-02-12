@@ -18,6 +18,7 @@ export default function Reports() {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
+  const [startDate, setStartDate] = useState(new Date());
 
   // const [selectedFilter, setSelectedFilter] = useState("All");
 

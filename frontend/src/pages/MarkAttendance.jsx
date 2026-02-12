@@ -22,7 +22,6 @@ export default function MarkAttendance() {
   const navigate = useNavigate();
   const webcamRef = useRef(null);
   const [snap, setSnap] = useState(null);
-  const [status, setStatus] = useState("Idle");
   const [activeTab, setActiveTab] = useState("Present");
   const [isSessionActive, setIsSessionActive] = useState(true);
 
@@ -86,7 +85,7 @@ export default function MarkAttendance() {
   }, [selectedSubject]);
 
   const presentStudents = Object.entries(attendanceMap)
-    .filter(([_, s]) => s.status === "present")
+    .filter(([, s]) => s.status === "present")
     .map(([id, s]) => ({
       studentId: id,
       name: s.name,
@@ -94,7 +93,7 @@ export default function MarkAttendance() {
     }));
 
   const absentStudents = Object.entries(attendanceMap)
-    .filter(([_, s]) => s.status === "absent")
+    .filter(([, s]) => s.status === "absent")
     .map(([id, s]) => ({
       studentId: id,
       name: s.name,
@@ -125,6 +124,7 @@ export default function MarkAttendance() {
   useEffect(() => {
     if (!detections.length) return;
 
+    // eslint-disable-next-line
     setAttendanceMap((prev) => {
       const updated = { ...prev };
 

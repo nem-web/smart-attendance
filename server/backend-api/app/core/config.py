@@ -39,12 +39,14 @@ settings = Settings()
 
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL")
 
+
 class BrevoSettings(BaseSettings):
-    BREVO_API_KEY:str=os.getenv("BREVO_API_KEY")
-    BREVO_SENDER_EMAIL:str=os.getenv("BREVO_SENDER_EMAIL")
-    BREVO_SENDER_NAME:str=os.getenv("BREVO_SENDER_NAME")
-    
-brevo_settings=BrevoSettings()
+    BREVO_API_KEY: str = os.getenv("BREVO_API_KEY")
+    BREVO_SENDER_EMAIL: str = os.getenv("BREVO_SENDER_EMAIL")
+    BREVO_SENDER_NAME: str = os.getenv("BREVO_SENDER_NAME")
+
+
+brevo_settings = BrevoSettings()
 
 # ML Service Configuration
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://localhost:8001")

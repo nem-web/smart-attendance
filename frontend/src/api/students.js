@@ -30,7 +30,7 @@ export const fetchAvailableSubjects = async () => {
 };
 
 export const addSubjectToStudent = async (subjectid) => {
-  const res = await api.post("/students/me/subjects", null, {
+  await api.post("/students/me/subjects", null, {
     params: {subject_id: subjectid}
   });
 };

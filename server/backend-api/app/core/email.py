@@ -1,9 +1,6 @@
 import logging
-import smtplib
-from email.message import EmailMessage
 
 import httpx
-
 from .config import brevo_settings
 from ..utils.email_template import verification_email_template
 
@@ -13,19 +10,19 @@ BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 
 class BrevoEmailService:
     @staticmethod
-    async def send_verification_email(to_email:str,user:str,verification_link:str):
-        payload={
-            "sender":{
-                "email":brevo_settings.BREVO_SENDER_EMAIL,
-                "name":brevo_settings.BREVO_SENDER_NAME,
+    async def send_verification_email(to_email: str, user: str, verification_link: str):
+        payload = {
+            "sender": {
+                "email": brevo_settings.BREVO_SENDER_EMAIL,
+                "name": brevo_settings.BREVO_SENDER_NAME,
             },
-            "to":[
-                {"email":to_email}
+            "to": [
+                {"email": to_email}
             ],
             "subject": "Verify your email for Smart Attendance",
-            "htmlContent":verification_email_template(verification_link,user),
+            "htmlContent": verification_email_template(verification_link, user),
         }
-    
+
         headers = {
         "api-key": brevo_settings.BREVO_API_KEY,
         "content-type": "application/json"

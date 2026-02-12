@@ -11,11 +11,11 @@ export const fetchCurrentUser = async () => {
     const res = await api.get("/auth/me");
     // console.log("id ", res.data)
     return res.data;
-  } catch (err) {
+  } catch {
     try {
       const profile = await fetchMyStudentProfile();
       return { ...profile.student, profileType: "student" };
-    } catch (e) {
+    } catch {
       return null;
     }
   }
