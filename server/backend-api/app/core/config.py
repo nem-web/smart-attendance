@@ -45,9 +45,9 @@ settings = Settings()
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL")
 
 class BrevoSettings(BaseSettings):
-    BREVO_API_KEY:str=os.getenv("BREVO_API_KEY")
-    BREVO_SENDER_EMAIL:str=os.getenv("BREVO_SENDER_EMAIL")
-    BREVO_SENDER_NAME:str=os.getenv("BREVO_SENDER_NAME")
+    BREVO_API_KEY: str | None = os.getenv("BREVO_API_KEY")
+    BREVO_SENDER_EMAIL: str | None = os.getenv("BREVO_SENDER_EMAIL")
+    BREVO_SENDER_NAME: str | None = os.getenv("BREVO_SENDER_NAME")
     
 brevo_settings=BrevoSettings()
 
