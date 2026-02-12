@@ -15,7 +15,13 @@ class Settings(BaseSettings):
     MIN_FACE_AREA_RATIO: float = 0.04
 
     # 👇 IMPORTANT FIX
-    CORS_ORIGINS: Union[str, List[str]] = ["*"]
+    CORS_ORIGINS: Union[str, List[str]] = [
+        "https://studentcheck.vercel.app",
+        "https://sa-gl.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+    ]
 
     LOG_LEVEL: str = "info"
 
