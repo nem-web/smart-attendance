@@ -8,7 +8,7 @@ COLLECTION = "attendance_daily"
 
 
 async def ensure_indexes():
-    """Create unique index to prevent duplicate daily records for the same class + date."""
+    """Create unique index to ensure one document per subject."""
     # Index is now unique on subjectId only
     await db[COLLECTION].create_index("subjectId", unique=True)
 
@@ -24,10 +24,8 @@ async def save_daily_summary(
     late: int = 0,
 ):
     """
-    Insert or update a daily attendance summary.
-
-    Uses upsert so that re-confirming the same class+date will update
-    instead of creating a duplicate.
+    Update the subject document by appending the daily attendance stats.
+    Uses upsert to create the subject document if it doesn't exist.
     """
     total = present + absent + late
     percentage = round((present / total) * 100, 2) if total > 0 else 0.0
