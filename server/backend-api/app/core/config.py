@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     # CORS configuration
     BACKEND_CORS_ORIGINS: List[Union[str, AnyHttpUrl]] = [
-         # e.g., 'http://localhost:5173', 'https://smart-attendance-app.vercel.app'
+        # e.g., 'http://localhost:5173', 'https://smart-attendance-app.vercel.app'
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
@@ -27,18 +27,18 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     # MongoDB
-    MONGO_URI: str = "mongodb://localhost:27017" # Replace with your Atlas URI often
+    MONGO_URI: str = "mongodb://localhost:27017"  # Replace with your Atlas URI often
     MONGO_DB_NAME: str = "smart_attendance_db"
-    
+
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str = "demo"
     CLOUDINARY_API_KEY: str = "12345678"
     CLOUDINARY_API_SECRET: str = "abcdefgh"
-    
+
     # ML Service
     # Update to http://localhost:8001 if running locally
-    ML_SERVICE_URL: str = "http://localhost:8001" 
-    
+    ML_SERVICE_URL: str = "http://localhost:8001"
+
     # Email (Brevo / Sendinblue)
     BREVO_API_KEY: Optional[str] = None
     EMAIL_SENDER_NAME: str = "Smart Attendance System"

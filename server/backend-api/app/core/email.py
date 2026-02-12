@@ -13,16 +13,14 @@ def send_email(
     subject: str,
     html_content: str,
     sender_name: str = settings.EMAIL_SENDER_NAME,
-    sender_email: EmailStr = settings.EMAIL_SENDER_ADDRESS
+    sender_email: EmailStr = settings.EMAIL_SENDER_ADDRESS,
 ) -> bool:
     """
     Sends an email using Brevo (formerly Sendinblue) API.
     Returns True if successful, False otherwise.
     """
     if not settings.BREVO_API_KEY:
-        logger.warning(
-            "BREVO_API_KEY is not set. Email to %s NOT sent.", to_email
-        )
+        logger.warning("BREVO_API_KEY is not set. Email to %s NOT sent.", to_email)
         return False
 
     import requests
@@ -31,20 +29,18 @@ def send_email(
     headers = {
         "accept": "application/json",
         "api-key": settings.BREVO_API_KEY,
-        "content-type": "application/json"
+        "content-type": "application/json",
     }
 
     payload = {
         "sender": {"name": sender_name, "email": sender_email},
         "to": [{"email": to_email}],
         "subject": subject,
-        "htmlContent": html_content
+        "htmlContent": html_content,
     }
 
     try:
-        response = requests.post(
-            url, json=payload, headers=headers, timeout=10
-        )
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
         logger.info("Email sent successfully to %s", to_email)
         return True
@@ -54,9 +50,7 @@ def send_email(
 
 
 def send_batch_email(
-    to_emails: List[EmailStr],
-    subject: str,
-    html_content: str
+    to_emails: List[EmailStr], subject: str, html_content: str
 ) -> None:
     for email in to_emails:
         send_email(email, subject, html_content)
