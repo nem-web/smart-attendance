@@ -9,10 +9,8 @@ COLLECTION = "attendance_daily"
 
 async def ensure_indexes():
     """Create unique index to prevent duplicate daily records for the same class + date."""
-    await db[COLLECTION].create_index(
-        [("classId", 1), ("subjectId", 1), ("date", 1)],
-        unique=True,
-    )
+    # Index is now unique on subjectId only
+    await db[COLLECTION].create_index("subjectId", unique=True)
 
 
 async def save_daily_summary(
@@ -43,7 +41,9 @@ async def save_daily_summary(
     update_doc = {
         "$set": {
             "teacherId": teacher_id,
-            "summary": {
+            "updatedAt": datetime.now(UTC),
+            # Updates just the specific date key inside the daily map
+            f"daily.{record_date}": {
                 "present": present,
                 "absent": absent,
                 "late": late,
@@ -53,6 +53,7 @@ async def save_daily_summary(
         },
         "$setOnInsert": {
             "createdAt": datetime.now(UTC),
+            "classId": class_id, # Preserve classId on creation
         },
     }
 
