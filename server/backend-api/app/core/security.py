@@ -1,7 +1,7 @@
 import logging
 
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from app.core.config import settings
@@ -29,8 +29,9 @@ def decode_jwt_token(token: str):
         return None
 
 
-    
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
     if not credentials or not credentials.credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -48,16 +49,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
     # Return a lightweight user object (can extend with email/name if in payload)
-    return {
-        "id": user_id,
-        "role": role,
-        "email": payload.get("email")
-    }
+    return {"id": user_id, "role": role, "email": payload.get("email")}
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

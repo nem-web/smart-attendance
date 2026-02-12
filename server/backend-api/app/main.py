@@ -2,24 +2,21 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-
-load_dotenv()
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from .core.config import APP_NAME, ORIGINS
-
-# Routes
+from app.api.routes import teacher_settings as settings_router
+from .api.routes.attendance import router as attendance_router
 from .api.routes.auth import router as auth_router
 from .api.routes.students import router as students_router
-from .api.routes.attendance import router as attendance_router
-
-from app.api.routes import teacher_settings as settings_router
-from app.core.cloudinary_config import cloudinary
+from .core.config import APP_NAME
+from app.services.attendance_daily import (
+    ensure_indexes as ensure_attendance_daily_indexes,
+)
 from app.services.ml_client import ml_client
-from app.services.attendance_daily import ensure_indexes as ensure_attendance_daily_indexes
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,8 +27,15 @@ logger = logging.getLogger(APP_NAME)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await ensure_attendance_daily_indexes()
-    logger.info("attendance_daily indexes ensured")
+    try:
+        await ensure_attendance_daily_indexes()
+        logger.info("attendance_daily indexes ensured")
+    except Exception as e:
+        logger.warning(
+            f"Could not connect to MongoDB. Application will continue, but DB features will fail. Error: {e}"  # noqa: E501
+        )
+        logger.warning("Please check your MONGO_URI in .env")
+
     yield
     await ml_client.close()
     logger.info("ML client closed")
@@ -53,11 +57,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-
-    # SessionMiddleware MUST be added before routers so authlib can use request.session reliably
+    # SessionMiddleware MUST be added before routers so authlib can use request.session reliably  # noqa: E501
     app.add_middleware(
         SessionMiddleware,
-        secret_key=os.getenv("SESSION_SECRET_KEY", "kuch-to12hai-mujhse-raita"),
+        secret_key=os.getenv("SESSION_SECRET_KEY", "temporary-dev-secret-key"),
         session_cookie="session",
         max_age=14 * 24 * 3600,
         same_site="lax",
@@ -79,4 +82,4 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)  # nosec

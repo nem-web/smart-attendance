@@ -1,6 +1,5 @@
 from app.db.mongo import db
 from bson import ObjectId
-from datetime import datetime
 
 students_col = db["students"]
 users_col = db["users"]
@@ -27,9 +26,7 @@ async def get_student_profile(user_id: str):
 
     subjects = []
     if subject_ids:
-        subject_cursor = subjects_col.find(
-            {"_id": {"$in": subject_ids}}
-        )
+        subject_cursor = subjects_col.find({"_id": {"$in": subject_ids}})
         subjects = [
             {
                 "_id": str(sub["_id"]),
@@ -45,10 +42,10 @@ async def get_student_profile(user_id: str):
         "userId": str(student["userId"]),
         "name": user.get("name"),
         "email": user.get("email"),
-        "branch":student.get("branch"),
-        "roll":student.get("roll"),
+        "branch": student.get("branch"),
+        "roll": student.get("roll"),
         "year": student.get("year"),
-        "subjects": subjects,              # ✅ populated & serialized
+        "subjects": subjects,  # ✅ populated & serialized
         "avatarUrl": student.get("avatarUrl"),
         "image_url": student.get("image_url"),
         "attendance": attendance_summary,
@@ -81,21 +78,19 @@ async def build_attendance_summary(student_doc_id: ObjectId):
     forecasted_score = 2 if percentage < 50 else 5
 
     # Last 5 attendance records
-    recent_cursor = (
-        attendance_col.find(q)
-        .sort("date", -1)
-        .limit(5)
-    )
+    recent_cursor = attendance_col.find(q).sort("date", -1).limit(5)
 
     recent = []
     async for r in recent_cursor:
-        recent.append({
-            "id": str(r["_id"]),
-            "date": r.get("date"),
-            "period": r.get("period"),
-            "present": r.get("present"),
-            "class_id": str(r["class_id"]) if r.get("class_id") else None,
-        })
+        recent.append(
+            {
+                "id": str(r["_id"]),
+                "date": r.get("date"),
+                "period": r.get("period"),
+                "present": r.get("present"),
+                "class_id": str(r["class_id"]) if r.get("class_id") else None,
+            }
+        )
 
     return {
         "total_classes": total_classes,

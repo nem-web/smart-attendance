@@ -9,12 +9,13 @@ from app.utils.jwt_token import decode_jwt
 
 security = HTTPBearer(auto_error=False)
 
+
 async def get_current_teacher(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     if credentials is None:
         raise HTTPException(status_code=401, detail="Authorization header missing")
-    
+
     token = credentials.credentials
 
     try:
@@ -49,16 +50,17 @@ async def get_current_teacher(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    teacher = await db.teachers.find_one({
-        "$or": [
-            {"user_id": oid},
-            {"userId": oid},
-        ]
-    })
+    teacher = await db.teachers.find_one(
+        {
+            "$or": [
+                {"user_id": oid},
+                {"userId": oid},
+            ]
+        }
+    )
 
     if not teacher:
         raise HTTPException(status_code=404, detail="Teacher profile not found")
-
 
     return {
         "id": oid,

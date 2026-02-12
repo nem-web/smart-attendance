@@ -18,6 +18,8 @@ import StudentForecast from "./students/pages/StudentForecast.jsx";
 import StudentProfile from "./students/pages/StudentProfile.jsx"
 import OAuthCallback from "./pages/OAuthCallback.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ForgotPassword from "./pages/ForgotPassword";
+
 
 /**
  * Redirects the user to the appropriate home page based on their role.
@@ -81,8 +83,9 @@ export default function App() {
           <Route path="/student-subjects" element={<StudentSubjects/>}/>
           <Route path="/student-forecast" element={<StudentForecast/>}/>
           <Route path="/student-profile" element={<StudentProfile/>}/>
-
           <Route path="/oauth-callback" element={<OAuthCallback />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+
         </Routes>
       </main>
     </div>

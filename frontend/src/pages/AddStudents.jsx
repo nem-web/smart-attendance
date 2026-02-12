@@ -23,7 +23,7 @@ export default function AddStudents() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
 
-  const [unverifiedCount, setUnverifiedCount] = useState(0)
+
 
   useEffect(() => {
     fetchMySubjects().then(setSubjects);
@@ -41,7 +41,7 @@ export default function AddStudents() {
       if (filterType === "Unverified only") return s.verified === false;
       return true;
     })
-    .map((s, idx) => ({
+    .map((s) => ({
       id: s.student_id,
       name: s.name,
       roll: s.roll,           
@@ -54,11 +54,7 @@ export default function AddStudents() {
       actionType: s.verified ? "none" : "verify"
   }));
 
-  useEffect(() => {
-    setUnverifiedCount(
-      filteredStudents.filter(s => s.status === "Unverified").length
-    );
-  }, [filteredStudents]);
+  const unverifiedCount = filteredStudents.filter(s => s.status === "Unverified").length;
 
   const handleVerify = async (studentId) => {
     if (!confirm("Verify this student for attendance?")) return;
@@ -262,10 +258,11 @@ export default function AddStudents() {
 }
 
 // Simple Helper Component for Sidebar Items
-function NavItem({ icon: Icon, label }) {
+// eslint-disable-next-line no-unused-vars
+function NavItem({ icon: IconComp, label }) {
   return (
     <button className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors">
-      <Icon size={18} />
+      <IconComp size={18} />
       <span>{label}</span>
     </button>
   );

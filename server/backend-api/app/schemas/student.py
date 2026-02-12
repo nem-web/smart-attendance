@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
+
 class StudentBase(BaseModel):
     name: str
     roll: Optional[str] = None
@@ -11,8 +12,10 @@ class StudentBase(BaseModel):
     year: Optional[int] = None
     branch: Optional[str] = None
 
+
 class StudentCreate(StudentBase):
     pass
+
 
 class StudentUpdate(BaseModel):
     name: Optional[str] = None
@@ -23,11 +26,9 @@ class StudentUpdate(BaseModel):
     year: Optional[int] = None
     branch: Optional[str] = None
 
+
 class StudentOut(StudentBase):
     id: str = Field(..., alias="_id")
     enrolled_on: Optional[datetime] = None
 
-    model_config = {
-        "populate_by_name": True,
-        "from_attributes": True
-    }
+    model_config = {"populate_by_name": True, "from_attributes": True}

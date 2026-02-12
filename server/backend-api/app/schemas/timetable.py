@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
+
 
 class Period(BaseModel):
     slot: int
@@ -8,10 +9,12 @@ class Period(BaseModel):
     end: str
     teacher_id: Optional[str]
 
+
 class TimetableCreate(BaseModel):
     class_id: str
     day: str
     periods: List[Period]
+
 
 class TimetableOut(TimetableCreate):
     id: str = Field(..., alias="_id")

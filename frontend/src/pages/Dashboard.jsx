@@ -1,5 +1,6 @@
-import React ,{useState,useEffect} from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
 import {
   Bell,
   Download,
@@ -8,37 +9,93 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  AlertTriangle
 } from "lucide-react"; // Assuming you use lucide-react, or replace with your icons
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => {
+    const data = localStorage.getItem("user");
+    return data ? JSON.parse(data) : null;
+  });
+  const [mlStatus, setMlStatus] = useState("checking"); // checking, ready, waking-up
 
   useEffect(() => {
-    const data = localStorage.getItem("user");
-    if (data) {
-      setUser(JSON.parse(data));
-    }
+    const checkMlService = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        setMlStatus("waking-up");
+      }, 10000); // If pending for > 10s, it's likely waking up
+
+      try {
+        const response = await axios.get(import.meta.env.VITE_ML_SERVICE_URL, {
+          signal: controller.signal
+        });
+        if (response.status === 200) {
+          setMlStatus("ready");
+        }
+      } catch {
+        clearTimeout(timeoutId);
+        // If it fails, assume it's waking up or down. 
+        // Render free tier might just timeout the first request or return 502 temporarily.
+        setMlStatus("waking-up");
+      }
+    };
+
+    // Initial check
+    checkMlService();
+
+    // Poll every 30 seconds
+    const interval = setInterval(checkMlService, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
+  const getStatusBadge = () => {
+    switch (mlStatus) {
+      case "ready":
+        return (
+          <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded flex items-center gap-1">
+            <CheckCircle size={12} />
+            Face recognition is ready
+          </span>
+        );
+      case "waking-up":
+        return (
+          <span className="text-xs font-medium text-yellow-700 bg-yellow-50 px-2 py-1 rounded flex items-center gap-1">
+            <AlertTriangle size={12} />
+            Waking up ML service...
+          </span>
+        );
+      case "checking":
+      default:
+        return (
+          <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded flex items-center gap-1">
+            <Loader2 size={12} className="animate-spin" />
+            Checking system status...
+          </span>
+        );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
+    <div className="min-h-screen bg-(--bg-primary) p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* --- SECTION 1: PAGE HEADER --- */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-main)]">Teacher dashboard</h1>
-            <p className="text-[var(--text-body)] mt-1">Overview of today's attendance and upcoming classes</p>
+            <h1 className="text-3xl font-bold text-(--text-main)">Teacher dashboard</h1>
+            <p className="text-(--text-body) mt-1">Overview of today's attendance and upcoming classes</p>
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-white border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--primary-hover)] hover:text-white font-medium transition-colors flex items-center gap-2 cursor-pointer">
+            <button className="px-4 py-2 bg-white border border-(--border-color) text-(--text-main) rounded-lg  hover:text-white font-medium transition-colors flex items-center gap-2 cursor-pointer">
               <Download size={18} />
               Download report
             </button>
-            <Link to="/start-attendance" className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] font-medium shadow-sm flex items-center gap-2 transition-colors">
+            <Link to="/start-attendance" className="hover:bg-[var(--primary-hover)]px-4 py-2 bg-(--primary) text-white rounded-lg hover:bg-(--primary-hover) font-medium shadow-sm flex items-center gap-2 transition-colors">
               <Play size={18} fill="currentColor" />
               Start attendance
             </Link>
@@ -52,21 +109,21 @@ export default function Dashboard() {
           <div className="lg:col-span-8 space-y-6">
 
             {/* 2.1 Welcome / Active Session Card */}
-            <div className="bg-[var(--bg-card)] rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="bg-(--bg-text-[var(--text-body)]card) rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text-main)]">Good morning, {user?.name || "Teacher"}</h2>
-                  <p className="text-[var(--text-body)] text-sm">Monday, September 23 • 08:45</p>
+                  <h2 className="text-xl font-bold text-(--text-main)">Good morning, {user?.name || "Teacher"}</h2>
+                  <p className=" text-sm">Monday, September 23 • 08:45</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-[var(--primary-hover)] font-medium">Next class: Grade 10A • 09:00</span>
-                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full  text-[var(--primary-hover)] font-medium">Room 203</span>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">Next class: Grade 10A • 09:00</span>
+                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">Room 203</span>
                 </div>
               </div>
 
               <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-                <span className="text-xs font-medium text-[var(--primary)] bg-indigo-50 px-2 py-1 rounded">Face recognition is ready</span>
-                <Link to="/attendance-session" className="w-full md:w-auto px-6 py-3 bg-[var(--primary)] text-white rounded-xl font-semibold hover:bg-[var(--primary-hover)] transition shadow-md text-center">
+                {getStatusBadge()}
+                <Link to="/attendance-session" className="w-full md:w-auto px-6 py-3 bg-(--primary) text-white rounded-xl font-semibold hover:bg-(--primary-hover) transition shadow-md text-center">
                   Start attendance session
                 </Link>
                 <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
@@ -109,21 +166,21 @@ export default function Dashboard() {
             {/* 2.3 Quick Actions Row (Light Gray Cards) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               <Link to="/students" className="block">
-              <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
-                <div className="font-semibold text-[var(--text-main)] mb-1">View student list</div>
-                <div className="text-xs text-[var(--text-body)]">Search, filter and manage profiles</div>
+              <div className="bg-(--bg-secondary) p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
+                <div className="font-semibold text-(--text-main) mb-1text-[var(--text-body)]">View student list</div>
+                <div className="text-xs text-(--text-body)">Search, filter and manage profiles</div>
               </div>
               </Link>
               <Link to="/attendance" className="block">
-              <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
-                <div className="font-semibold text-[var(--text-main)] mb-1">Go to attendance</div>
-                <div className="text-xs text-[var(--text-body)]">Open live marking screen</div>
+              <div className="bg-(--bg-secondary) p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
+                <div className="font-semibold text-(--text-main) mb-1">Go to attendance</div>
+                <div className="text-xs text-(--text-body)">Open live marking screen</div>
               </div>
               </Link>
               <Link to="/" className="block">
-              <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
-                <div className="font-semibold text-[var(--text-main)] mb-1">Manage schedule</div>
-                <div className="text-xs text-[var(--text-body)]">Edit classes and timetables</div>
+              <div className="bg-(--bg-secondary) p-5 rounded-2xl cursor-pointer hover:bg-gray-200 transition">
+                <div className="font-semibold text-(--text-main) mb-1">Manage schedule</div>
+                <div className="text-xs text-(--text-body)">Edit classes and timetables</div>
               </div>
               </Link>
             </div>
@@ -134,10 +191,10 @@ export default function Dashboard() {
           <div className="lg:col-span-4 space-y-6">
 
             {/* 3.1 Trends Chart Placeholder */}
-            <div className="bg-[var(--bg-card)] p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-(--bg-card) p-6 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-[var(--text-main)]">Attendance trends</h3>
-                <span className="text-xs text-[var(--text-body)] bg-gray-100 px-2 py-1 rounded">This week</span>
+                <h3 className="font-bold text-(--text-main)">Attendance trends</h3>
+                <span className="text-xs text-(--text-body) bg-gray-100 px-2 py-1 rounded">This week</span>
               </div>
 
               {/* Chart Placeholder Box */}
@@ -146,7 +203,7 @@ export default function Dashboard() {
               </div>
 
               <div className="flex justify-center gap-4 text-xs">
-                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--primary)]"></span> Present</div>
+                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-(--primary)"></span> Present</div>
                 <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-300"></span> Absent</div>
                 <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-300"></span> Late</div>
               </div>
@@ -155,28 +212,28 @@ export default function Dashboard() {
             {/* 3.2 Upcoming Classes List */}
             <div className="space-y-3">
               {/* Card 1 */}
-              <div className="bg-[var(--bg-card)] p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
+              <div className="bg-(--bg-card) p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-[var(--text-main)]">Grade 10A Mathematics</h4>
+                  <h4 className="font-semibold text-(--text-main)">Grade 10A Mathematics</h4>
                   <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wide rounded-full">Completed</span>
                 </div>
                 <div className="flex justify-between items-end">
-                  <div className="text-xs text-[var(--text-body)] flex flex-col gap-1">
+                  <div className="text-xs text-(--text-body) flex flex-col gap-1">
                     <span className="flex items-center gap-1"><Clock size={12} /> 08:00 - 09:00</span>
                     <span>Room 203</span>
                   </div>
-                  <span className="text-xs font-medium text-[var(--text-body)]">96% attendance</span>
+                  <span className="text-xs font-medium text-(--text-body)">96% attendance</span>
                 </div>
               </div>
 
               {/* Card 2 */}
-              <div className="bg-[var(--bg-card)] p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
+              <div className="bg-(--bg-card) p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-[var(--text-main)]">Grade 9B Physics</h4>
+                  <h4 className="font-semibold text-(--text-main)">Grade 9B Physics</h4>
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wide rounded-full">Upcoming</span>
                 </div>
                 <div className="flex justify-between items-end">
-                  <div className="text-xs text-[var(--text-body)] flex flex-col gap-1">
+                  <div className="text-xs text-(--text-body) flex flex-col gap-1">
                     <span className="flex items-center gap-1"><Clock size={12} /> 09:15 - 10:15</span>
                     <span>Lab 2</span>
                   </div>
@@ -185,17 +242,17 @@ export default function Dashboard() {
               </div>
 
               {/* Card 3 */}
-              <div className="bg-[var(--bg-card)] p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-orange-400">
+              <div className="bg-(--bg-card) p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-orange-400">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-[var(--text-main)]">Grade 11C Chemistry</h4>
+                  <h4 className="font-semibold text-(--text-main)">Grade 11C Chemistry</h4>
                   <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wide rounded-full">Pending</span>
                 </div>
                 <div className="flex justify-between items-end">
-                  <div className="text-xs text-[var(--text-body)] flex flex-col gap-1">
+                  <div className="text-xs text-(--text-body) flex flex-col gap-1">
                     <span className="flex items-center gap-1"><Clock size={12} /> 11:00 - 12:00</span>
                     <span>Lab 1</span>
                   </div>
-                  <span className="text-xs font-medium text-[var(--text-body)]">Attendance not started</span>
+                  <span className="text-xs font-medium ">Attendance not started</span>
                 </div>
               </div>
 

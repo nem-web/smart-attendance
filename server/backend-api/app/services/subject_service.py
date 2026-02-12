@@ -6,6 +6,7 @@ from app.db.subjects_repo import (
     add_professor_to_subject,
 )
 
+
 async def add_subject_for_teacher(teacher_id: ObjectId, name: str, code: str):
     # 1. Find or create subject
     subject = await get_subject_by_code(code)
@@ -25,11 +26,9 @@ async def add_subject_for_teacher(teacher_id: ObjectId, name: str, code: str):
             ]
         },
         {
-            "$addToSet": {
-                "subjects": subject["_id"]
-            },
-            "$currentDate": {"updatedAt": True}
-        }
+            "$addToSet": {"subjects": subject["_id"]},
+            "$currentDate": {"updatedAt": True},
+        },
     )
 
     # 3. Return safe response (ObjectId → str)

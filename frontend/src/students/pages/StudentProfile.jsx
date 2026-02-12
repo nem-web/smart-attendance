@@ -73,7 +73,7 @@ export default function StudentProfile() {
   }
   if(!data) return <div>No Profile found..</div>;
   
-  const {student, class: classDoc, professor, attendance_summary} = data;
+
   const img = data.image_url;
   // console.log(data)
 

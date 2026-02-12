@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date
 from typing import Optional
+
 
 class AttendanceCreate(BaseModel):
     student_id: str
@@ -9,6 +10,7 @@ class AttendanceCreate(BaseModel):
     period: int
     present: bool
     marked_by: Optional[str]
+
 
 class AttendanceOut(AttendanceCreate):
     id: str = Field(..., alias="_id")

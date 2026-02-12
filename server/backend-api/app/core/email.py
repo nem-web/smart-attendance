@@ -1,83 +1,73 @@
 import logging
+from typing import List
 
-import httpx
-from .config import brevo_settings
-from ..utils.email_template import verification_email_template
+from app.core.config import settings
+from pydantic import EmailStr
 
+# Setup basic logging
 logger = logging.getLogger(__name__)
-BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+
+
+def send_email(
+    to_email: EmailStr,
+    subject: str,
+    html_content: str,
+    sender_name: str = settings.EMAIL_SENDER_NAME,
+    sender_email: EmailStr = settings.EMAIL_SENDER_ADDRESS
+) -> bool:
+    """
+    Sends an email using Brevo (formerly Sendinblue) API.
+    Returns True if successful, False otherwise.
+    """
+    if not settings.BREVO_API_KEY:
+        logger.warning(
+            "BREVO_API_KEY is not set. Email to %s NOT sent.", to_email
+        )
+        return False
+
+    import requests
+
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": settings.BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_content
+    }
+
+    try:
+        response = requests.post(
+            url, json=payload, headers=headers, timeout=10
+        )
+        response.raise_for_status()
+        logger.info("Email sent successfully to %s", to_email)
+        return True
+    except Exception as e:
+        logger.error("Failed to send email: %s", e)
+        return False
+
+
+def send_batch_email(
+    to_emails: List[EmailStr],
+    subject: str,
+    html_content: str
+) -> None:
+    for email in to_emails:
+        send_email(email, subject, html_content)
 
 
 class BrevoEmailService:
     @staticmethod
-    async def send_verification_email(to_email: str, user: str, verification_link: str):
-        payload = {
-            "sender": {
-                "email": brevo_settings.BREVO_SENDER_EMAIL,
-                "name": brevo_settings.BREVO_SENDER_NAME,
-            },
-            "to": [
-                {"email": to_email}
-            ],
-            "subject": "Verify your email for Smart Attendance",
-            "htmlContent": verification_email_template(verification_link, user),
-        }
-
-        headers = {
-        "api-key": brevo_settings.BREVO_API_KEY,
-        "content-type": "application/json"
-        }
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            try:
-                response=await client.post(BREVO_URL,json=payload,headers=headers)
-                response.raise_for_status()
-            except httpx.HTTPError as e:
-                logger.warning("Failed to send email: %s", e)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def send_verification_email(to_email: str, verification_link: str):
-#     try:
-#         print("SMTP CONFIG:", SMTP_HOST, SMTP_PORT, SMTP_USER)
-
-#         msg = EmailMessage()
-#         msg["Subject"] = "Verify your email for Smart Attendance"
-#         msg["From"] = SMTP_USER
-#         msg["To"] = to_email
-
-#         msg.set_content(
-#             f"""
-# Hi,
-
-# Click the link below to verify your email:
-
-# {verification_link}
-
-# Thanks,
-# Smart Attendance
-# """
-#         )
-
-#         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
-#             server.starttls()
-#             server.login(SMTP_USER, SMTP_PASS)
-#             server.send_message(msg)
-
-#         print("Verification email sent to", to_email)
-
-#     except Exception as e:
-#         print("EMAIL ERROR:", str(e))
+    def send_verification_email(email: str, name: str, link: str):
+        subject = "Verify your email - Smart Attendance"
+        html_content = (
+            f"<h1>Hello, {name}</h1>"
+            f"<p>Please verify your email clicking <a href='{link}'>here</a></p>"
+        )
+        send_email(email, subject, html_content)

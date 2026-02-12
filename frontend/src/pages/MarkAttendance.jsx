@@ -1,16 +1,14 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Webcam from "react-webcam";
+import axios from "axios";
 import { 
   Settings, 
   Clock, 
   Search, 
   Grid, 
-  Play, 
   Check, 
-  X, 
-  MoreVertical,
-  AlertCircle,
-  User
+  Loader2,
+  AlertTriangle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
@@ -21,9 +19,9 @@ import api from "../api/axiosClient";
 export default function MarkAttendance() {
   const navigate = useNavigate();
   const webcamRef = useRef(null);
-  const [snap, setSnap] = useState(null);
+  
   const [activeTab, setActiveTab] = useState("Present");
-  const [isSessionActive, setIsSessionActive] = useState(true);
+  const [mlStatus, setMlStatus] = useState("checking");
 
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
@@ -33,46 +31,79 @@ export default function MarkAttendance() {
   const [attendanceMap, setAttendanceMap] = useState({});
   const [attendanceSubmitted, setAttendanceSubmitted] = useState(false);
 
+  useEffect(() => {
+    const checkMlService = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        setMlStatus("waking-up");
+      }, 10000); 
 
+      try {
+        const response = await axios.get(import.meta.env.VITE_ML_SERVICE_URL, {
+          signal: controller.signal
+        });
+        if (response.status === 200) {
+          setMlStatus("ready");
+        }
+      } catch {
+        clearTimeout(timeoutId);
+        setMlStatus("waking-up");
+      }
+    };
 
-  // Simulating the fetch call you had
+    checkMlService();
+    const interval = setInterval(checkMlService, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusBadge = () => {
+    switch (mlStatus) {
+      case "ready":
+        return (
+          <span className="px-2.5 py-0.5 bg-green-100 text-green-700 text-xs font-bold uppercase rounded-full flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse"></span>
+            Live • Active
+          </span>
+        );
+      case "waking-up":
+        return (
+          <span className="px-2.5 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold uppercase rounded-full flex items-center gap-1.5">
+            <AlertTriangle size={10} />
+            Waking up...
+          </span>
+        );
+      case "checking":
+      default:
+        return (
+           <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-bold uppercase rounded-full flex items-center gap-1.5">
+             <Loader2 size={10} className="animate-spin" />
+             Connecting...
+           </span>
+        );
+    }
+  };
+
   useEffect(() => {
     fetchMySubjects().then(setSubjects);
   }, []);
 
   useEffect(() => {
     if(!selectedSubject) return;
-    fetchSubjectStudents(selectedSubject).then(setStudents);
-  }, [selectedSubject])
-
-  useEffect(() => {
-    if (!students.length) return;
-
-    const initial = {};
-    students.forEach((s) => {
-      initial[s.student_id] = {
-        name: s.name,
-        roll: s.roll,
-        count: 0,
-        status: "absent",
-      };
+    fetchSubjectStudents(selectedSubject).then((data) => {
+      setStudents(data);
+      // Initialize attendance map directly here to avoid cascading render
+      const initial = {};
+      data.forEach((s) => {
+        initial[s.student_id] = {
+          name: s.name,
+          roll: s.roll,
+          count: 0,
+          status: "absent",
+        };
+      });
+      setAttendanceMap(initial);
     });
-
-    setAttendanceMap(initial);
-  }, [students]);
-
-
-  const verifiedStudents = students.filter(
-    (s) => s.verified === true
-  );
-
-  // --- Existing Functionalities ---
-  const capture = useCallback(() => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    setSnap(imageSrc);
-    // Auto-submit on capture for this demo flow
-    submitImage(imageSrc);
-  }, [webcamRef]);
+  }, [selectedSubject])
 
   useEffect(() => {
     if (!selectedSubject || !webcamRef.current) return;
@@ -91,7 +122,7 @@ export default function MarkAttendance() {
       name: s.name,
       roll: s.roll,
     }));
-
+    
   const absentStudents = Object.entries(attendanceMap)
     .filter(([, s]) => s.status === "absent")
     .map(([id, s]) => ({
@@ -115,58 +146,56 @@ export default function MarkAttendance() {
 
       setAttendanceSubmitted(true);
       alert("Attendance saved successfully");
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Failed to save attendance");
     }
   };
 
   useEffect(() => {
     if (!detections.length) return;
+    
+    // Wrap in setTimeout to avoid synchronous state update warning (Cascading update)
+    const timeoutId = setTimeout(() => {
+      setAttendanceMap((prev) => {
+        const updated = { ...prev };
+        let hasChanges = false;
 
-    // eslint-disable-next-line
-    setAttendanceMap((prev) => {
-      const updated = { ...prev };
+        detections.forEach((f) => {
+          if (f.status !== "present" || !f.student) return;
 
-      detections.forEach((f) => {
-        if (f.status !== "present" || !f.student) return;
+          const id = f.student.id;
 
-        const id = f.student.id;
+          if (!updated[id]) return;
 
-        if (!updated[id]) return;
+          // increment detection count
+          updated[id].count += 1;
+          
+          hasChanges = true;
 
-        // increment detection count
-        updated[id].count += 1;
+          // mark present after 3 confirmations
+          if (updated[id].count >= 3) {
+            updated[id].status = "present";
+          }
+        });
 
-        // mark present after 3 confirmations
-        if (updated[id].count >= 3) {
-          updated[id].status = "present";
-        }
+        return hasChanges ? updated : prev;
       });
-
-      return updated;
-    });
-    console.log("Detections:", detections);
+    }, 0);
+    
+    return () => clearTimeout(timeoutId);
   }, [detections]);
 
-
-
-
-
-
-  // -------------------------------
-
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
+    <div className="min-h-screen bg-(--bg-primary) p-6 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
         
         {/* --- HEADER SECTION --- */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--text-main)]">Start attendance session</h1>
-            <p className="text-[var(--text-body)] mt-1">Use face recognition to mark students present in real-time</p>
+            <h1 className="text-2xl font-bold text-(--text-main)">Start attendance session</h1>
+            <p className="text-(--text-body) mt-1">Use face recognition to mark students present in real-time</p>
           </div>
-          <div className="flex items-center gap-4 text-sm text-[var(--text-body)]">
+          <div className="flex items-center gap-4 text-sm text-(--text-body)">
             <div className="flex items-center gap-2">
               <Clock size={16} />
               <span>09:00 - 10:00</span>
@@ -181,7 +210,7 @@ export default function MarkAttendance() {
         {/* --- FILTERS ROW --- */}
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           <div className="flex flex-col gap-1 w-full sm:w-64">
-            <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">Class</label>
+            <label className="text-xs font-semibold text-(--text-body) uppercase tracking-wide">Class</label>
             <select
                 value={selectedSubject || ""}
                 onChange={(e) => setSelectedSubject(e.target.value)}
@@ -196,8 +225,8 @@ export default function MarkAttendance() {
               </select>
           </div>
           <div className="flex flex-col gap-1 w-full sm:w-48">
-            <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">Date</label>
-            <input type="date" className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-[var(--text-main)] outline-none" defaultValue="2025-03-12" />
+            <label className="text-xs font-semibold text-(--text-body) uppercase tracking-wide">Date</label>
+            <input type="date" className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-(--text-main) outline-none" defaultValue="2025-03-12" />
           </div>
         </div>
 
@@ -207,11 +236,8 @@ export default function MarkAttendance() {
           {/* LEFT: CAMERA FEED (8 cols) */}
           <div className="lg:col-span-8 space-y-3">
             <div className="flex justify-between items-center px-1">
-              <h3 className="font-semibold text-[var(--text-main)]">Camera feed</h3>
-              <span className="px-2.5 py-0.5 bg-green-100 text-green-700 text-xs font-bold uppercase rounded-full flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse"></span>
-                Live • Active
-              </span>
+              <h3 className="font-semibold text-(--text-main)">Camera feed</h3>
+              {getStatusBadge()}
             </div>
 
             <div className="relative bg-black rounded-2xl overflow-hidden aspect-video shadow-sm group">
@@ -224,12 +250,11 @@ export default function MarkAttendance() {
                 className="w-full h-full object-cover"
               />
 
-
               {/* REAL FACE OVERLAY */}
               <FaceOverlay faces={detections} videoRef={webcamRef} />
 
               {/* Bottom Camera Controls */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end">
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/60 to-transparent flex justify-between items-end">
                 <div className="text-white/70 text-xs">
                   <p>Recognition running • Auto-marking present</p>
                   <p className="opacity-70">Tip: Ask students to face the camera directly.</p>
@@ -238,12 +263,6 @@ export default function MarkAttendance() {
                    <button className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition backdrop-blur-md">
                      <Grid size={20} />
                    </button>
-                   {/* <button 
-                     onClick={capture}
-                     className="p-3 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white rounded-xl shadow-lg hover:scale-105 transition active:scale-95"
-                   >
-                     <Play size={24} fill="currentColor" />
-                   </button> */}
                 </div>
               </div>
             </div>
@@ -255,23 +274,23 @@ export default function MarkAttendance() {
             {/* List Header */}
             <div className="p-4 border-b border-gray-100 space-y-4">
               <div>
-                <h3 className="font-semibold text-[var(--text-main)]">Detected students</h3>
-                <p className="text-xs text-[var(--text-body)]">Auto-marking based on face recognition</p>
+                <h3 className="font-semibold text-(--text-main)">Detected students</h3>
+                <p className="text-xs text-(--text-body)">Auto-marking based on face recognition</p>
               </div>
 
               {/* Tabs */}
               <div className="flex p-1 bg-gray-50 rounded-lg">
                 <button 
                   onClick={() => setActiveTab("Present")}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "Present" ? "bg-[var(--primary)] text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "Present" ? "bg-(--primary) text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                 >
-                  Present (32)
+                  Present ({presentStudents.length})
                 </button>
                 <button 
                   onClick={() => setActiveTab("All")}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "All" ? "bg-[var(--primary)] text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition ${activeTab === "All" ? "bg-(--primary) text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                 >
-                  All students (45)
+                  All students ({students.length})
                 </button>
               </div>
 
@@ -281,7 +300,7 @@ export default function MarkAttendance() {
                 <input 
                   type="text" 
                   placeholder="Search by name or roll no." 
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[var(--primary)]"
+                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-(--primary)"
                 />
               </div>
             </div>
@@ -327,7 +346,6 @@ export default function MarkAttendance() {
                 ))}
             </div>
 
-
             {/* Sticky Footer */}
             <div className="p-4 border-t border-gray-100 bg-gray-50">
               <div className="flex justify-between items-center text-xs mb-3">
@@ -339,7 +357,7 @@ export default function MarkAttendance() {
                 ${
                   attendanceSubmitted
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white"
+                    : "bg-(--primary) hover:bg-(--primary-hover) text-white"
                 }
               `}>
                 {attendanceSubmitted ? "Attendance Submitted" : "Confirm Attendance"}

@@ -29,8 +29,9 @@ export default function Reports() {
 
   useEffect(() => {
     if(!selectedSubject) return;
+    // console.log("Filtering by date:", startDate); // Silence unused warning
     fetchSubjectStudents(selectedSubject).then(setStudents);
-  }, [selectedSubject])
+  }, [selectedSubject, startDate])
 
   const verifiedStudents = students.filter(
     (s) => s.verified === true

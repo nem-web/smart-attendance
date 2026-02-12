@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { 
   Bell, 
   Shield, 
@@ -46,16 +46,14 @@ export default function StudentDashboard() {
     },
   ];
 
-  const [username, setUsername] = useState("");
-    useEffect(() => {
-      const stored = localStorage.getItem("user");
-      if (!stored) return; 
-  
+  const [username] = useState(() => {
       try {
-        const userObj = JSON.parse(stored);
-        setUsername(userObj.name);
-      } catch {}
-    }, []);
+        const stored = localStorage.getItem("user");
+        return stored ? JSON.parse(stored).name : "";
+      } catch {
+        return "";
+      }
+    });
 
 
   return (

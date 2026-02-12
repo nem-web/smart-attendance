@@ -1,63 +1,52 @@
-import os
-from dotenv import load_dotenv
+from typing import List, Optional, Union
+
+from pydantic import AnyHttpUrl, EmailStr, validator
 from pydantic_settings import BaseSettings
-from typing import List
-
-load_dotenv()
-
-APP_NAME = "Smart Attendance API"
-
-# CORS origins (can override via env as comma-separated in production)
-_default_origins = [
-    "http://localhost:5173",
-    "https://sa-gl.vercel.app",
-    "https://studentcheck.vercel.app",
-    "http://127.0.0.1:5173",
-]
-ORIGINS: List[str] = (
-    [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
-    or _default_origins
-)
 
 
 class Settings(BaseSettings):
-    MONGO_URI: str = ""
-    JWT_SECRET: str = ""
-    JWT_ALGORITHM: str = "HS256"
+    API_V1_STR: str = "/api/v1"
+    SECRET_KEY: str = "YOUR_SUPER_SECRET_KEY_HERE_CHANGE_IN_PRODUCTION"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
+    SERVER_NAME: str = "Smart Attendance API"
+    SERVER_HOST: AnyHttpUrl = "http://localhost:8000"
+
+    # CORS configuration
+    BACKEND_CORS_ORIGINS: List[Union[str, AnyHttpUrl]] = [
+         # e.g., 'http://localhost:5173', 'https://smart-attendance-app.vercel.app'
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
+
+    # MongoDB
+    MONGO_URI: str = "mongodb://localhost:27017" # Replace with your Atlas URI often
+    MONGO_DB_NAME: str = "smart_attendance_db"
+    
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME: str = "demo"
+    CLOUDINARY_API_KEY: str = "12345678"
+    CLOUDINARY_API_SECRET: str = "abcdefgh"
+    
+    # ML Service
+    # Update to http://localhost:8001 if running locally
+    ML_SERVICE_URL: str = "http://localhost:8001" 
+    
+    # Email (Brevo / Sendinblue)
+    BREVO_API_KEY: Optional[str] = None
+    EMAIL_SENDER_NAME: str = "Smart Attendance System"
+    EMAIL_SENDER_ADDRESS: EmailStr = "noreply@smartattendance.com"
 
     class Config:
+        case_sensitive = True
         env_file = ".env"
-        extra = "ignore"
 
 
 settings = Settings()
-
-# SMTP_HOST = os.getenv("SMTP_HOST")
-# SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-# SMTP_USER = os.getenv("SMTP_USER")
-# SMTP_PASS = os.getenv("SMTP_PASS")
-
-BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL")
-
-
-class BrevoSettings(BaseSettings):
-    BREVO_API_KEY: str = os.getenv("BREVO_API_KEY")
-    BREVO_SENDER_EMAIL: str = os.getenv("BREVO_SENDER_EMAIL")
-    BREVO_SENDER_NAME: str = os.getenv("BREVO_SENDER_NAME")
-
-
-brevo_settings = BrevoSettings()
-
-# ML Service Configuration
-ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
-ML_SERVICE_TIMEOUT = float(os.getenv("ML_SERVICE_TIMEOUT", "30"))
-ML_SERVICE_MAX_RETRIES = int(os.getenv("ML_SERVICE_MAX_RETRIES", "3"))
-
-# ML Thresholds
-ML_CONFIDENT_THRESHOLD = float(os.getenv("ML_CONFIDENT_THRESHOLD", "0.50"))
-ML_UNCERTAIN_THRESHOLD = float(os.getenv("ML_UNCERTAIN_THRESHOLD", "0.60"))
-
-CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
-CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
-CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
-

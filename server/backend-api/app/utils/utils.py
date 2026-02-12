@@ -1,7 +1,8 @@
 # backend/app/db/utils.py
 from bson import ObjectId
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict
+
 
 def _convert_value(v: Any) -> Any:
     if isinstance(v, ObjectId):
@@ -14,6 +15,7 @@ def _convert_value(v: Any) -> Any:
     if isinstance(v, list):
         return [_convert_value(i) for i in v]
     return v
+
 
 def serialize_bson(doc: Dict[str, Any]) -> Dict[str, Any]:
     """

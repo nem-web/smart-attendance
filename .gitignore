@@ -61,4 +61,5 @@ frontend/.cache/
 *.tar
 *.gz
 *.rar
+demo_user_id.txt
 

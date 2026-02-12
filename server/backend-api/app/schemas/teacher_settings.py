@@ -1,16 +1,19 @@
 # backend/app/schemas/settings.py
-from pydantic import BaseModel, Field, EmailStr, conint, constr
+from pydantic import BaseModel, EmailStr, conint
 from typing import List, Optional, Literal
 from datetime import datetime
+
 
 class Notifications(BaseModel):
     push: bool = True
     inApp: bool = True
     sound: bool = False
 
+
 class EmailPref(BaseModel):
     key: str
     enabled: bool = False
+
 
 class FaceSettings(BaseModel):
     liveness: bool = True
@@ -18,9 +21,11 @@ class FaceSettings(BaseModel):
     enrolledAt: Optional[datetime] = None
     lastUpdatedVia: Optional[str] = None
 
+
 class Thresholds(BaseModel):
     warningVal: conint(ge=0, le=100) = 75
     safeVal: conint(ge=0, le=100) = 85
+
 
 class Profile(BaseModel):
     name: Optional[str] = None
@@ -30,6 +35,7 @@ class Profile(BaseModel):
     subjects: List[str] = []
     avatarUrl: Optional[str] = None
 
+
 class UserSettingsCreate(BaseModel):
     # used when creating defaults (server generates user_id)
     profile: Optional[Profile] = Profile()
@@ -38,6 +44,7 @@ class UserSettingsCreate(BaseModel):
     emailPreferences: Optional[List[EmailPref]] = None
     thresholds: Optional[Thresholds] = Thresholds()
     faceSettings: Optional[FaceSettings] = FaceSettings()
+
 
 class UserSettingsResponse(UserSettingsCreate):
     user_id: str

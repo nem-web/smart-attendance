@@ -8,7 +8,7 @@ COLLECTION = "attendance_daily"
 
 
 async def ensure_indexes():
-    """Create unique index to prevent duplicate daily records for the same class + date."""
+    """Create unique index to prevent duplicate daily records for the same class + date."""  # noqa: E501
     await db[COLLECTION].create_index(
         [("classId", 1), ("subjectId", 1), ("date", 1)],
         unique=True,

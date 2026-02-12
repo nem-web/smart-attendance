@@ -1,13 +1,10 @@
 # backend/app/api/routes/settings.py
 from app.db.mongo import db
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from pathlib import Path
 from datetime import datetime, UTC
 
 from app.core.cloudinary_config import cloudinary
-from cloudinary.uploader import upload
 
-from app.db.subjects_repo import ensure_indexes as ensure_subject_indexes
 from app.utils.utils import serialize_bson
 from app.api.deps import get_current_teacher
 from app.services.subject_service import add_subject_for_teacher
@@ -246,8 +243,7 @@ async def replace_settings(user_id_str: str, payload: dict) -> dict:
 
     if teacher_updates:
         result = await db.teachers.update_one(
-            {"userId": user_id},
-            {"$set": {**teacher_updates, "updatedAt": now}}
+            {"userId": user_id}, {"$set": {**teacher_updates, "updatedAt": now}}
         )
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Teacher profile not found")
@@ -276,6 +272,7 @@ async def replace_settings(user_id_str: str, payload: dict) -> dict:
     }
 
     return profile
+
 
 # ---------- My subjects ----------------
 @router.get("/teachers/me/subjects", response_model=list)
@@ -339,8 +336,10 @@ async def get_subject_students(
                 "student_id": uid,
                 "name": user.get("name", "Unknown"),
                 "roll": student_doc.get("roll"),
-+               "year": student_doc.get("year"),
-+               "branch": student_doc.get("branch"),
+                +"year": student_doc.get("year"),
+                +"branch": student_doc.get("branch"),
+                "year": student_doc.get("year"),
+                "branch": student_doc.get("branch"),
                 "embeddings": student_doc.get("face_embeddings", []),
                 "avatar": student_doc.get("image_url"),
                 "verified": s.get("verified", False),
