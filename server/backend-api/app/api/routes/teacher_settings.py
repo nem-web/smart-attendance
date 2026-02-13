@@ -336,8 +336,6 @@ async def get_subject_students(
                 "student_id": uid,
                 "name": user.get("name", "Unknown"),
                 "roll": student_doc.get("roll"),
-                +"year": student_doc.get("year"),
-                +"branch": student_doc.get("branch"),
                 "year": student_doc.get("year"),
                 "branch": student_doc.get("branch"),
                 "embeddings": student_doc.get("face_embeddings", []),

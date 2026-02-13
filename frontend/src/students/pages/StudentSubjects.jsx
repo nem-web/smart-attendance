@@ -1,62 +1,88 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowLeft, Home, BookOpen, TrendingUp, User } from "lucide-react";
 import StudentNavigation from "../components/StudentNavigation";
+import { fetchMySubjects } from "../../api/students";
 
 export default function StudentSubjects() {
-  const subjects = [
-    {
-      id: 1,
-      name: "Mathematics",
-      type: "Core",
-      attendance: 92,
-      attended: 23,
-      total: 25,
-      status: "On track",
-      statusColor: "bg-blue-100 text-blue-700",
-      barColor: "bg-emerald-500",
-      message: "Safe above 75% rule",
-      typeColor: "bg-blue-600"
-    },
-    {
-      id: 2,
-      name: "Physics",
-      type: "Lab",
-      attendance: 78,
-      attended: 18,
-      total: 23,
-      status: "Near threshold",
-      statusColor: "bg-blue-100 text-blue-700",
-      barColor: "bg-amber-500",
-      message: "Stay regular to keep 75%+",
-      typeColor: "bg-blue-600"
-    },
-    {
-      id: 3,
-      name: "Chemistry",
-      type: "Theory",
-      attendance: 64,
-      attended: 16,
-      total: 25,
-      status: "At risk",
-      statusColor: "bg-blue-600 text-white", // Adjusted to match design roughly, or stick to standard pills
-      barColor: "bg-rose-500",
-      message: "Need 4 more classes to reach 75%",
-      typeColor: "bg-blue-600"
-    },
-    {
-      id: 4,
-      name: "Computer Science",
-      type: "Elective",
-      attendance: 85,
-      attended: 17,
-      total: 20,
-      status: "Comfortable",
-      statusColor: "bg-blue-100 text-blue-700",
-      barColor: "bg-emerald-500",
-      message: "Well above safe zone",
-      typeColor: "bg-blue-600"
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const data = await fetchMySubjects();
+        
+        // Transform data to match UI
+        const transformed = data.map(sub => {
+          // Standard Logic: 75% threshold
+          const att = sub.attendance || 0;
+          const total = sub.total || 0;
+          const attended = sub.attended || 0;
+          
+          let status = "On track";
+          let statusColor = "bg-emerald-100 text-emerald-700";
+          let barColor = "bg-emerald-500";
+          let message = "Safe above 75% rule";
+          let typeColor = "bg-blue-600"; // default
+
+          // Color coded by type loosely
+          if (sub.type === "Lab") typeColor = "bg-purple-600";
+          if (sub.type === "Elective") typeColor = "bg-indigo-500";
+
+          // Calculate status based on 75% rule
+          if (att < 75) {
+             status = "At risk";
+             statusColor = "bg-rose-100 text-rose-700";
+             barColor = "bg-rose-500";
+             
+             // How many more classes to attend to reach 75%?
+             // (attended + x) / (total + x) >= 0.75
+             // attended + x >= 0.75*total + 0.75x
+             // 0.25x >= 0.75*total - attended
+             // x >= 3*total - 4*attended
+             const needed = Math.ceil(3 * total - 4 * attended);
+             message = needed > 0 
+               ? `Need ${needed} more classes to reach 75%` 
+               : "Attendance is critical";
+
+          } else if (att < 85) {
+             status = "Near threshold";
+             statusColor = "bg-amber-100 text-amber-700";
+             barColor = "bg-amber-500";
+             message = "Stay regular to keep 75%+";
+          }
+
+          return {
+            ...sub,
+            status,
+            statusColor,
+            barColor,
+            message,
+            typeColor
+          };
+        });
+
+        setSubjects(transformed);
+      } catch (err) {
+        console.error("Failed to load subjects", err);
+        setError("Failed to load subjects");
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
+
+    loadData();
+  }, []);
+
+  if (loading) {
+     return (
+        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+     );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -77,10 +103,21 @@ export default function StudentSubjects() {
               <p className="text-slate-500 text-sm">Attendance overview by subject</p>
             </div>
           </div>
+          
+          {error && (
+            <div className="p-4 bg-rose-50 text-rose-600 rounded-lg">
+               {error}
+            </div>
+          )}
 
           {/* Subjects List */}
           <div className="space-y-6">
-            {subjects.map((sub) => (
+            {subjects.length === 0 ? (
+               <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-gray-100">
+                  No subjects enrolled yet.
+               </div>
+            ) : (
+                subjects.map((sub) => (
               <div key={sub.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                 
                 {/* Card Header */}
@@ -111,9 +148,7 @@ export default function StudentSubjects() {
                     <p className="text-xs font-medium text-slate-400">
                       Attended: {sub.attended}/{sub.total} classes ({sub.attendance}%)
                     </p>
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                      sub.status === 'At risk' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'
-                    }`}>
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${sub.statusColor}`}>
                       {sub.status}
                     </span>
                   </div>
@@ -121,7 +156,8 @@ export default function StudentSubjects() {
                 </div>
 
               </div>
-            ))}
+            ))
+            )}
           </div>
 
         </div>

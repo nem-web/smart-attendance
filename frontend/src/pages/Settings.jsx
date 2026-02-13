@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Info,
@@ -38,6 +38,43 @@ export default function Settings() {
   // State for Thresholds
   const [warningVal, setWarningVal] = useState(75);
   const [safeVal, setSafeVal] = useState(85);
+  const sliderRef = useRef(null);
+  const [dragging, setDragging] = useState(null); // 'warning' | 'safe' | null
+
+  useEffect(() => {
+    const handleUp = () => setDragging(null);
+    const handleMove = (e) => {
+      if (!dragging || !sliderRef.current) return;
+      
+      const rect = sliderRef.current.getBoundingClientRect();
+      const percent = Math.min(Math.max(0, ((e.clientX - rect.left) / rect.width) * 100), 100);
+      
+      if (dragging === 'warning') {
+        const newVal = Math.round(percent);
+        // Ensure warning doesn't cross safe
+        if (newVal < safeVal - 1) { // keep at least 1% gap
+          setWarningVal(newVal);
+        }
+      } else if (dragging === 'safe') {
+        const newVal = Math.round(percent);
+        // Ensure safe doesn't cross warning
+        if (newVal > warningVal + 1) { // keep at least 1% gap
+          setSafeVal(newVal);
+        }
+      }
+    };
+    
+    if (dragging) {
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
+    }
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [dragging, warningVal, safeVal]);
+
 
   // State for Theme
   const { theme, setTheme } = useTheme();
@@ -139,7 +176,7 @@ export default function Settings() {
         // Use consistent loader function
         await loadProfile(data);
 
-        setTheme(data?.theme ?? "Light");
+        setTheme(data?.theme ?? data?.settings?.theme ?? "Light");
 
         setNotifications({
           push: data?.settings?.notifications?.push ?? true,
@@ -186,6 +223,18 @@ export default function Settings() {
           branch: profile.branch,
           subjects: profile.subjects,
           avatarUrl: profile.avatarUrl,
+        },
+        settings: {
+          thresholds: {
+            warningVal,
+            safeVal,
+          },
+          notifications,
+          faceSettings: {
+            liveness,
+            sensitivity,
+          },
+          theme,
         },
       };
       const updated = await patchSettings(payload); // your API helper
@@ -417,8 +466,12 @@ export default function Settings() {
                   <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200">
                     Cancel
                   </button>
-                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md">
-                    Save changes
+                  <button 
+                    onClick={saveProfile}
+                    disabled={saving}
+                    className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Save changes"}
                   </button>
                 </div>
               </div>
@@ -452,7 +505,10 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="relative py-8 select-none px-2">
+                  <div 
+                    className="relative py-8 select-none px-2"
+                    ref={sliderRef}
+                  >
                     <div className="h-4 w-full rounded-full bg-gray-100 relative overflow-hidden">
                       <div
                         className="absolute top-0 left-0 h-full bg-rose-400"
@@ -471,12 +527,20 @@ export default function Settings() {
                       ></div>
                     </div>
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-[3px] border-indigo-600 rounded-full shadow-md cursor-ew-resize z-20"
+                      className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-[3px] border-indigo-600 rounded-full shadow-md cursor-ew-resize z-20 hover:scale-110 transition-transform"
                       style={{ left: `calc(${warningVal}% - 12px)` }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        setDragging('warning');
+                      }}
                     ></div>
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-[3px] border-indigo-600 rounded-full shadow-md cursor-ew-resize z-20"
+                      className="absolute top-1/2 -translate-y-1/2 w-6 h-6 bg-white border-[3px] border-indigo-600 rounded-full shadow-md cursor-ew-resize z-20 hover:scale-110 transition-transform"
                       style={{ left: `calc(${safeVal}% - 12px)` }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        setDragging('safe');
+                      }}
                     ></div>
 
                     <div className="absolute top-14 w-full flex text-[11px] font-bold pointer-events-none mt-2">
@@ -519,8 +583,12 @@ export default function Settings() {
                     <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 cursor-pointer">
                       Cancel
                     </button>
-                    <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">
-                      Save changes
+                    <button 
+                      onClick={saveProfile}
+                      disabled={saving}
+                      className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer disabled:opacity-50"
+                    >
+                      {saving ? "Saving..." : "Save changes"}
                     </button>
                   </div>
                 </div>
@@ -827,8 +895,12 @@ export default function Settings() {
                   <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 cursor-pointer">
                     Discard
                   </button>
-                  <button className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer">
-                    Apply settings
+                  <button 
+                    onClick={saveProfile}
+                    disabled={saving}
+                    className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[#4F46E5] text-white hover:bg-[#4338ca] shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "Apply settings"}
                   </button>
                 </div>
               </div>
