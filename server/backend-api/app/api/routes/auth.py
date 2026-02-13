@@ -205,7 +205,7 @@ async def verify_email(token: str = Query(...)):
         {"_id": user["_id"]},
         {
             "$set": {"is_verified": True},
-            "$unset": {"verification_token": "", "verification_expiry": ""},
+            "$unset": {"verification_token": 1, "verification_expiry": 1},
         },
     )
 
@@ -269,7 +269,7 @@ async def google_callback(request: Request):
             {"_id": user["_id"]},
             {
                 "$set": {"is_verified": True},
-                "$unset": {"verification_token": "", "verification_expiry": ""},
+                "$unset": {"verification_token": 1, "verification_expiry": 1},
             },
         )
         logger.info(f"User auto-verified via Google Login: {email}")
