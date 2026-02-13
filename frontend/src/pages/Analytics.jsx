@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import { 
   Download, 
   FileText, 
@@ -58,36 +58,6 @@ const CLASS_BREAKDOWN = [
 ];
 
 export default function Analytics() {
-  const [selectedPeriod, setSelectedPeriod] = useState("Month");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const periodOptions = ["Week", "Month", "Semester"];
-
-  // Handle outside click to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isDropdownOpen]);
-
-  const handlePeriodChange = (period) => {
-    setSelectedPeriod(period);
-    setIsDropdownOpen(false);
-    // TODO: Trigger data fetch when backend is ready
-    // fetchAnalyticsData(period);
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       
@@ -160,37 +130,11 @@ export default function Analytics() {
               <h3 className="font-bold text-lg text-[var(--text-main)]">Attendance trend</h3>
               <p className="text-sm text-[var(--text-body)]">Weekly attendance for the selected range</p>
             </div>
-            <div className="flex gap-2 items-center">
-              {/* Dropdown Container */}
-              <div className="relative" ref={dropdownRef}>
-                <button 
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="text-sm text-gray-600 flex items-center gap-1 hover:bg-gray-50 px-3 py-1.5 rounded border border-gray-200 transition"
-                >
-                  {selectedPeriod} <ChevronDown size={14} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}/>
-                </button>
-
-                {/* Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                    {periodOptions.map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => handlePeriodChange(option)}
-                        className={`w-full text-left px-4 py-2 text-sm transition ${
-                          selectedPeriod === option
-                            ? 'bg-blue-50 text-blue-600 font-medium'
-                            : 'text-gray-700 hover:bg-gray-50'
-                        } ${option === periodOptions[0] ? 'rounded-t-lg' : ''} ${option === periodOptions[periodOptions.length - 1] ? 'rounded-b-lg' : ''}`}
-                      >
-                        {option}
-                        {option === "Month" && !selectedPeriod.includes("(") && <span className="ml-1 text-gray-400 text-xs">(Default)</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setSelectedPeriod("Month")} className="text-sm text-[var(--primary)] font-medium hover:underline">Reset</button>
+            <div className="flex gap-2">
+               <button className="text-sm text-gray-500 flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded">
+                 This month <ChevronDown size={14}/>
+               </button>
+               <button className="text-sm text-[var(--primary)] font-medium hover:underline">Reset</button>
             </div>
           </div>
 

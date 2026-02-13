@@ -2,7 +2,7 @@
 name: "Problem Report"
 about: "Report any issue you face while using the system"
 title: "[BUG] "
-labels: ["bug","apertre3.0"]
+labels: ["bug"]
 assignees: ""
 ---
 

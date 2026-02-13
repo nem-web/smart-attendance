@@ -94,9 +94,6 @@ jobs:
           pip install -r requirements.txt
 
       # Start Services
-      # Start MongoDB (using service container is cleaner, but for full stack locally we might need it)
-      # Wait, we need mongo service for backend.
-
       # Start Backend
       - name: Start Backend
         env:
@@ -131,6 +128,9 @@ jobs:
 
       - name: Build Frontend
         working-directory: frontend
+        # Pass API URL to build
+        env:
+          VITE_API_URL: http://localhost:8000
         run: npm run build
 
       - name: Start Frontend
@@ -138,7 +138,16 @@ jobs:
         run: nohup npm run preview -- --port 4173 > ../frontend.log 2>&1 &
 
       - name: Wait for services
-        run: sleep 15
+        run: |
+          sleep 10
+          # Wait for backend
+          echo "Waiting for Backend..."
+          timeout 60s bash -c 'until curl -s http://localhost:8000/docs > /dev/null; do sleep 2; done'
+          echo "Backend ready."
+          # Wait for frontend
+          echo "Waiting for Frontend..."
+          timeout 60s bash -c 'until curl -s http://localhost:4173 > /dev/null; do sleep 2; done'
+          echo "Frontend ready."
 
       - name: Run E2E Tests
         working-directory: frontend

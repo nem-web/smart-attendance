@@ -7,7 +7,7 @@ import os
 from app.utils.jwt_token import create_jwt
 from urllib.parse import quote
 
-from ...schemas.auth import RegisterRequest, UserResponse, LoginRequest, RegisterResponse
+from ...schemas.auth import RegisterRequest, UserResponse, LoginRequest
 from ...core.security import hash_password, verify_password
 
 # from ...core.email import send_verification_email
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 oauth = OAuth()
 
 
-@router.post("/register", response_model=RegisterResponse)
+@router.post("/register", response_model=UserResponse)
 async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
 
     if len(payload.password.encode("utf-8")) > 72:
@@ -143,6 +143,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
         "role": payload.role,
         "name": payload.name,
         "college_name": payload.college_name,
+        "token": "",  # No token returned to enforce verification
     }
 
 

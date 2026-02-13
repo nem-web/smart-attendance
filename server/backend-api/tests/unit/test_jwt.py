@@ -1,8 +1,7 @@
 import pytest
 import jwt
-import os
-from datetime import datetime, timedelta, UTC
 from app.utils.jwt_token import create_jwt, decode_jwt
+
 
 def test_jwt_lifecycle():
     user_id = "test_user"
@@ -20,6 +19,7 @@ def test_jwt_lifecycle():
     assert decoded["role"] == role
     assert decoded["email"] == email
     assert "exp" in decoded
+
 
 def test_jwt_invalid_token():
     with pytest.raises(jwt.DecodeError):

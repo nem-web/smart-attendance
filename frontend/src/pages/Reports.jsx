@@ -6,10 +6,7 @@ import {
   ChevronDown, 
   RotateCcw, 
   Search,
-  Filter,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown
+  Filter
 } from "lucide-react";
 import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
 import DateRange from '../components/DateRange.jsx';
@@ -22,7 +19,6 @@ export default function Reports() {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
   const [startDate, setStartDate] = useState(new Date());
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   // const [selectedFilter, setSelectedFilter] = useState("All");
 
@@ -66,79 +62,12 @@ export default function Reports() {
 
     return {
       ...s,
-      present,
-      absent,
       total,
       percentage,
       status,
       color
     };
   });
-
-  // Sorting function
-  const handleSort = (key) => {
-    let direction = 'asc';
-    
-    if (sortConfig.key === key) {
-      if (sortConfig.direction === 'asc') {
-        direction = 'desc';
-      } else if (sortConfig.direction === 'desc') {
-        direction = null;
-      } else {
-        direction = 'asc';
-      }
-    }
-    
-    setSortConfig({ key, direction });
-  };
-
-  // Apply sorting
-  const sortedStudents = React.useMemo(() => {
-    if (!sortConfig.key || !sortConfig.direction) {
-      return enhancedStudents;
-    }
-
-    return [...enhancedStudents].sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortConfig.key) {
-        case 'total':
-          aValue = a.total;
-          bValue = b.total;
-          break;
-        case 'attended':
-          aValue = a.present || 0;
-          bValue = b.present || 0;
-          break;
-        case 'percentage':
-          aValue = a.percentage;
-          bValue = b.percentage;
-          break;
-        default:
-          return 0;
-      }
-
-      if (sortConfig.direction === 'asc') {
-        return aValue - bValue;
-      } else {
-        return bValue - aValue;
-      }
-    });
-  }, [enhancedStudents, sortConfig]);
-
-  // Get sort icon for column
-  const getSortIcon = (columnKey) => {
-    if (sortConfig.key !== columnKey) {
-      return <ArrowUpDown size={14} className="text-gray-400" />;
-    }
-    if (sortConfig.direction === 'asc') {
-      return <ArrowUp size={14} className="text-blue-600" />;
-    }
-    if (sortConfig.direction === 'desc') {
-      return <ArrowDown size={14} className="text-blue-600" />;
-    }
-    return <ArrowUpDown size={14} className="text-gray-400" />;
-  };
 
 
   return (
@@ -248,47 +177,23 @@ export default function Reports() {
             <thead className="bg-white">
               <tr className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-50">
                 <th className="px-6 py-4">Student</th>
-                <th 
-                  className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors select-none"
-                  onClick={() => handleSort('total')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Total classes</span>
-                    {getSortIcon('total')}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors select-none"
-                  onClick={() => handleSort('attended')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Attended</span>
-                    {getSortIcon('attended')}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors select-none"
-                  onClick={() => handleSort('percentage')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Attendance %</span>
-                    {getSortIcon('percentage')}
-                  </div>
-                </th>
+                <th className="px-6 py-4">Total classes</th>
+                <th className="px-6 py-4">Attended</th>
+                <th className="px-6 py-4">Attendance %</th>
                 <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {sortedStudents.map((row) => (
-                <tr key={row.student_id} className="hover:bg-gray-50 transition-colors">
+              {enhancedStudents.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div>
                       <div className="font-semibold text-[var(--text-main)]">{row.name}</div>
                       <div className="text-xs text-gray-400">ID: {row.roll} • {row.branch.toUpperCase()}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.total}</td>
-                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.present}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attendance.present + row.attendance.absent}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attendance.present}</td>
                   <td className="px-6 py-4 text-sm font-bold text-[var(--text-main)]">{row.percentage}%</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(row.color)}`}>
@@ -303,16 +208,7 @@ export default function Reports() {
 
         {/* Footer */}
         <div className="bg-gray-50 p-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
-          <span>
-            Showing {sortedStudents.length} of {verifiedStudents.length} students
-            {sortConfig.key && sortConfig.direction && (
-              <> • Sorted by {
-                sortConfig.key === 'total' ? 'Total Classes' :
-                sortConfig.key === 'attended' ? 'Attended' :
-                'Attendance %'
-              } ({sortConfig.direction === 'asc' ? 'Low to High' : 'High to Low'})</>
-            )}
-          </span>
+          <span>Showing top 5 of 132 students • Sorted by lowest attendance</span>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
