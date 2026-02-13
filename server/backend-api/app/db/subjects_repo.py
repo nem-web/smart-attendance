@@ -1,7 +1,7 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from bson import ObjectId
 from app.db.mongo import db
-
+UTC = timezone.utc
 COLLECTION = "subjects"
 
 

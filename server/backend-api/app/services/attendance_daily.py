@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from bson import ObjectId
 
@@ -6,6 +6,7 @@ from app.db.mongo import db
 
 COLLECTION = "attendance_daily"
 
+UTC = timezone.utc
 
 async def ensure_indexes():
     """Create unique index to prevent duplicate daily records for the same class + date."""  # noqa: E501

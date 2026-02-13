@@ -1,8 +1,8 @@
 # backend/app/api/routes/settings.py
 from app.db.mongo import db
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from datetime import datetime, UTC
-
+from datetime import datetime, timezone
+UTC = timezone.utc
 from app.core.cloudinary_config import cloudinary
 
 from app.utils.utils import serialize_bson

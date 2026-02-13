@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Request
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
-from datetime import datetime, timedelta, UTC, timezone
+from datetime import datetime, timedelta, timezone
 import secrets
 import os
 from app.utils.jwt_token import create_jwt
@@ -15,6 +15,7 @@ from ...core.email import BrevoEmailService
 from ...core.config import BACKEND_BASE_URL
 from ...db.mongo import db
 import logging
+UTC = timezone.utc
 
 logger = logging.getLogger(__name__)
 
