@@ -1,0 +1,19 @@
+name: Auto Request Reviewers
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  assign-reviewers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: kentaro-m/auto-assign-action@v1.2.5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          addReviewers: true
+          addAssignees: author
+          reviewers: |
+            nem-web
+            Suvam-paul145
+            adi271001
