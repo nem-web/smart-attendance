@@ -26,3 +26,6 @@ cloudinary
 
 pytest
 httpx
+structlog>=23.0.0
+python-json-logger>=2.0.0
+sentry-sdk[fastapi]>=1.40.0

@@ -10,3 +10,6 @@ opencv-python-headless
 numpy==1.26.4
 pillow==11.0.0
 scikit-learn
+structlog>=23.0.0
+python-json-logger>=2.0.0
+sentry-sdk[fastapi]>=1.40.0

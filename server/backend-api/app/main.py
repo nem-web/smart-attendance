@@ -1,10 +1,12 @@
-import logging
+﻿import logging
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.api.routes import teacher_settings as settings_router
 from .api.routes.attendance import router as attendance_router
@@ -16,14 +18,26 @@ from app.services.attendance_daily import (
 )
 from app.services.ml_client import ml_client
 
+# New Imports
+from .core.logging import setup_logging
+from .core.error_handlers import smart_attendance_exception_handler, generic_exception_handler
+from .core.exceptions import SmartAttendanceException
+from .middleware.correlation import CorrelationIdMiddleware
+from .middleware.timing import TimingMiddleware
+
 load_dotenv()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+# Setup structured logging
+setup_logging()
 logger = logging.getLogger(APP_NAME)
 
+if SENTRY_DSN := os.getenv("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.getenv("ENVIRONMENT", "development"),
+        traces_sample_rate=0.1,
+        integrations=[FastApiIntegration()]
+    )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,6 +57,10 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(title=APP_NAME, lifespan=lifespan)
+
+    # Middleware
+    app.add_middleware(CorrelationIdMiddleware)
+    app.add_middleware(TimingMiddleware)
 
     # CORS – use config ORIGINS so production can override via CORS_ORIGINS env
     app.add_middleware(
@@ -66,6 +84,10 @@ def create_app() -> FastAPI:
         same_site="lax",
         https_only=False,
     )
+
+    # Exception Handlers
+    app.add_exception_handler(SmartAttendanceException, smart_attendance_exception_handler)
+    app.add_exception_handler(Exception, generic_exception_handler)
 
     # Routers
     app.include_router(auth_router)
