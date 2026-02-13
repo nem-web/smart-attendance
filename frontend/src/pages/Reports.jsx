@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Download, 
   FileText, 
@@ -6,7 +6,8 @@ import {
   ChevronDown, 
   RotateCcw, 
   Search,
-  Filter
+  Filter,
+  ArrowUpDown
 } from "lucide-react";
 import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
 import DateRange from '../components/DateRange.jsx';
@@ -63,11 +64,63 @@ export default function Reports() {
     return {
       ...s,
       total,
+      attended: present,
       percentage,
       status,
       color
     };
   });
+
+  const [sortConfig, setSortConfig] = useState({
+    key: "percentage",
+    direction: "asc",
+  });
+
+  const handleSort = (key) => {
+    setSortConfig((current) => {
+      if (current?.key === key) {
+        return {
+          key,
+          direction: current.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return { key, direction: "asc" };
+    });
+  };
+
+  const sortedStudents = useMemo(() => {
+    if (!sortConfig) return enhancedStudents;
+
+    const getValue = (student) => {
+      switch (sortConfig.key) {
+        case "total":
+          return student.total ?? 0;
+        case "attended":
+          return student.attended ?? 0;
+        case "percentage":
+        default:
+          return student.percentage ?? 0;
+      }
+    };
+
+    return [...enhancedStudents].sort((a, b) => {
+      const aVal = getValue(a);
+      const bVal = getValue(b);
+
+      if (aVal === bVal) return 0;
+
+      return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+    });
+  }, [enhancedStudents, sortConfig]);
+
+  const totalStudents = enhancedStudents.length;
+
+  const sortLabels = {
+    total: "Total classes",
+    attended: "Attended",
+    percentage: "Attendance %",
+  };
 
 
   return (
@@ -177,14 +230,68 @@ export default function Reports() {
             <thead className="bg-white">
               <tr className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-50">
                 <th className="px-6 py-4">Student</th>
-                <th className="px-6 py-4">Total classes</th>
-                <th className="px-6 py-4">Attended</th>
-                <th className="px-6 py-4">Attendance %</th>
+                <th className="px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={() => handleSort("total")}
+                    className="inline-flex items-center gap-1 hover:text-[var(--primary)]"
+                  >
+                    <span className="uppercase tracking-wider text-xs font-medium">
+                      Total classes
+                    </span>
+                    <ArrowUpDown
+                      size={14}
+                      className={
+                        sortConfig?.key === "total"
+                          ? "text-[var(--primary)]"
+                          : "text-gray-300"
+                      }
+                    />
+                  </button>
+                </th>
+                <th className="px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={() => handleSort("attended")}
+                    className="inline-flex items-center gap-1 hover:text-[var(--primary)]"
+                  >
+                    <span className="uppercase tracking-wider text-xs font-medium">
+                      Attended
+                    </span>
+                    <ArrowUpDown
+                      size={14}
+                      className={
+                        sortConfig?.key === "attended"
+                          ? "text-[var(--primary)]"
+                          : "text-gray-300"
+                      }
+                    />
+                  </button>
+                </th>
+                <th className="px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={() => handleSort("percentage")}
+                    className="inline-flex items-center gap-1 hover:text-[var(--primary)]"
+                  >
+                    <span className="uppercase tracking-wider text-xs font-medium">
+                      Attendance %
+                    </span>
+                    <ArrowUpDown
+                      size={14}
+                      className={
+                        sortConfig?.key === "percentage"
+                          ? "text-[var(--primary)]"
+                          : "text-gray-300"
+                      }
+                    />
+                  </button>
+                </th>
                 <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {enhancedStudents.map((row) => (
+              {sortedStudents.map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div>
@@ -192,8 +299,8 @@ export default function Reports() {
                       <div className="text-xs text-gray-400">ID: {row.roll} • {row.branch.toUpperCase()}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attendance.present + row.attendance.absent}</td>
-                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attendance.present}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.total}</td>
+                  <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.attended}</td>
                   <td className="px-6 py-4 text-sm font-bold text-[var(--text-main)]">{row.percentage}%</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(row.color)}`}>
@@ -208,7 +315,14 @@ export default function Reports() {
 
         {/* Footer */}
         <div className="bg-gray-50 p-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
-          <span>Showing top 5 of 132 students • Sorted by lowest attendance</span>
+          <span>
+            {`Showing ${totalStudents} of ${totalStudents} students`}
+            {sortConfig
+              ? ` • Sorted by ${sortLabels[sortConfig.key]} (${
+                  sortConfig.direction === "asc" ? "low to high" : "high to low"
+                })`
+              : ""}
+          </span>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
