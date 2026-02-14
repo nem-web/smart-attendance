@@ -72,7 +72,7 @@ export default function AddStudents() {
 
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC]">
+    <div className="flex h-screen bg-[var(--bg-primary)]">
       
       {/* --- MAIN CONTENT --- */}
       <main className="flex-1 m-auto p-8 overflow-y-auto">
@@ -81,17 +81,17 @@ export default function AddStudents() {
         <div className="flex justify-between items-start mb-8">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-2xl font-bold text-gray-900">Add students</h2>
-              <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Unverified list</span>
+              <h2 className="text-2xl font-bold text-[var(--text-main)]">Add students</h2>
+              <span className="px-2.5 py-0.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full text-xs font-bold">Unverified list</span>
             </div>
-            <p className="text-gray-500 text-sm">Students who added subjects in their profile appear here automatically. Review and verify them for face-recognition attendance.</p>
+            <p className="text-[var(--text-body)] opacity-90 text-sm">Students who added subjects in their profile appear here automatically. Review and verify them for face-recognition attendance.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2 transition shadow-sm">
+            <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-hover)] flex items-center gap-2 transition shadow-sm">
               <RefreshCw size={16} />
               Refresh
             </button>
-            <button className="px-4 py-2 bg-[#4F46E5] text-white rounded-lg text-sm font-medium hover:bg-[#4338ca] flex items-center gap-2 shadow-md transition">
+            <button className="px-4 py-2 bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-lg text-sm font-medium hover:bg-[var(--primary-hover)] flex items-center gap-2 shadow-md transition">
               <CheckCircle size={16} />
               Verify all visible
             </button>
@@ -99,26 +99,26 @@ export default function AddStudents() {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] shadow-sm p-5 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
             <div className="md:col-span-5 space-y-1.5">
-              <label className="text-xs font-semibold text-gray-500">Search</label>
+              <label className="text-xs font-semibold text-[var(--text-body)] opacity-90">Search</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" size={18} />
                 <input 
                   type="text" 
                   placeholder="Search by name or roll number" 
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                 />
               </div>
             </div>
             <div className="md:col-span-4 space-y-1.5">
-              <label className="text-xs font-semibold text-gray-500">Subjects</label>
+              <label className="text-xs font-semibold text-[var(--text-body)] opacity-90">Subjects</label>
               <div className="relative">
                 <select
                   value={selectedSubject || ""}
                   onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700"
+                  className="w-full pl-3 pr-10 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm appearance-none focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-main)]"
                 >
                   <option value="">Select subject</option>
                   {subjects.map(s => (
@@ -127,36 +127,36 @@ export default function AddStudents() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70 pointer-events-none" size={16} />
               </div>
             </div>
             <div className="md:col-span-3 space-y-1.5">
-              <label className="text-xs font-semibold text-gray-500">Year</label>
+              <label className="text-xs font-semibold text-[var(--text-body)] opacity-90">Year</label>
               <div className="relative">
-                <select className="w-full pl-3 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700">
+                <select className="w-full pl-3 pr-10 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm appearance-none focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-main)]">
                   <option>All years</option>
                   <option>1st Year</option>
                   <option>2nd Year</option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70 pointer-events-none" size={16} />
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 border-t border-gray-50">
-             <p className="text-xs text-gray-500">
-               <span className="font-bold text-gray-700">Auto-populated list:</span> Whenever a student adds a new subject on their profile, they appear here as <span className="font-bold text-gray-900">unverified</span> until you confirm or delete.
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 border-t border-[var(--border-color)]">
+             <p className="text-xs text-[var(--text-body)] opacity-80">
+               <span className="font-bold text-[var(--text-body)]">Auto-populated list:</span> Whenever a student adds a new subject on their profile, they appear here as <span className="font-bold text-[var(--text-main)]">unverified</span> until you confirm or delete.
              </p>
-             <div className="flex bg-gray-100 p-1 rounded-lg">
+             <div className="flex bg-[var(--bg-secondary)] p-1 rounded-lg">
                 <button 
                   onClick={() => setFilterType("Unverified only")}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filterType === "Unverified only" ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filterType === "Unverified only" ? "bg-[var(--action-info-bg)] text-[var(--text-on-primary)] shadow-sm" : "text-[var(--text-body)] hover:text-[var(--text-main)]"}`}
                 >
                   Unverified only
                 </button>
                 <button 
                   onClick={() => setFilterType("All requests")}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filterType === "All requests" ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filterType === "All requests" ? "bg-[var(--primary)] text-[var(--text-on-primary)] shadow-sm" : "text-[var(--text-body)] hover:text-[var(--text-main)] hover:bg-[var(--primary-hover)]"}`}
                 >
                   All requests
                 </button>
@@ -165,21 +165,21 @@ export default function AddStudents() {
         </div>
 
         {/* List Section */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-[var(--border-color)] flex justify-between items-center">
             <div>
-              <h3 className="font-bold text-gray-900 text-lg">Unverified students</h3>
-              <p className="text-sm text-gray-500">Review face images, details, and linked subjects before allowing them into attendance sessions.</p>
+              <h3 className="font-bold text-[var(--text-main)] text-lg">Unverified students</h3>
+              <p className="text-sm text-[var(--text-body)] opacity-80">Review face images, details, and linked subjects before allowing them into attendance sessions.</p>
             </div>
-            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
+            <span className="bg-[var(--warning)]/10 text-[var(--warning)] text-xs font-bold px-3 py-1 rounded-full">
               {unverifiedCount} pending approvals
             </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px]">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <thead className="bg-[var(--bg-secondary)]">
+                <tr className="text-left text-xs font-semibold text-[var(--text-body)] uppercase tracking-wider">
                   <th className="px-6 py-4">Roll no</th>
                   <th className="px-6 py-4">Student</th>
                   <th className="px-6 py-4">Year</th>
@@ -188,31 +188,31 @@ export default function AddStudents() {
                   <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[var(--border-color)]">
                 {filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50 transition-colors group">
+                  <tr key={student.id} className="hover:bg-[var(--bg-hover)] transition-colors group">
 
-                    <td className="px-6 py-4 text-sm font-medium text-gray-700">{student.roll}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-[var(--text-body)]">{student.roll}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <img src={student.avatar} alt={student.name} className="w-10 h-10 rounded-full bg-gray-100" />
+                        <img src={student.avatar} alt={student.name} className="w-10 h-10 rounded-full bg-[var(--bg-secondary)]" />
                         <div>
-                          <div className="font-semibold text-gray-900">{student.name}</div>
-                          <div className="text-xs text-gray-400">Added {student.addedTime}</div>
+                          <div className="font-semibold text-[var(--text-main)]">{student.name}</div>
+                          <div className="text-xs text-[var(--text-body)] opacity-70">Added {student.addedTime}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{student.year}</td>
-                    <td className="px-6 py-4 text-sm text-gray-800 max-w-[200px]">{student.branch}</td>
+                    <td className="px-6 py-4 text-sm text-[var(--text-body)]">{student.year}</td>
+                    <td className="px-6 py-4 text-sm text-[var(--text-main)] max-w-[200px]">{student.branch}</td>
                     <td className="px-6 py-4">
                       {student.status === "Unverified" ? (
-                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                           <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/30">
+                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)]"></span>
                            Unverified
                          </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
-                           <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--bg-secondary)] text-[var(--text-body)] border-[var(--border-color)]">
+                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-body)] opacity-70"></span>
                            Waiting image
                          </span>
                       )}
@@ -222,7 +222,7 @@ export default function AddStudents() {
                         {!student.verified && (
                           <button
                             onClick={() => handleVerify(student.id)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition shadow-sm"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-[var(--success)] text-[var(--text-on-primary)] rounded-lg text-xs font-bold hover:bg-[var(--success)]/90 transition shadow-sm"
                           >
                             <Check size={14} /> Verify
                           </button>
@@ -230,7 +230,7 @@ export default function AddStudents() {
 
                         <button
                           onClick={() => handleDelete(student.id)}
-                          className="px-3 py-1.5 border border-rose-200 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-50 transition"
+                          className="px-3 py-1.5 border border-[var(--danger)]/30 text-[var(--danger)] rounded-lg text-xs font-bold hover:bg-[var(--danger)]/10 transition"
                         >
                           <X size={14} />
                         </button>
@@ -243,12 +243,12 @@ export default function AddStudents() {
             </table>
           </div>
           
-          <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 text-center">
+          <div className="p-4 bg-[var(--bg-secondary)] border-t border-[var(--border-color)] text-xs text-[var(--text-body)] opacity-90 text-center">
              Older requests are hidden. Adjust filters above to see all previously verified or deleted students.
           </div>
         </div>
         
-        <p className="mt-6 text-xs text-gray-400 text-center">
+        <p className="mt-6 text-xs text-[var(--text-body)] opacity-80 text-center">
           Note: Verified students will start appearing in the attendance marking list for their selected subjects and classes. You can revoke access anytime by deleting their entry from the main Students page.
         </p>
 
@@ -261,7 +261,7 @@ export default function AddStudents() {
 // eslint-disable-next-line no-unused-vars
 function NavItem({ icon: IconComp, label }) {
   return (
-    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors">
+    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[var(--text-body)] hover:bg-[var(--bg-hover)] rounded-lg text-sm font-medium transition-colors">
       <IconComp size={18} />
       <span>{label}</span>
     </button>
