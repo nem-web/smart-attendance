@@ -191,24 +191,64 @@ async def login(payload: LoginRequest):
 
 # ----- Forgot Password flow (Issue #196, #226) -----
 
+OTP_FAILED_ATTEMPTS_MAX = 5
+"""Maximum failed OTP verification attempts before the OTP is cleared (brute-force protection)."""
+
+GENERIC_OTP_ERROR = "Invalid or expired OTP"
+"""Generic error message for OTP failures to prevent email enumeration."""
+
 
 def _generate_otp() -> str:
-    """Generate a secure 6-digit numeric OTP."""
+    """
+    Generate a secure 6-digit numeric OTP.
+
+    Returns:
+        A zero-padded 6-character string of digits (e.g. "042731").
+    """
     return f"{secrets.randbelow(10**6):06d}"
 
 
 def _get_otp_expiry() -> datetime:
-    """OTP valid for 10 minutes."""
+    """
+    Return the datetime at which the current OTP will expire.
+
+    Returns:
+        A timezone-aware UTC datetime 10 minutes from now.
+    """
     return datetime.now(UTC) + timedelta(minutes=10)
 
 
 def _normalize_expiry(dt: datetime | None) -> datetime | None:
-    """Ensure expiry datetime is timezone-aware for comparison."""
+    """
+    Ensure expiry datetime is timezone-aware for comparison with UTC now.
+
+    Args:
+        dt: The expiry datetime from the database (may be naive).
+
+    Returns:
+        The same datetime with UTC tzinfo if it was naive; None if dt is None.
+    """
     if dt is None:
         return None
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt
+
+
+def _clear_otp_fields() -> dict:
+    """
+    Build the $unset document to remove all OTP-related fields from a user.
+
+    Includes legacy reset_otp so any plaintext OTP from older code is removed.
+    """
+    return {
+        "$unset": {
+            "reset_otp": 1,
+            "reset_otp_hash": 1,
+            "otp_expiry": 1,
+            "otp_failed_attempts": 1,
+        }
+    }
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
@@ -217,23 +257,27 @@ async def forgot_password(
     background_tasks: BackgroundTasks,
 ) -> dict:
     """
-    Request a password reset. Sends a 6-digit OTP to the user's email.
-    Returns the same message whether the user exists or not (avoids enumeration).
+    Request a password reset by sending a 6-digit OTP to the user's email.
+
+    Generates a secure OTP, hashes it before storing, and enqueues an email via
+    Brevo. Returns the same message whether the email exists or not to avoid
+    email enumeration.
     """
     user = await db.users.find_one({"email": payload.email})
     if not user:
-        # Same response to avoid email enumeration
         return ForgotPasswordResponse()
 
     otp = _generate_otp()
+    otp_hash = hash_password(otp)
     otp_expiry = _get_otp_expiry()
 
     await db.users.update_one(
         {"_id": user["_id"]},
         {
             "$set": {
-                "reset_otp": otp,
+                "reset_otp_hash": otp_hash,
                 "otp_expiry": otp_expiry,
+                "otp_failed_attempts": 0,
             }
         },
     )
@@ -253,20 +297,41 @@ async def forgot_password(
 async def verify_otp(payload: VerifyOtpRequest) -> dict:
     """
     Verify the OTP sent to the user's email.
-    Returns clear errors: User not found, Invalid OTP, OTP expired (Issue #226).
+
+    Returns a generic 400 error for invalid/expired OTP or unknown email to
+    prevent enumeration. After 5 failed attempts, the OTP is cleared.
     """
     user = await db.users.find_one({"email": payload.email})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
-    stored_otp = user.get("reset_otp")
+    stored_otp_hash = user.get("reset_otp_hash")
     expiry = _normalize_expiry(user.get("otp_expiry"))
+    failed_attempts = user.get("otp_failed_attempts", 0)
+
+    if failed_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+        await db.users.update_one({"_id": user["_id"]}, _clear_otp_fields())
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
     if expiry is None or expiry < datetime.now(UTC):
-        raise HTTPException(status_code=400, detail="OTP expired")
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$inc": {"otp_failed_attempts": 1}},
+        )
+        new_attempts = failed_attempts + 1
+        if new_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+            await db.users.update_one({"_id": user["_id"]}, _clear_otp_fields())
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
-    if not stored_otp or str(stored_otp) != str(payload.otp):
-        raise HTTPException(status_code=400, detail="Invalid OTP")
+    if not stored_otp_hash or not verify_password(payload.otp, stored_otp_hash):
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$inc": {"otp_failed_attempts": 1}},
+        )
+        new_attempts = failed_attempts + 1
+        if new_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+            await db.users.update_one({"_id": user["_id"]}, _clear_otp_fields())
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
     return VerifyOtpResponse()
 
@@ -274,21 +339,24 @@ async def verify_otp(payload: VerifyOtpRequest) -> dict:
 @router.post("/reset-password", response_model=ResetPasswordResponse)
 async def reset_password(payload: ResetPasswordRequest) -> dict:
     """
-    Set new password after OTP verification.
-    Validates OTP again, then updates password and clears reset_otp / otp_expiry.
+    Set a new password after OTP verification.
+
+    Validates the OTP again (hashed comparison), then updates the password
+    and clears all OTP-related fields. Returns a generic 400 for any
+    validation failure to prevent email enumeration.
     """
     user = await db.users.find_one({"email": payload.email})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
-    stored_otp = user.get("reset_otp")
+    stored_otp_hash = user.get("reset_otp_hash")
     expiry = _normalize_expiry(user.get("otp_expiry"))
 
     if expiry is None or expiry < datetime.now(UTC):
-        raise HTTPException(status_code=400, detail="OTP expired")
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
-    if not stored_otp or str(stored_otp) != str(payload.otp):
-        raise HTTPException(status_code=400, detail="Invalid OTP")
+    if not stored_otp_hash or not verify_password(payload.otp, stored_otp_hash):
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
     if len(payload.new_password.encode("utf-8")) > 72:
         raise HTTPException(
@@ -302,7 +370,7 @@ async def reset_password(payload: ResetPasswordRequest) -> dict:
         {"_id": user["_id"]},
         {
             "$set": {"password_hash": new_hash},
-            "$unset": {"reset_otp": 1, "otp_expiry": 1},
+            **_clear_otp_fields(),
         },
     )
 
