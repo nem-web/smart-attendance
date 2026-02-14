@@ -3,9 +3,7 @@ import {
   Download, 
   FileText, 
   ArrowUpRight, 
-  AlertTriangle, 
   Clock, 
-  Calendar,
   ChevronDown
 } from "lucide-react";
 import { 
@@ -18,8 +16,7 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  Legend
+  Cell
 } from "recharts";
 
 // --- Mock Data ---
@@ -33,9 +30,9 @@ const TREND_DATA = [
 ];
 
 const DISTRIBUTION_DATA = [
-  { name: 'Present', value: 72, color: "var(--success)" }, // emerald-500
-  { name: 'Late', value: 9, color: "var(--warning)" },    // amber-500
-  { name: 'Absent', value: 19, color: "var(--danger)" },  // red-500
+  { name: 'Present', value: 72, color: "var(--success)" }, 
+  { name: 'Late', value: 9, color: "var(--warning)" },    
+  { name: 'Absent', value: 19, color: "var(--danger)" },  
 ];
 
 const CLASS_PERFORMANCE = [
@@ -85,7 +82,6 @@ export default function Analytics() {
     setSelectedPeriod(period);
     setIsDropdownOpen(false);
     // TODO: Trigger data fetch when backend is ready
-    // fetchAnalyticsData(period);
   };
 
   return (
@@ -160,43 +156,44 @@ export default function Analytics() {
               <h3 className="font-bold text-lg text-[var(--text-main)]">Attendance trend</h3>
               <p className="text-sm text-[var(--text-body)]">Weekly attendance for the selected range</p>
             </div>
-            <div className="flex gap-2">
-               <button className="text-sm text-[var(--text-body)] flex items-center gap-1 hover:bg-[var(--bg-secondary)] px-2 py-1 rounded">
-                 This month <ChevronDown size={14}/>
-               </button>
-               <button className="text-sm text-[var(--primary)] font-medium hover:underline">Reset</button>
+            
+            {/* --- DROPDOWN SECTION (Fixed) --- */}
             <div className="flex gap-2 items-center">
-              {/* Dropdown Container */}
               <div className="relative" ref={dropdownRef}>
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="text-sm text-gray-600 flex items-center gap-1 hover:bg-gray-50 px-3 py-1.5 rounded border border-gray-200 transition"
+                  className="text-sm text-[var(--text-body)] flex items-center gap-1 hover:bg-[var(--bg-secondary)] px-3 py-1.5 rounded border border-[var(--border-color)] transition"
                 >
                   {selectedPeriod} <ChevronDown size={14} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}/>
                 </button>
 
-                {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  <div className="absolute right-0 top-full mt-1 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg shadow-lg z-10 w-32 overflow-hidden">
                     {periodOptions.map((option) => (
                       <button
                         key={option}
                         onClick={() => handlePeriodChange(option)}
                         className={`w-full text-left px-4 py-2 text-sm transition ${
                           selectedPeriod === option
-                            ? 'bg-blue-50 text-blue-600 font-medium'
-                            : 'text-gray-700 hover:bg-gray-50'
-                        } ${option === periodOptions[0] ? 'rounded-t-lg' : ''} ${option === periodOptions[periodOptions.length - 1] ? 'rounded-b-lg' : ''}`}
+                            ? 'bg-[var(--primary)] text-[var(--text-on-primary)] font-medium'
+                            : 'text-[var(--text-main)] hover:bg-[var(--bg-secondary)]'
+                        }`}
                       >
                         {option}
-                        {option === "Month" && !selectedPeriod.includes("(") && <span className="ml-1 text-gray-400 text-xs">(Default)</span>}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              <button onClick={() => setSelectedPeriod("Month")} className="text-sm text-[var(--primary)] font-medium hover:underline">Reset</button>
+              <button 
+                onClick={() => setSelectedPeriod("Month")} 
+                className="text-sm text-[var(--primary)] font-medium hover:underline"
+              >
+                Reset
+              </button>
             </div>
+            {/* --- END DROPDOWN SECTION --- */}
+
           </div>
 
           <div className="h-[300px] w-full">
@@ -230,7 +227,6 @@ export default function Analytics() {
             
             <div className="flex items-center justify-between">
               <div className="h-32 w-32 relative">
-                {/* Centered Text for Donut */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-xl font-bold text-[var(--text-main)]">89%</span>
                   <span className="text-[10px] text-[var(--text-body)] opacity-80">avg</span>
@@ -253,15 +249,14 @@ export default function Analytics() {
                 </ResponsiveContainer>
               </div>
 
-              {/* Custom Legend */}
               <div className="space-y-2">
                 {DISTRIBUTION_DATA.map((item, i) => (
                   <div key={i} className="flex items-center justify-between text-xs w-28">
-                     <div className="flex items-center gap-2">
-                       <span className="w-2 h-2 rounded-full" style={{backgroundColor: item.color}}></span>
-                       <span className="text-[var(--text-body)] opacity-80">{item.name}</span>
-                     </div>
-                     <span className="font-bold text-[var(--text-main)]">{item.value}%</span>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{backgroundColor: item.color}}></span>
+                        <span className="text-[var(--text-body)] opacity-80">{item.name}</span>
+                      </div>
+                      <span className="font-bold text-[var(--text-main)]">{item.value}%</span>
                   </div>
                 ))}
               </div>
@@ -274,11 +269,11 @@ export default function Analytics() {
             <div className="space-y-3">
               {CLASS_PERFORMANCE.map((c, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
-                   <div className="flex items-center gap-3">
-                     <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
-                     <span className="text-[var(--text-body)]">{c.name}</span>
-                   </div>
-                   <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
+                      <span className="text-[var(--text-body)]">{c.name}</span>
+                    </div>
+                    <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
                 </div>
               ))}
             </div>
@@ -290,11 +285,11 @@ export default function Analytics() {
             <div className="space-y-3">
               {CLASS_RISK.map((c, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
-                   <div className="flex items-center gap-3">
-                     <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
-                     <span className="text-[var(--text-body)]">{c.name}</span>
-                   </div>
-                   <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
+                      <span className="text-[var(--text-body)]">{c.name}</span>
+                    </div>
+                    <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
                 </div>
               ))}
             </div>
@@ -318,24 +313,21 @@ export default function Analytics() {
               
               {/* Progress Bar Container */}
               <div className="h-4 w-full bg-[var(--bg-card)] rounded-full flex overflow-hidden shadow-inner mb-2">
-                {/* Present */}
                 <div 
                   className={`h-full ${cls.color === 'red' ? 'bg-[var(--danger)]' : cls.color === 'amber' ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'}`} 
                   style={{width: `${cls.present}%`}}
                 ></div>
-                {/* Late */}
                 <div className="h-full bg-[var(--warning)]/40" style={{width: `${cls.late}%`}}></div>
-                {/* Absent */}
                 <div className="h-full bg-[var(--danger)]/40" style={{width: `${cls.absent}%`}}></div>
               </div>
 
               <div className="flex justify-between items-center text-xs">
-                 <span className={`px-2 py-0.5 rounded text-[var(--text-on-primary)] font-bold ${cls.color === 'red' ? 'bg-[var(--danger)]' : cls.color === 'amber' ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'}`}>
-                   {cls.present}% present
-                 </span>
-                 <span className="text-[var(--text-body)] opacity-80">
-                   {cls.late}% late · {cls.absent}% absent
-                 </span>
+                  <span className={`px-2 py-0.5 rounded text-[var(--text-on-primary)] font-bold ${cls.color === 'red' ? 'bg-[var(--danger)]' : cls.color === 'amber' ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'}`}>
+                    {cls.present}% present
+                  </span>
+                  <span className="text-[var(--text-body)] opacity-80">
+                    {cls.late}% late · {cls.absent}% absent
+                  </span>
               </div>
             </div>
           ))}
