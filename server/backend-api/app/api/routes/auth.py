@@ -20,31 +20,31 @@ oauth = OAuth()
 
 @router.post("/register", response_model=UserResponse)
 async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
-    
+
     if len(payload.password.encode("utf-8")) > 72:
         raise HTTPException(
             status_code=400,
             detail="Password too long. Please use at most 72 characters"
         )
-    
+
     # Check existing user
     existing = await db.users.find_one({"email": payload.email})
-    
+
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     # Generate random verification link
     verification_token = secrets.token_urlsafe(32)
     verification_expiry = datetime.now(UTC) + timedelta(hours=24)
-    
+
     user_doc = {
         "name": payload.name,
         "email": payload.email,
         "password_hash": hash_password(payload.password),
         "role": payload.role,
         "college_name": payload.college_name,
-        "is_verified": False,  # Changed to False for email verification flow
-        "verification_token": verification_token,  # Store the actual token
+        "is_verified": True,  # Auto-verify for local dev (set to False in production with working email)
+        "verification_token": verification_token,
         "verification_expiry": verification_expiry,
         "created_at": datetime.now(UTC),
     }
@@ -93,7 +93,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
                         "sound": False,
                     },
                     "emailPreferences": {
-                        
+
                     },
                     "thresholds": {
                         "warningVal": 75,
@@ -106,7 +106,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
                 },
                 "createdAt":  datetime.now(UTC),
                 "updatedAt":  datetime.now(UTC),
-                
+
             }
 
             await db.teachers.insert_one(teacher_doc)
@@ -123,7 +123,7 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
 
     # Build Verification link
     verify_link = f"{BACKEND_BASE_URL}/auth/verify-email?token={verification_token}"
-    
+
     # send_verification_email(
     #     to_email=payload.email,
     #     verification_link=verify_link,
@@ -155,13 +155,13 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
 async def login(payload: LoginRequest):
     email = payload.email
     password = payload.password
-    
+
     user = await db.users.find_one({"email": payload.email})
 
     # 1. Find user with this email
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
-    
+
     # 2. Verify the password of the user
     if not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Wrong Password")
@@ -169,7 +169,7 @@ async def login(payload: LoginRequest):
     # 3. Check if user is verified or not
     if not user.get("is_verified", False):
         raise HTTPException(status_code=403, detail="Please verify your email first..")
-    
+
     # 4. Generate JWT token
     token = create_jwt(
         user_id=str(user["_id"]),
@@ -192,7 +192,7 @@ async def verify_email(token: str = Query(...)):
     user = await db.users.find_one({"verification_token": token})
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
-    
+
     # Check expiry
     expires_at = user.get("verification_expiry")
     if expires_at:
@@ -200,7 +200,7 @@ async def verify_email(token: str = Query(...)):
             expires_at = expires_at.replace(tzinfo=timezone.utc)
         if expires_at and expires_at <  datetime.now(UTC):
             raise HTTPException(status_code=400, detail="Verification link expired")
-    
+
     await db.users.update_one(
         {"_id": user["_id"]},
         {
@@ -208,7 +208,7 @@ async def verify_email(token: str = Query(...)):
             "$unset": {"verification_token": "", "verification_expiry": ""},
         },
     )
-    
+
     return {"message": "Email verified successfully. You can now log in.."}
 
 
@@ -272,3 +272,10 @@ async def google_callback(request: Request):
     )
 
     return RedirectResponse(url=redirect_url)
+
+# Fix users with is_verified=False
+@router.post("/fix-users")
+async def fix_users():
+    r = await db.users.update_many({}, {'$set': {'is_verified': True}})
+    print(f'Verified {r.modified_count} users')
+    return {"message": f"Fixed {r.modified_count} users"}

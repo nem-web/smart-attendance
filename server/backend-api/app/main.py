@@ -20,6 +20,8 @@ from app.api.routes import teacher_settings as settings_router
 from app.core.cloudinary_config import cloudinary
 from app.services.ml_client import ml_client
 from app.services.attendance_daily import ensure_indexes as ensure_attendance_daily_indexes
+from app.api.routes.qr import qr_router, qr_attendance_router
+from app.db.nonce_store import close_redis
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,6 +37,8 @@ async def lifespan(app: FastAPI):
     yield
     await ml_client.close()
     logger.info("ML client closed")
+    await close_redis()
+    logger.info("Redis connection closed")
 
 
 def create_app() -> FastAPI:
@@ -64,6 +68,8 @@ def create_app() -> FastAPI:
     app.include_router(students_router)
     app.include_router(attendance_router)
     app.include_router(settings_router.router)
+    app.include_router(qr_router)
+    app.include_router(qr_attendance_router)
 
     return app
 
