@@ -23,15 +23,74 @@ export default function StudentList() {
   const [sortOrder, setSortOrder] = useState("desc"); // "asc" or "desc"
   const navigate = useNavigate();
 
-  // Simulating the fetch call you had
+  // Mock data for preview (remove when backend is ready)
   useEffect(() => {
-    fetchMySubjects().then(setSubjects);
+    const mockSubjects = [
+      { _id: '1', name: 'Mathematics', code: 'MATH101' },
+      { _id: '2', name: 'Physics', code: 'PHY201' },
+      { _id: '3', name: 'Computer Science', code: 'CS301' }
+    ];
+    setSubjects(mockSubjects);
+    setSelectedSubject('1'); // Auto-select first subject
+    
+    const mockStudents = [
+      { 
+        _id: '1', 
+        student_id: 'S001', 
+        name: 'Alice Johnson', 
+        roll: 'R101', 
+        verified: true,
+        avatar: 'https://ui-avatars.com/api/?name=Alice+Johnson&background=4F46E5&color=fff',
+        attendance: { present: 85, absent: 5 }
+      },
+      { 
+        _id: '2', 
+        student_id: 'S002', 
+        name: 'Bob Smith', 
+        roll: 'R102', 
+        verified: true,
+        avatar: 'https://ui-avatars.com/api/?name=Bob+Smith&background=4F46E5&color=fff',
+        attendance: { present: 92, absent: 3 }
+      },
+      { 
+        _id: '3', 
+        student_id: 'S003', 
+        name: 'Carol Williams', 
+        roll: 'R103', 
+        verified: true,
+        avatar: 'https://ui-avatars.com/api/?name=Carol+Williams&background=4F46E5&color=fff',
+        attendance: { present: 78, absent: 12 }
+      },
+      { 
+        _id: '4', 
+        student_id: 'S004', 
+        name: 'David Brown', 
+        roll: 'R104', 
+        verified: true,
+        avatar: 'https://ui-avatars.com/api/?name=David+Brown&background=4F46E5&color=fff',
+        attendance: { present: 95, absent: 2 }
+      },
+      { 
+        _id: '5', 
+        student_id: 'S005', 
+        name: 'Emma Davis', 
+        roll: 'R105', 
+        verified: true,
+        avatar: 'https://ui-avatars.com/api/?name=Emma+Davis&background=4F46E5&color=fff',
+        attendance: { present: 88, absent: 7 }
+      },
+      { 
+        _id: '6', 
+        student_id: 'S006', 
+        name: 'Frank Miller', 
+        roll: 'R106', 
+        verified: true,
+        avatar: 'https://ui-avatars.com/api/?name=Frank+Miller&background=4F46E5&color=fff',
+        attendance: { present: 70, absent: 15 }
+      }
+    ];
+    setStudents(mockStudents);
   }, []);
-
-  useEffect(() => {
-    if(!selectedSubject) return;
-    fetchSubjectStudents(selectedSubject).then(setStudents);
-  }, [selectedSubject])
 
   const verifiedStudents = students.filter(
     (s) => s.verified === true
@@ -147,17 +206,17 @@ export default function StudentList() {
         <div className="xl:col-span-3 space-y-4">
           
           {/* Filters Bar */}
-          <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[color:var(--border-color)] shadow-sm">
+          <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] shadow-sm">
             
             {/* Search */}
             <div className="relative w-full mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-body)]" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]" size={18} />
               <input 
                 type="text" 
                 placeholder={t('students.search_placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[color:var(--bg-secondary)] border-none rounded-lg text-sm focus:ring-2 focus:ring-[color:var(--primary)] outline-none"
+                className="w-full pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border-none rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
               />
             </div>
 
@@ -166,7 +225,7 @@ export default function StudentList() {
               <select
                 value={selectedSubject || ""}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="flex items-center gap-1 text-sm font-medium text-[color:var(--text-body)] px-3 py-1.5 hover:bg-[color:var(--bg-secondary)] rounded-lg cursor-pointer"
+                className="flex items-center gap-1 text-sm font-medium text-[var(--text-body)] px-3 py-1.5 hover:bg-[var(--bg-secondary)] rounded-lg cursor-pointer border border-[var(--border-color)] bg-[var(--bg-card)]"
               >
                 <option value="">{t('students.select_subject')}</option>
                 {subjects.map(s => (
@@ -178,7 +237,7 @@ export default function StudentList() {
 
               <button 
                 onClick={handleSortToggle}
-                className="flex items-center gap-1 text-sm font-medium text-[color:var(--text-body)] px-3 py-1.5 hover:bg-[color:var(--bg-secondary)] rounded-lg cursor-pointer"
+                className="flex items-center gap-1 text-sm font-medium text-[var(--text-body)] px-3 py-1.5 hover:bg-[var(--bg-secondary)] rounded-lg cursor-pointer border border-[var(--border-color)] bg-[var(--bg-card)]"
                 title="Sort by attendance"
               >
                 <span className="hidden sm:inline">{t('students.sort_by_attendance')}</span>
@@ -189,7 +248,7 @@ export default function StudentList() {
                 />
               </button>
               
-              <div className="hidden sm:block h-6 w-px bg-[color:var(--border-color)] mx-1"></div>
+              <div className="hidden sm:block h-6 w-px bg-[var(--border-color)] mx-1"></div>
 
               {["All", "High (> 90%)", "Medium (75-90%)", "Low (< 75%)"].map((filter) => {
                 const getLabel = () => {
@@ -390,7 +449,7 @@ export default function StudentList() {
 
           {/* Card 2: Top Performers */}
           {topPerformers.length > 0 && (
-            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-gray-100 shadow-sm">
+            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
               <h3 className="font-semibold text-[var(--text-main)] mb-1">{t('students.stats.top_performers')}</h3>
               <p className="text-xs text-[var(--text-body)] mb-4">{t('students.stats.top_performers_desc')}</p>
               
@@ -398,10 +457,10 @@ export default function StudentList() {
                 {topPerformers.map((s, i) => (
                   <div key={s._id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{i+1}</div>
-                      <span className="text-sm font-medium text-gray-700">{s.name}</span>
+                      <div className="w-6 h-6 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-xs font-bold">{i+1}</div>
+                      <span className="text-sm font-medium text-[var(--text-body)]">{s.name}</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{s.attendancePercentage}%</span>
+                    <span className="text-sm font-bold text-[var(--text-main)]">{s.attendancePercentage}%</span>
                   </div>
                 ))}
               </div>
@@ -410,7 +469,7 @@ export default function StudentList() {
 
           {/* Card 3: Needs Support */}
           {needsSupport.length > 0 && (
-            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-gray-100 shadow-sm">
+            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
               <h3 className="font-semibold text-[var(--text-main)] mb-1">{t('students.stats.needs_support')}</h3>
               <p className="text-xs text-[var(--text-body)] mb-4">{t('students.stats.needs_support_desc')}</p>
               
@@ -418,10 +477,10 @@ export default function StudentList() {
                 {needsSupport.map((s, i) => (
                   <div key={s._id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">{i+1}</div>
-                      <span className="text-sm font-medium text-gray-700">{s.name}</span>
+                      <div className="w-6 h-6 rounded-full bg-[var(--danger)]/10 text-[var(--danger)] flex items-center justify-center text-xs font-bold">{i+1}</div>
+                      <span className="text-sm font-medium text-[var(--text-body)]">{s.name}</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{s.attendancePercentage}%</span>
+                    <span className="text-sm font-bold text-[var(--text-main)]">{s.attendancePercentage}%</span>
                   </div>
                 ))}
               </div>
