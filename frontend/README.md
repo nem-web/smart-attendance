@@ -102,6 +102,7 @@ frontend/
 The main dashboard page that displays attendance overview and statistics.
 
 **Features:**
+
 - Total students count card
 - Today's attendance statistics
 - Average attendance percentage
@@ -113,8 +114,8 @@ The main dashboard page that displays attendance overview and statistics.
 
 ```jsx
 // Usage
-import Dashboard from './pages/Dashboard';
-<Route path="/" element={<Dashboard />} />
+import Dashboard from "./pages/Dashboard";
+<Route path="/" element={<Dashboard />} />;
 ```
 
 ---
@@ -124,6 +125,7 @@ import Dashboard from './pages/Dashboard';
 Authentication page for teachers to access the system.
 
 **Features:**
+
 - Email and password input fields
 - Form validation and submission
 - Forgot password link
@@ -133,6 +135,7 @@ Authentication page for teachers to access the system.
 **Route:** `/login`
 
 **State Management:**
+
 - `email` - stores teacher's email input
 - `password` - stores password input
 
@@ -152,6 +155,7 @@ const submit = async (e) => {
 Interactive page for marking attendance using webcam-based facial recognition.
 
 **Features:**
+
 - Live webcam preview using `react-webcam`
 - Capture snapshot functionality
 - Image preview before submission
@@ -162,10 +166,12 @@ Interactive page for marking attendance using webcam-based facial recognition.
 **Route:** `/mark`
 
 **State Management:**
+
 - `snap` - stores captured image as base64
 - `status` - tracks upload/processing status
 
 **Workflow:**
+
 1. Allow camera access
 2. Position students in frame
 3. Click "Capture" to take snapshot
@@ -184,7 +190,7 @@ const capture = useCallback(() => {
 const submitImage = async () => {
   const res = await fetch("/api/attendance/mark", {
     method: "POST",
-    body: JSON.stringify({ image: snap })
+    body: JSON.stringify({ image: snap }),
   });
 };
 ```
@@ -196,6 +202,7 @@ const submitImage = async () => {
 Comprehensive table view of all registered students with their attendance records.
 
 **Features:**
+
 - Sortable table with student data
 - Photo placeholders for each student
 - Roll number, name, and attendance percentage
@@ -205,6 +212,7 @@ Comprehensive table view of all registered students with their attendance record
 **Route:** `/students`
 
 **Data Structure:**
+
 ```javascript
 {
   roll: "2101",
@@ -214,6 +222,7 @@ Comprehensive table view of all registered students with their attendance record
 ```
 
 **API Integration:**
+
 ```jsx
 useEffect(() => {
   async function load() {
@@ -234,21 +243,19 @@ useEffect(() => {
 Root component that sets up routing and navigation.
 
 **Features:**
+
 - Top navigation bar with branding
 - Theme selector dropdown
 - React Router integration
 - Route definitions for all pages
 
 **Structure:**
+
 ```jsx
 <div>
-  <nav>
-    {/* Navigation bar with theme selector */}
-  </nav>
+  <nav>{/* Navigation bar with theme selector */}</nav>
   <div>
-    <Routes>
-      {/* Route definitions */}
-    </Routes>
+    <Routes>{/* Route definitions */}</Routes>
   </div>
 </div>
 ```
@@ -262,12 +269,14 @@ Root component that sets up routing and navigation.
 React Context provider for managing application themes.
 
 **Features:**
+
 - Three theme options: Light, Dark, Soft
 - Persistent theme storage in localStorage
 - Auto-apply theme on mount
 - `useTheme` hook for accessing theme state
 
 **API:**
+
 ```jsx
 const { theme, setTheme, toggle } = useTheme();
 
@@ -278,12 +287,13 @@ const { theme, setTheme, toggle } = useTheme();
 ```
 
 **Usage:**
+
 ```jsx
-import { useTheme } from './theme/ThemeContext';
+import { useTheme } from "./theme/ThemeContext";
 
 function Component() {
   const { theme, setTheme } = useTheme();
-  
+
   return (
     <select value={theme} onChange={(e) => setTheme(e.target.value)}>
       <option value="light">Light</option>
@@ -305,15 +315,15 @@ Located in `src/index.css`:
 ```css
 :root {
   /* Light theme (default) */
-  --color-primary: #3A7AFE;
-  --color-primary-600: #205BDE;
-  --color-bg: #F9FAFB;
-  --color-surface: #FFFFFF;
-  --color-text: #0F172A;
-  --color-muted: #6B7280;
-  --color-success: #31C48D;
-  --color-warning: #FBBF24;
-  --color-danger: #F87171;
+  --color-primary: #3a7afe;
+  --color-primary-600: #205bde;
+  --color-bg: #f9fafb;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-muted: #6b7280;
+  --color-success: #31c48d;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
 }
 
 [data-theme="dark"] {
@@ -353,17 +363,32 @@ The application provides utility classes for common UI elements:
 ### Steps
 
 1. **Clone the repository** (if not already done)
+
    ```bash
    git clone https://github.com/nem-web/smart-attendance.git
    cd smart-attendance/frontend
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
-3. **Verify installation**
+3. **Setup environment variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` and configure the backend URL:
+
+   ```env
+   VITE_API_URL=http://localhost:8000  # Development
+   # Or use your production backend URL (e.g., Render service)
+   ```
+
+4. **Verify installation**
    ```bash
    npm run lint
    ```
@@ -377,22 +402,24 @@ npm run dev
 ```
 
 This will start the Vite development server at `http://localhost:5173` with:
+
 - ⚡ Hot Module Replacement (HMR)
 - 🔄 Fast Refresh for React components
 - 📦 On-demand compilation
 
 ### Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with HMR |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint to check code quality |
+| Command           | Description                       |
+| ----------------- | --------------------------------- |
+| `npm run dev`     | Start development server with HMR |
+| `npm run build`   | Build for production              |
+| `npm run preview` | Preview production build locally  |
+| `npm run lint`    | Run ESLint to check code quality  |
 
 ### Development Workflow
 
 1. **Run the development server**
+
    ```bash
    npm run dev
    ```
@@ -408,7 +435,7 @@ This will start the Vite development server at `http://localhost:5173` with:
 
 ### Backend Integration
 
-The frontend expects the backend API to be running on `http://localhost:8000`. 
+The frontend expects the backend API to be running on `http://localhost:8000`.
 
 **Note:** For proper API proxying in Vite, you should configure the proxy in `vite.config.js`:
 
@@ -417,16 +444,40 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true
-      }
-    }
-  }
-})
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
+  },
+});
 ```
 
 Make sure to start the backend server before testing API-dependent features.
+
+### Keep-Alive Mechanism
+
+The application implements an automatic background ping to keep the backend service warm and prevent cold starts (particularly useful when deploying to platforms like Render).
+
+**How it works:**
+
+- Automatically triggers a lightweight ping to the backend when the app starts
+- Non-blocking: Does not delay the user interface loading
+- Silent failure handling: Errors are logged but don't affect the app
+- Uses the configured `VITE_API_URL` environment variable
+
+**Configuration:**
+No additional setup required! The keep-alive mechanism is enabled by default and uses your configured backend URL from `.env`.
+
+**Logging:**
+Check the browser console for keep-alive status:
+
+- `[KeepAlive] Backend ping successful` - Backend is responsive
+- `[KeepAlive] Backend ping timeout` - Request took too long (5s timeout)
+- `[KeepAlive] Backend ping failed` - Connection error (check backend URL)
+
+**Optional Enhancement:**
+To enable periodic pings (e.g., every 5 minutes), uncomment the code in [src/utils/keepAlive.js](src/utils/keepAlive.js#L65-L67).
 
 ## 🏗️ Build & Deployment
 
@@ -437,6 +488,7 @@ npm run build
 ```
 
 This creates an optimized production build in the `dist/` folder with:
+
 - Minified JavaScript and CSS
 - Code splitting for better performance
 - Asset optimization
@@ -457,12 +509,14 @@ Serves the production build locally on `http://localhost:4173` for testing.
 Deploy the `dist/` folder to any static hosting service:
 
 - **Vercel**
+
   ```bash
   npm install -g vercel
   vercel --prod
   ```
 
 - **Netlify**
+
   ```bash
   npm install -g netlify-cli
   netlify deploy --prod --dir=dist
@@ -493,6 +547,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ```
 
 Build and run:
+
 ```bash
 docker build -t smart-attendance-frontend .
 docker run -p 80:80 smart-attendance-frontend
@@ -505,12 +560,13 @@ docker run -p 80:80 smart-attendance-frontend
 The project uses Tailwind CSS v4 with PostCSS for utility-first styling.
 
 **Configuration:** `postcss.config.js`
+
 ```javascript
 export default {
   plugins: {
-    '@tailwindcss/postcss': {}
-  }
-}
+    "@tailwindcss/postcss": {},
+  },
+};
 ```
 
 ### Custom Styles
@@ -518,19 +574,27 @@ export default {
 Global styles are defined in `src/index.css`:
 
 1. **Tailwind Import**
+
    ```css
    @import "tailwindcss";
    ```
 
 2. **Theme Variables**
+
    ```css
-   :root { /* CSS variables */ }
+   :root {
+     /* CSS variables */
+   }
    ```
 
 3. **Utility Classes**
    ```css
-   .btn-primary { /* ... */ }
-   .card { /* ... */ }
+   .btn-primary {
+     /* ... */
+   }
+   .card {
+     /* ... */
+   }
    ```
 
 ### Styling Best Practices
@@ -551,6 +615,7 @@ Development: `http://localhost:8000` (via proxy)
 ### API Endpoints Used
 
 #### 1. **Login**
+
 ```javascript
 POST /api/login
 Body: { email, password }
@@ -558,12 +623,14 @@ Response: { ok: true, token: "..." }
 ```
 
 #### 2. **Get Students**
+
 ```javascript
 GET /api/students
 Response: [{ roll, name, attendance }, ...]
 ```
 
 #### 3. **Mark Attendance**
+
 ```javascript
 POST /api/attendance/mark
 Body: { image: "base64..." }
@@ -574,14 +641,14 @@ Response: { ok: true, detected: [...], count: 2 }
 
 ```javascript
 // GET request
-const response = await fetch('/api/students');
+const response = await fetch("/api/students");
 const data = await response.json();
 
 // POST request
-const response = await fetch('/api/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email, password })
+const response = await fetch("/api/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password }),
 });
 ```
 
@@ -592,12 +659,12 @@ const response = await fetch('/api/login', {
 Vite configuration for React:
 
 ```javascript
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-})
+});
 ```
 
 ### `eslint.config.js`
