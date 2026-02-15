@@ -43,8 +43,28 @@ jobs:
               return;
             }
 
-            // 5. STRICT CHECK: Does the user ALREADY have an open issue?
-            // Fetch open issues assigned to this user
+            // 5. NEW: Check if the issue is "On Hold"
+            const onHoldLabel = "on-hold"; // Make sure this matches your label name exactly or lowercase
+            const isHold = issue.labels.some(label => label.name.toLowerCase() === onHoldLabel);
+
+            if (isHold) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `⏳ **Assignment Paused**
+            
+            @${author}, thanks for your interest!
+            
+            However, this issue is currently marked as **on-hold**.
+            👉 This usually means it depends on another task or requires further discussion.
+            
+            Please wait until the label is removed or check out other open issues.`
+              });
+              return;
+            }
+
+            // 6. STRICT CHECK: Does the user ALREADY have an open issue?
             const { data: assignedIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -52,7 +72,6 @@ jobs:
               assignee: author,
             });
 
-            // If user has ANY assigned issues, block them (regardless of PR status).
             if (assignedIssues.length > 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -70,7 +89,7 @@ jobs:
               return;
             }
 
-            // 6. Assign the issue
+            // 7. Assign the issue
             await github.rest.issues.addAssignees({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -78,7 +97,7 @@ jobs:
               assignees: [author],
             });
 
-            // 7. Post success comment
+            // 8. Post success comment
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
