@@ -3,17 +3,14 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import {
-  Bell,
   Download,
   Play,
-  Users,
   Calendar,
   CheckCircle,
   Clock,
-  ChevronRight,
   Loader2,
   AlertTriangle
-} from "lucide-react"; // Assuming you use lucide-react, or replace with your icons
+} from "lucide-react"; 
 import { getTodaySchedule } from "../api/schedule";
 
 export default function Dashboard() {
@@ -349,15 +346,13 @@ export default function Dashboard() {
                   <p className="text-[var(--text-body)]">No classes scheduled for today</p>
                 </div>
               ) : (
-                (() => {
-                  const now = new Date();
-                  return todayClasses.map((cls) => {
-                    const status = getClassStatus(cls.start_time, cls.end_time, now);
-                    const borderColorMap = {
-                      success: 'border-l-[var(--success)]',
-                      warning: 'border-l-[var(--warning)]',
-                      primary: 'border-l-[var(--primary)]'
-                    };
+                todayClasses.map((cls) => {
+                  const status = getClassStatus(cls.start_time, cls.end_time);
+                  const borderColorMap = {
+                    success: 'border-l-[var(--success)]',
+                    warning: 'border-l-[var(--warning)]',
+                    primary: 'border-l-[var(--primary)]'
+                  };
                   const bgColorMap = {
                     success: 'bg-[var(--success)]/10 text-[var(--success)]',
                     warning: 'bg-[var(--warning)]/10 text-[var(--warning)]',
