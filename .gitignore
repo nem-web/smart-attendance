@@ -24,6 +24,8 @@ server/**/*.so
 server/.pytest_cache/
 server/.mypy_cache/
 server/.ruff_cache/
+server/**/.coverage
+server/**/htmlcov/
 
 # ENV FILES (NEVER COMMIT)
 server/.env

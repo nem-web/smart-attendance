@@ -15,6 +15,7 @@ JWT_ALGORITHM = settings.JWT_ALGORITHM
 # Password hashing context using bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def decode_jwt_token(token: str):
     try:
         if token.startswith("Bearer "):
@@ -71,4 +72,3 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(_prehash(plain_password), hashed_password)
-

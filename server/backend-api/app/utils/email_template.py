@@ -1,5 +1,6 @@
 import html
 
+
 def otp_email_template(otp: str, user: str) -> str:
     """
     Generate HTML body for password reset OTP email.
@@ -194,7 +195,6 @@ def otp_email_template(otp: str, user: str) -> str:
 """
 
 
-
 def verification_email_template(verification_link: str, user: str) -> str:
     safe_user = html.escape(user)
     return f"""
@@ -215,7 +215,9 @@ def verification_email_template(verification_link: str, user: str) -> str:
     """
 
 
-def absence_notification_template(student_name: str, subject: str, date: str, teacher_name: str) -> str:
+def absence_notification_template(
+    student_name: str, subject: str, date: str, teacher_name: str
+) -> str:
     """Generate HTML email for absence notification."""
     safe_student = html.escape(student_name)
     safe_subject = html.escape(subject)
@@ -263,7 +265,9 @@ def absence_notification_template(student_name: str, subject: str, date: str, te
 """
 
 
-def low_attendance_warning_template(student_name: str, subject: str, attendance_percentage: float, threshold: int) -> str:
+def low_attendance_warning_template(
+    student_name: str, subject: str, attendance_percentage: float, threshold: int
+) -> str:
     """Generate HTML email for low attendance warning."""
     safe_student = html.escape(student_name)
     safe_subject = html.escape(subject)
@@ -311,7 +315,13 @@ def low_attendance_warning_template(student_name: str, subject: str, attendance_
 """
 
 
-def assignment_reminder_template(student_name: str, assignment_title: str, subject: str, due_date: str, teacher_name: str) -> str:
+def assignment_reminder_template(
+    student_name: str,
+    assignment_title: str,
+    subject: str,
+    due_date: str,
+    teacher_name: str,
+) -> str:
     """Generate HTML email for assignment reminder."""
     safe_student = html.escape(student_name)
     safe_assignment = html.escape(assignment_title)
@@ -361,7 +371,14 @@ def assignment_reminder_template(student_name: str, assignment_title: str, subje
 """
 
 
-def exam_alert_template(student_name: str, exam_name: str, subject: str, exam_date: str, time: str, venue: str) -> str:
+def exam_alert_template(
+    student_name: str,
+    exam_name: str,
+    subject: str,
+    exam_date: str,
+    time: str,
+    venue: str,
+) -> str:
     """Generate HTML email for exam alert."""
     safe_student = html.escape(student_name)
     safe_exam = html.escape(exam_name)
@@ -415,11 +432,13 @@ def exam_alert_template(student_name: str, exam_name: str, subject: str, exam_da
 """
 
 
-def custom_message_template(student_name: str, message_title: str, message_body: str, teacher_name: str) -> str:
+def custom_message_template(
+    student_name: str, message_title: str, message_body: str, teacher_name: str
+) -> str:
     """Generate HTML email for custom message from teacher."""
     safe_student = html.escape(student_name)
     safe_title = html.escape(message_title)
-    safe_message = html.escape(message_body).replace('\n', '<br>')
+    safe_message = html.escape(message_body).replace("\n", "<br>")
     safe_teacher = html.escape(teacher_name)
 
     return f"""

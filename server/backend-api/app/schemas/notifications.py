@@ -9,6 +9,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class SendAbsenceNotificationRequest(BaseModel):
     """Request to send absence notification."""
+
     student_emails: List[EmailStr] = Field(..., max_length=200)
     subject: str
     date: str
@@ -17,6 +18,7 @@ class SendAbsenceNotificationRequest(BaseModel):
 
 class SendLowAttendanceWarningRequest(BaseModel):
     """Request to send low attendance warning."""
+
     student_email: EmailStr
     student_name: str
     subject: str
@@ -26,6 +28,7 @@ class SendLowAttendanceWarningRequest(BaseModel):
 
 class SendAssignmentReminderRequest(BaseModel):
     """Request to send assignment reminder."""
+
     student_emails: List[EmailStr] = Field(..., max_length=200)
     assignment_title: str
     subject: str
@@ -35,6 +38,7 @@ class SendAssignmentReminderRequest(BaseModel):
 
 class SendExamAlertRequest(BaseModel):
     """Request to send exam alert."""
+
     student_emails: List[EmailStr] = Field(..., max_length=200)
     exam_name: str
     subject: str
@@ -45,6 +49,7 @@ class SendExamAlertRequest(BaseModel):
 
 class SendCustomMessageRequest(BaseModel):
     """Request to send custom message."""
+
     student_emails: List[EmailStr] = Field(..., max_length=200)
     message_title: str
     message_body: str = Field(..., min_length=1, max_length=2000)
@@ -53,13 +58,10 @@ class SendCustomMessageRequest(BaseModel):
 
 class EmailLogEntry(BaseModel):
     """Schema for email log entry."""
+
     email_id: Optional[str] = None
     notification_type: Literal[
-        "absence",
-        "low_attendance",
-        "assignment",
-        "exam",
-        "custom"
+        "absence", "low_attendance", "assignment", "exam", "custom"
     ]
     recipient_email: EmailStr
     recipient_name: str
@@ -73,6 +75,7 @@ class EmailLogEntry(BaseModel):
 
 class BulkEmailResponse(BaseModel):
     """Response for bulk email sending."""
+
     total: int
     sent: int
     failed: int
@@ -81,6 +84,7 @@ class BulkEmailResponse(BaseModel):
 
 class EmailStatsResponse(BaseModel):
     """Email statistics for teacher."""
+
     total_sent: int
     total_failed: int
     sent_by_type: dict

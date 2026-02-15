@@ -30,8 +30,6 @@ export const pingBackend = () => {
       signal: controller.signal,
       // Don't send credentials for health check
       credentials: 'omit',
-      // Set a minimal priority to avoid impacting other requests
-      priority: 'low',
     })
       .then((response) => {
         clearTimeout(timeoutId);

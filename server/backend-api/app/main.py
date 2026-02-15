@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -13,7 +13,8 @@ from .api.routes.attendance import router as attendance_router
 from .api.routes.auth import router as auth_router
 from .api.routes.students import router as students_router
 from .api.routes.notifications import router as notifications_router
-from .core.config import APP_NAME
+from .core.config import APP_NAME, ORIGINS
+from .api.routes.analytics import router as analytics_router
 from app.services.attendance_daily import (
     ensure_indexes as ensure_attendance_daily_indexes,
 )
@@ -22,7 +23,10 @@ from app.services.ml_client import ml_client
 # New Imports
 from prometheus_fastapi_instrumentator import Instrumentator
 from .core.logging import setup_logging
-from .core.error_handlers import smart_attendance_exception_handler, generic_exception_handler
+from .core.error_handlers import (
+    smart_attendance_exception_handler,
+    generic_exception_handler,
+)
 from .core.exceptions import SmartAttendanceException
 from .middleware.correlation import CorrelationIdMiddleware
 from .middleware.timing import TimingMiddleware
@@ -40,8 +44,9 @@ if SENTRY_DSN := os.getenv("SENTRY_DSN"):
         dsn=SENTRY_DSN,
         environment=os.getenv("ENVIRONMENT", "development"),
         traces_sample_rate=0.1,
-        integrations=[FastApiIntegration()]
+        integrations=[FastApiIntegration()],
     )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -65,10 +70,7 @@ def create_app() -> FastAPI:
     # CORS MUST be added FIRST so headers are present even on errors
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-        ],
+        allow_origins=ORIGINS,
         allow_origin_regex=r"https://.*\.vercel\.app",
         allow_credentials=True,
         allow_methods=["*"],
@@ -90,7 +92,9 @@ def create_app() -> FastAPI:
     )
 
     # Exception Handlers
-    app.add_exception_handler(SmartAttendanceException, smart_attendance_exception_handler)
+    app.add_exception_handler(
+        SmartAttendanceException, smart_attendance_exception_handler
+    )
     app.add_exception_handler(Exception, generic_exception_handler)
 
     # Routers
@@ -99,6 +103,7 @@ def create_app() -> FastAPI:
     app.include_router(attendance_router)
     app.include_router(settings_router.router)
     app.include_router(notifications_router)
+    app.include_router(analytics_router)
     app.include_router(health_router, tags=["Health"])
 
     return app

@@ -9,7 +9,6 @@ from bson import ObjectId
 
 from ..core.email import BrevoEmailService
 from ..db.mongo import db
-from ..schemas.notifications import EmailLogEntry
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ class NotificationService:
         status: str,
         sent_by: str,
         error_message: str = None,
-        metadata: dict = None
+        metadata: dict = None,
     ) -> str:
         """
         Log email send attempt to database.
@@ -53,7 +52,7 @@ class NotificationService:
             "error_message": error_message,
             "sent_by": ObjectId(sent_by),
             "sent_at": datetime.now(timezone.utc),
-            "metadata": metadata or {}
+            "metadata": metadata or {},
         }
 
         try:
@@ -70,7 +69,7 @@ class NotificationService:
         subject: str,
         date: str,
         teacher_name: str,
-        teacher_id: str
+        teacher_id: str,
     ) -> Dict:
         """Send absence notifications to multiple students."""
         results = {"total": len(student_emails), "sent": 0, "failed": 0, "details": []}
@@ -80,11 +79,9 @@ class NotificationService:
             student = await db.students.find_one({"email": email})
             if not student:
                 results["failed"] += 1
-                results["details"].append({
-                    "email": email,
-                    "status": "failed",
-                    "error": "Student not found"
-                })
+                results["details"].append(
+                    {"email": email, "status": "failed", "error": "Student not found"}
+                )
                 # Log the failure
                 await NotificationService.log_email(
                     notification_type="absence",
@@ -94,7 +91,7 @@ class NotificationService:
                     status="failed",
                     sent_by=teacher_id,
                     error_message="Student not found",
-                    metadata={"subject": subject, "date": date}
+                    metadata={"subject": subject, "date": date},
                 )
                 continue
 
@@ -106,7 +103,7 @@ class NotificationService:
                 student_name=student_name,
                 subject=subject,
                 date=date,
-                teacher_name=teacher_name
+                teacher_name=teacher_name,
             )
 
             # Log the attempt
@@ -118,7 +115,7 @@ class NotificationService:
                 status=result["status"],
                 sent_by=teacher_id,
                 error_message=result.get("error"),
-                metadata={"subject": subject, "date": date}
+                metadata={"subject": subject, "date": date},
             )
 
             if result["status"] == "sent":
@@ -126,18 +123,19 @@ class NotificationService:
             else:
                 results["failed"] += 1
 
-            results["details"].append({
-                "email": email,
-                "status": result["status"],
-                "error": result.get("error")
-            })
+            results["details"].append(
+                {
+                    "email": email,
+                    "status": result["status"],
+                    "error": result.get("error"),
+                }
+            )
 
         return results
 
     @staticmethod
     async def send_low_attendance_warnings(
-        warnings: List[Dict],
-        teacher_id: str
+        warnings: List[Dict], teacher_id: str
     ) -> Dict:
         """Send low attendance warnings to students."""
         results = {"total": len(warnings), "sent": 0, "failed": 0, "details": []}
@@ -155,7 +153,7 @@ class NotificationService:
                 student_name=student_name,
                 subject=subject,
                 attendance_percentage=attendance_percentage,
-                threshold=threshold
+                threshold=threshold,
             )
 
             # Log the attempt
@@ -170,8 +168,8 @@ class NotificationService:
                 metadata={
                     "subject": subject,
                     "attendance_percentage": attendance_percentage,
-                    "threshold": threshold
-                }
+                    "threshold": threshold,
+                },
             )
 
             if result["status"] == "sent":
@@ -179,11 +177,13 @@ class NotificationService:
             else:
                 results["failed"] += 1
 
-            results["details"].append({
-                "email": email,
-                "status": result["status"],
-                "error": result.get("error")
-            })
+            results["details"].append(
+                {
+                    "email": email,
+                    "status": result["status"],
+                    "error": result.get("error"),
+                }
+            )
 
         return results
 
@@ -194,7 +194,7 @@ class NotificationService:
         subject: str,
         due_date: str,
         teacher_name: str,
-        teacher_id: str
+        teacher_id: str,
     ) -> Dict:
         """Send assignment reminders to students."""
         results = {"total": len(student_emails), "sent": 0, "failed": 0, "details": []}
@@ -204,11 +204,9 @@ class NotificationService:
             student = await db.students.find_one({"email": email})
             if not student:
                 results["failed"] += 1
-                results["details"].append({
-                    "email": email,
-                    "status": "failed",
-                    "error": "Student not found"
-                })
+                results["details"].append(
+                    {"email": email, "status": "failed", "error": "Student not found"}
+                )
                 # Log the failure
                 await NotificationService.log_email(
                     notification_type="assignment",
@@ -221,8 +219,8 @@ class NotificationService:
                     metadata={
                         "assignment_title": assignment_title,
                         "subject": subject,
-                        "due_date": due_date
-                    }
+                        "due_date": due_date,
+                    },
                 )
                 continue
 
@@ -235,7 +233,7 @@ class NotificationService:
                 assignment_title=assignment_title,
                 subject=subject,
                 due_date=due_date,
-                teacher_name=teacher_name
+                teacher_name=teacher_name,
             )
 
             # Log the attempt
@@ -250,8 +248,8 @@ class NotificationService:
                 metadata={
                     "assignment_title": assignment_title,
                     "subject": subject,
-                    "due_date": due_date
-                }
+                    "due_date": due_date,
+                },
             )
 
             if result["status"] == "sent":
@@ -259,11 +257,13 @@ class NotificationService:
             else:
                 results["failed"] += 1
 
-            results["details"].append({
-                "email": email,
-                "status": result["status"],
-                "error": result.get("error")
-            })
+            results["details"].append(
+                {
+                    "email": email,
+                    "status": result["status"],
+                    "error": result.get("error"),
+                }
+            )
 
         return results
 
@@ -275,7 +275,7 @@ class NotificationService:
         exam_date: str,
         time: str,
         venue: str,
-        teacher_id: str
+        teacher_id: str,
     ) -> Dict:
         """Send exam alerts to students."""
         results = {"total": len(student_emails), "sent": 0, "failed": 0, "details": []}
@@ -285,11 +285,9 @@ class NotificationService:
             student = await db.students.find_one({"email": email})
             if not student:
                 results["failed"] += 1
-                results["details"].append({
-                    "email": email,
-                    "status": "failed",
-                    "error": "Student not found"
-                })
+                results["details"].append(
+                    {"email": email, "status": "failed", "error": "Student not found"}
+                )
                 # Log the failure
                 await NotificationService.log_email(
                     notification_type="exam",
@@ -304,8 +302,8 @@ class NotificationService:
                         "subject": subject,
                         "exam_date": exam_date,
                         "time": time,
-                        "venue": venue
-                    }
+                        "venue": venue,
+                    },
                 )
                 continue
 
@@ -319,7 +317,7 @@ class NotificationService:
                 subject=subject,
                 exam_date=exam_date,
                 time=time,
-                venue=venue
+                venue=venue,
             )
 
             # Log the attempt
@@ -336,8 +334,8 @@ class NotificationService:
                     "subject": subject,
                     "exam_date": exam_date,
                     "time": time,
-                    "venue": venue
-                }
+                    "venue": venue,
+                },
             )
 
             if result["status"] == "sent":
@@ -345,11 +343,13 @@ class NotificationService:
             else:
                 results["failed"] += 1
 
-            results["details"].append({
-                "email": email,
-                "status": result["status"],
-                "error": result.get("error")
-            })
+            results["details"].append(
+                {
+                    "email": email,
+                    "status": result["status"],
+                    "error": result.get("error"),
+                }
+            )
 
         return results
 
@@ -359,7 +359,7 @@ class NotificationService:
         message_title: str,
         message_body: str,
         teacher_name: str,
-        teacher_id: str
+        teacher_id: str,
     ) -> Dict:
         """Send custom messages to students."""
         results = {"total": len(student_emails), "sent": 0, "failed": 0, "details": []}
@@ -369,11 +369,9 @@ class NotificationService:
             student = await db.students.find_one({"email": email})
             if not student:
                 results["failed"] += 1
-                results["details"].append({
-                    "email": email,
-                    "status": "failed",
-                    "error": "Student not found"
-                })
+                results["details"].append(
+                    {"email": email, "status": "failed", "error": "Student not found"}
+                )
                 # Log the failure
                 await NotificationService.log_email(
                     notification_type="custom",
@@ -385,8 +383,8 @@ class NotificationService:
                     error_message="Student not found",
                     metadata={
                         "message_title": message_title,
-                        "message_body": message_body[:200]  # Truncate for storage
-                    }
+                        "message_body": message_body[:200],  # Truncate for storage
+                    },
                 )
                 continue
 
@@ -398,7 +396,7 @@ class NotificationService:
                 student_name=student_name,
                 message_title=message_title,
                 message_body=message_body,
-                teacher_name=teacher_name
+                teacher_name=teacher_name,
             )
 
             # Log the attempt
@@ -410,7 +408,9 @@ class NotificationService:
                 status=result["status"],
                 sent_by=teacher_id,
                 error_message=result.get("error"),
-                metadata={"message_body": message_body[:200]}  # Store truncated message
+                metadata={
+                    "message_body": message_body[:200]
+                },  # Store truncated message
             )
 
             if result["status"] == "sent":
@@ -418,11 +418,13 @@ class NotificationService:
             else:
                 results["failed"] += 1
 
-            results["details"].append({
-                "email": email,
-                "status": result["status"],
-                "error": result.get("error")
-            })
+            results["details"].append(
+                {
+                    "email": email,
+                    "status": result["status"],
+                    "error": result.get("error"),
+                }
+            )
 
         return results
 
@@ -436,18 +438,15 @@ class NotificationService:
             {
                 "$match": {
                     "sent_by": ObjectId(teacher_id),
-                    "sent_at": {"$gte": since_date}
+                    "sent_at": {"$gte": since_date},
                 }
             },
             {
                 "$group": {
-                    "_id": {
-                        "status": "$status",
-                        "type": "$notification_type"
-                    },
-                    "count": {"$sum": 1}
+                    "_id": {"status": "$status", "type": "$notification_type"},
+                    "count": {"$sum": 1},
                 }
-            }
+            },
         ]
 
         stats_result = await db.email_logs.aggregate(pipeline).to_list(length=None)
@@ -474,13 +473,15 @@ class NotificationService:
                 sent_by_type[ntype][status] += count
 
         # Get recent logs within the time window
-        recent_logs = await db.email_logs.find(
-            {
-                "sent_by": ObjectId(teacher_id),
-                "sent_at": {"$gte": since_date}
-            },
-            {"_id": 0}
-        ).sort("sent_at", -1).limit(10).to_list(length=10)
+        recent_logs = (
+            await db.email_logs.find(
+                {"sent_by": ObjectId(teacher_id), "sent_at": {"$gte": since_date}},
+                {"_id": 0},
+            )
+            .sort("sent_at", -1)
+            .limit(10)
+            .to_list(length=10)
+        )
 
         # Convert ObjectId to string for JSON serialization
         for log in recent_logs:
@@ -491,7 +492,7 @@ class NotificationService:
             "total_sent": total_sent,
             "total_failed": total_failed,
             "sent_by_type": sent_by_type,
-            "recent_logs": recent_logs
+            "recent_logs": recent_logs,
         }
 
     @staticmethod
@@ -499,7 +500,7 @@ class NotificationService:
         teacher_id: str,
         notification_type: str,
         recipient_email: str,
-        within_hours: int = 1
+        within_hours: int = 1,
     ) -> bool:
         """
         Check if a similar email was recently sent to prevent spam.
@@ -515,12 +516,14 @@ class NotificationService:
         """
         since_time = datetime.now(timezone.utc) - timedelta(hours=within_hours)
 
-        recent_send = await db.email_logs.find_one({
-            "sent_by": ObjectId(teacher_id),
-            "notification_type": notification_type,
-            "recipient_email": recipient_email,
-            "status": "sent",
-            "sent_at": {"$gte": since_time}
-        })
+        recent_send = await db.email_logs.find_one(
+            {
+                "sent_by": ObjectId(teacher_id),
+                "notification_type": notification_type,
+                "recipient_email": recipient_email,
+                "status": "sent",
+                "sent_at": {"$gte": since_time},
+            }
+        )
 
         return recent_send is not None

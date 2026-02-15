@@ -9,26 +9,20 @@ os.environ["MONGO_DB_NAME"] = "test_smart_attendance"
 os.environ["JWT_SECRET"] = "test-secret-key-123"
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    import asyncio
-
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def db_client():
-    # Attempt connection
+    """Get the MongoDB client for tests"""
     mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
     client = AsyncIOMotorClient(mongo_uri, serverSelectionTimeoutMS=2000)
     try:
         await client.admin.command("ping")
     except Exception:
+        client.close()
         pytest.skip("MongoDB not available - skipping integration tests")
-
+    
     yield client
+    
+    # Close client after test
     client.close()
 
 

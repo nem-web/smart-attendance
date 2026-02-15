@@ -1,0 +1,95 @@
+name: PR Auto Manager
+
+on:
+  pull_request:
+    types: [opened, reopened, edited]
+
+# 🛡️ Permissions: Explicitly granted to avoid 403 errors
+permissions:
+  pull-requests: write
+  issues: read
+
+jobs:
+  label-and-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign User & Sync Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const repo = context.repo;
+
+            // -----------------------------------------
+            // 1. Assign the PR to the creator
+            // -----------------------------------------
+            try {
+              // Check if already assigned to avoid API spam
+              if (pr.assignees.length === 0) {
+                await github.rest.issues.addAssignees({
+                  ...repo,
+                  issue_number: pr.number,
+                  assignees: [pr.user.login]
+                });
+                console.log(`✅ Assigned PR to creator: ${pr.user.login}`);
+              }
+            } catch (error) {
+              console.log(`⚠️ Could not assign user: ${error.message}`);
+            }
+
+            // -----------------------------------------
+            // 2. Prepare Labels
+            // -----------------------------------------
+            // We ALWAYS add this label
+            const labelsToAdd = ["apertre3.0"];
+
+            // -----------------------------------------
+            // 3. Find Linked Issue & Extract Difficulty
+            // -----------------------------------------
+            // Regex matches: "Closes #123", "Fixes #123", "Resolves #123" (case insensitive)
+            const linkedIssueRegex = /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved):?\s+#(\d+)/i;
+            const match = pr.body ? pr.body.match(linkedIssueRegex) : null;
+
+            if (match) {
+              const issueNumber = match[1];
+              console.log(`🔎 Found linked issue: #${issueNumber}`);
+
+              try {
+                // Fetch the linked issue's details
+                const { data: issue } = await github.rest.issues.get({
+                  ...repo,
+                  issue_number: issueNumber
+                });
+
+                // logic: Look for labels containing "easy", "medium", "hard", or "difficulty"
+                const difficultyKeywords = ["easy", "medium", "hard", "difficulty", "good first issue"];
+                
+                const foundLabels = issue.labels
+                  .map(l => l.name)
+                  .filter(name => difficultyKeywords.some(kw => name.toLowerCase().includes(kw)));
+
+                if (foundLabels.length > 0) {
+                  console.log(`🎯 Found difficulty labels: ${foundLabels.join(", ")}`);
+                  labelsToAdd.push(...foundLabels);
+                } else {
+                  console.log("ℹ️ Linked issue has no difficulty labels.");
+                }
+
+              } catch (error) {
+                console.log(`⚠️ Error fetching issue #${issueNumber}: ${error.message}`);
+              }
+            } else {
+              console.log("ℹ️ No linked issue number found in PR body (e.g., 'Closes #123').");
+            }
+
+            // -----------------------------------------
+            // 4. Apply Labels to PR
+            // -----------------------------------------
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                ...repo,
+                issue_number: pr.number,
+                labels: labelsToAdd
+              });
+              console.log(`✅ Applied labels: ${labelsToAdd.join(", ")}`);
+            }

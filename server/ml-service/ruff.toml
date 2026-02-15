@@ -5,7 +5,7 @@ target-version = "py312"
 select = ["E", "F"]
 ignore = []
 
-# Ignore line length for test files and email templates
+# Ignore import order in main.py (dotenv must be loaded first)
 [lint.per-file-ignores]
+"app/main.py" = ["E402"]
 "tests/**/*.py" = ["E501"]
-"**/email_template.py" = ["E501"]

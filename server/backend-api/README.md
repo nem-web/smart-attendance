@@ -53,6 +53,13 @@ Frontend → Backend API → ML Service
 - `POST /mark` - Mark attendance with classroom photo
 - `POST /confirm` - Confirm attendance after review
 
+### Analytics (`/api/analytics`)
+- `GET /attendance-trend` - Get attendance trend for a class over time
+  - Query params: `classId`, `dateFrom`, `dateTo`
+- `GET /monthly-summary` - Get monthly attendance summary
+  - Query params: `classId` (optional)
+- `GET /class-risk` - Get classes with low attendance (<75%)
+
 ### Teacher Settings & Schedule (`/api/settings`)
 - `GET /api/settings` – Get teacher profile, settings, and schedule
 - `PATCH /api/settings` – Partially update teacher settings
@@ -236,11 +243,114 @@ If ML service is unavailable:
 }
 ```
 
+### Attendance Daily Collection
+```javascript
+{
+  _id: ObjectId,
+  classId: ObjectId,      // Reference to subject (class)
+  subjectId: ObjectId,    // Same as classId
+  teacherId: ObjectId,    // Teacher who marked attendance
+  date: String,           // ISO date (YYYY-MM-DD)
+  summary: {
+    present: Number,
+    absent: Number,
+    late: Number,
+    total: Number,
+    percentage: Number    // Rounded to 2 decimals
+  },
+  createdAt: Date
+}
+```
+
 ## API Documentation
 
 Interactive API docs available at:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+
+### Analytics Endpoints
+
+The analytics endpoints provide aggregated attendance data from the `attendance_daily` collection.
+
+#### Attendance Trend
+
+Get daily attendance data for a specific class over a date range:
+
+```bash
+GET /api/analytics/attendance-trend?classId={classId}&dateFrom=2024-01-01&dateTo=2024-01-31
+```
+
+**Response:**
+```json
+{
+  "classId": "507f1f77bcf86cd799439011",
+  "dateFrom": "2024-01-01",
+  "dateTo": "2024-01-31",
+  "data": [
+    {
+      "date": "2024-01-15",
+      "present": 22,
+      "absent": 4,
+      "late": 0,
+      "total": 26,
+      "percentage": 84.62
+    }
+  ]
+}
+```
+
+#### Monthly Summary
+
+Get monthly aggregated attendance data, optionally filtered by class:
+
+```bash
+GET /api/analytics/monthly-summary?classId={classId}
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "classId": "507f1f77bcf86cd799439011",
+      "month": "2024-01",
+      "totalPresent": 420,
+      "totalAbsent": 80,
+      "totalLate": 10,
+      "totalStudents": 510,
+      "daysRecorded": 20,
+      "averagePercentage": 82.35
+    }
+  ]
+}
+```
+
+#### Class Risk
+
+Get classes with attendance percentage below 75%:
+
+```bash
+GET /api/analytics/class-risk
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "classId": "507f1f77bcf86cd799439011",
+      "className": "Mathematics",
+      "classCode": "MATH101",
+      "attendancePercentage": 68.5,
+      "totalPresent": 350,
+      "totalAbsent": 160,
+      "totalLate": 5,
+      "totalStudents": 515,
+      "lastRecorded": "2024-01-31"
+    }
+  ]
+}
+```
 
 ## Testing
 
