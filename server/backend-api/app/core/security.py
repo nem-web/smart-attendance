@@ -1,5 +1,5 @@
 import logging
-
+import hashlib
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -12,6 +12,8 @@ security = HTTPBearer(auto_error=False)
 JWT_SECRET = settings.JWT_SECRET
 JWT_ALGORITHM = settings.JWT_ALGORITHM
 
+# Password hashing context using bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def decode_jwt_token(token: str):
     try:
@@ -55,9 +57,18 @@ async def get_current_user(
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def _prehash(password: str) -> str:
+    """
+    Normalize + prehash password to avoid bcrypt 72-byte limit.
+    """
+    normalized = password.strip().encode("utf-8")
+    return hashlib.sha256(normalized).hexdigest()
+
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(_prehash(password))
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(_prehash(plain_password), hashed_password)
+

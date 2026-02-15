@@ -1,0 +1,99 @@
+name: Issue Auto Assignment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue Assignment Guard
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commentBody = context.payload.comment.body.toLowerCase();
+            const author = context.payload.comment.user.login;
+            const issue = context.payload.issue;
+
+            // 1. Ignore Bots and PR comments
+            if (context.payload.comment.user.type === "Bot" || issue.pull_request) {
+              return;
+            }
+
+            // 2. Define Keywords
+            const intentWords = ["assign", "take", "work", "handle", "pick", "do", "fix", "solve"];
+            const selfWords = ["me", "i", "myself"];
+
+            // 3. Check if comment contains keywords
+            const hasIntent = intentWords.some(w => commentBody.includes(w));
+            const hasSelf = selfWords.some(w => commentBody.includes(w));
+
+            if (!hasIntent || !hasSelf) {
+              console.log("No assignment request detected.");
+              return;
+            }
+
+            // 4. Check if issue is ALREADY assigned
+            if (issue.assignees.length > 0) {
+              return;
+            }
+
+            // 5. Check if user already has an OPEN issue (without an open PR)
+            // Fetch open issues assigned to this user
+            const { data: assignedIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              assignee: author,
+            });
+
+            // Fetch open PRs by this user to see if they are actively working
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+            });
+            
+            const hasOpenPR = prs.some(pr => pr.user.login === author);
+
+            // If user has assigned issues AND no open PRs, block them.
+            if (assignedIssues.length > 0 && !hasOpenPR) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `👋 @${author}
+            
+            You already have an **assigned open issue**.
+            
+            👉 Please complete it first before taking a new one.  
+            👉 If you have already raised a PR, please ensure it is linked or open, then try again.
+            
+            Thanks for contributing 🚀`
+              });
+              return;
+            }
+
+            // 6. Assign the issue
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              assignees: [author],
+            });
+
+            // 7. Post success comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `✅ **Assigned to @${author}**
+            
+            All the best! 🚀  
+            Feel free to ask questions or share progress updates here.`
+            });

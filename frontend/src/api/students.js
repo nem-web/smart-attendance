@@ -44,3 +44,9 @@ export async function removeSubjectFromStudent (subjectId) {
   const res = await api.delete(`/students/me/remove-subject/${subjectId}`);
   return res.data;
 };
+
+// Get all students (for teachers - messaging feature)
+export const getStudents = async () => {
+  const res = await api.get("/settings/teachers/students");
+  return res.data;
+};

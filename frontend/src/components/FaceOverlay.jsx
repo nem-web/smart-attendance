@@ -1,18 +1,37 @@
-/* eslint-disable */
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export default function FaceOverlay({ faces, videoRef }) {
-  // eslint-disable-next-line react/prop-types
-  if (!videoRef.current) return null;
+  const [videoDimensions, setVideoDimensions] = useState(null);
 
-  const videoEl = videoRef.current.video;
-  if (!videoEl || !videoEl.videoWidth) return null;
+  useEffect(() => {
+    if (videoRef.current && videoRef.current.video && videoRef.current.video.videoWidth) {
+      const videoEl = videoRef.current.video;
+      const newDims = {
+        width: videoEl.videoWidth,
+        height: videoEl.videoHeight,
+        displayWidth: videoEl.clientWidth,
+        displayHeight: videoEl.clientHeight
+      };
 
-  const displayWidth = videoEl.clientWidth;
-  const displayHeight = videoEl.clientHeight;
+      setVideoDimensions(prev => {
+        if (!prev || 
+            prev.width !== newDims.width || 
+            prev.height !== newDims.height || 
+            prev.displayWidth !== newDims.displayWidth || 
+            prev.displayHeight !== newDims.displayHeight) {
+          return newDims;
+        }
+        return prev;
+      });
+    }
+  }, [faces, videoRef]); // Re-check when faces change or videoRef changes
 
-  const scaleX = displayWidth / videoEl.videoWidth;
-  const scaleY = displayHeight / videoEl.videoHeight;
+  if (!videoDimensions) return null;
+
+  const { width: videoWidth, height: videoHeight, displayWidth, displayHeight } = videoDimensions;
+
+  const scaleX = displayWidth / videoWidth;
+  const scaleY = displayHeight / videoHeight;
 
   return (
     <div
@@ -22,11 +41,11 @@ export default function FaceOverlay({ faces, videoRef }) {
       {faces.map((f, idx) => {
         const { top, right, bottom, left } = f.box;
 
-        const width = (right - left) * scaleX;
-        const height = (bottom - top) * scaleY;
+        const boxWidth = (right - left) * scaleX;
+        const boxHeight = (bottom - top) * scaleY;
 
         // ✅ correct mirror handling
-        const x = (videoEl.videoWidth - right) * scaleX;
+        const x = (videoWidth - right) * scaleX;
         const y = top * scaleY;
 
         const color =
@@ -50,8 +69,8 @@ export default function FaceOverlay({ faces, videoRef }) {
               position: "absolute",
               left: `${x}px`,
               top: `${y}px`,
-              width: `${width}px`,
-              height: `${height}px`,
+              width: `${boxWidth}px`,
+              height: `${boxHeight}px`,
               border: `2px solid ${color}`,
               borderRadius: "8px",
               background: `${color}20`,

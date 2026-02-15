@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert-rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'backend-api'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['backend-api:8000']
+
+  - job_name: 'ml-service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['ml-service:8001']

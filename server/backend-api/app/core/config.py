@@ -5,9 +5,10 @@ from pydantic_settings import BaseSettings
 from typing import List
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent
+# config.py is in app/core/, so go up 2 levels to backend-api/
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Load .env from root
+# Load .env from backend-api/.env
 load_dotenv(BASE_DIR / ".env")
 
 APP_NAME = "Smart Attendance API"

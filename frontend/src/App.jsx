@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import AddStudents from "./pages/AddStudents";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Messaging from "./pages/Messaging";
 import StudentDashboard from "./students/pages/StudentDashboard.jsx"
 import StudentSubjects from "./students/pages/StudentSubjects.jsx";
 import StudentForecast from "./students/pages/StudentForecast.jsx";
@@ -46,7 +47,8 @@ const hideNavbarRoutes = [
   "/student-forecast",
   "/student-profile",
   "/login",
-  "/register"
+  "/register",
+  "/forgot-password",
 ];
 
 /**
@@ -74,6 +76,7 @@ export default function App() {
           <Route path="/reports" element={<Reports/>}/>
           <Route path="/manage-schedule" element={<ProtectedRoute><ManageSchedule /></ProtectedRoute>} />
           <Route path="/broadcast" element={<BroadcastPage />} />
+          <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
           <Route path="/settings" element={<Settings/>}/>
           <Route path="/add-students" element={<AddStudents/>}/>
           <Route path="/login" element={<Login/>}/>

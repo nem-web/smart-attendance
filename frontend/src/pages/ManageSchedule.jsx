@@ -298,13 +298,13 @@ export default function ManageSchedule() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] font-sans text-[var(--text-main)] transition-colors duration-200">
       {saveTemplateNotification && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top duration-300">
+        <div className="fixed top-4 right-4 z-50 bg-[var(--success)] text-[var(--text-on-primary)] px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top duration-300">
           <CheckCircle size={20} />
           <span>Saved as {saveTemplateNotification}!</span>
         </div>
       )}
       {isEditModalOpen && currentClass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3">
               <h3 className="text-xl font-bold">Edit Class</h3>
@@ -404,7 +404,7 @@ export default function ManageSchedule() {
               </button>
               <button
                 onClick={saveEditedClass}
-                className="px-4 py-2 text-sm font-medium bg-[var(--primary)] text-white rounded-lg shadow-sm hover:opacity-90 transition flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg shadow-sm hover:opacity-90 transition flex items-center gap-2"
               >
                 <Save size={16} /> Save Changes
               </button>
@@ -414,7 +414,7 @@ export default function ManageSchedule() {
       )}
 
       {previewTemplate && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm">
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-2xl p-6 rounded-2xl shadow-2xl">
             <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3 mb-4">
               <h3 className="text-xl font-bold">{previewTemplate.name}</h3>
@@ -463,7 +463,7 @@ export default function ManageSchedule() {
                   applyTemplate(previewTemplate);
                   setPreviewTemplate(null);
                 }}
-                className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition"
+                className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:opacity-90 transition"
               >
                 Apply Template
               </button>
@@ -484,7 +484,7 @@ export default function ManageSchedule() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleSave}
-              className="px-6 py-2.5 bg-[var(--primary)] text-white rounded-xl font-semibold shadow-sm transition active:scale-95"
+              className="px-6 py-2.5 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold shadow-sm transition active:scale-95"
             >
               Save schedule
             </button>
@@ -502,7 +502,7 @@ export default function ManageSchedule() {
                     onClick={() => setActiveDay(day)}
                     className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all ${
                       activeDay === day
-                        ? "bg-[var(--primary)] text-white"
+                        ? "bg-[var(--primary)] text-[var(--text-on-primary)]"
                         : "text-[var(--text-body)]"
                     }`}
                   >
@@ -512,7 +512,7 @@ export default function ManageSchedule() {
               </div>
               <button
                 onClick={handleAddClass}
-                className="flex items-center gap-2 bg-[var(--primary)] text-white px-4 py-2 rounded-lg text-sm font-medium"
+                className="flex items-center gap-2 bg-[var(--primary)] text-[var(--text-on-primary)] px-4 py-2 rounded-lg text-sm font-medium"
               >
                 <Plus size={16} /> Add class
               </button>
@@ -537,7 +537,7 @@ export default function ManageSchedule() {
                       </button>
                       <button
                         onClick={() => handleDeleteClass(cls.id)}
-                        className="p-1.5 text-[var(--text-body)] hover:text-red-500 hover:bg-red-50/10 rounded-md transition"
+                        className="p-1.5 text-[var(--text-body)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded-md transition"
                         title="Delete Class"
                       >
                         <Trash2 size={16} />
@@ -557,7 +557,7 @@ export default function ManageSchedule() {
                       · {cls.teacher}
                     </p>
                     <span
-                      className={`text-white text-[10px] font-bold px-2 py-0.5 rounded ${cls.status === "Active" ? "bg-emerald-500" : "bg-amber-500"}`}
+                      className={`text-[var(--text-on-primary)] text-[10px] font-bold px-2 py-0.5 rounded ${cls.status === "Active" ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
                     >
                       {cls.status}
                     </span>
@@ -611,7 +611,7 @@ export default function ManageSchedule() {
                                     type="button"
                                     onClick={() =>
                                        handleMonthSelect(idx)}
-                                    className={`text-sm px-3 py-1.5 rounded-lg text-left transition ${currentDate.getMonth() === idx ? "bg-[var(--primary)] text-white" : "hover:bg-[var(--bg-secondary)]"}`}
+                                    className={`text-sm px-3 py-1.5 rounded-lg text-left transition ${currentDate.getMonth() === idx ? "bg-[var(--primary)] text-[var(--text-on-primary)]" : "hover:bg-[var(--bg-secondary)]"}`}
                                   >
                                     {m}
                                   </button>
@@ -630,7 +630,7 @@ export default function ManageSchedule() {
                                     type="button"
                                     data-selected={currentDate.getFullYear() === year}
                                     onClick={() => handleYearSelect(year)}
-                                    className={`block w-full text-sm px-2 py-1.5 rounded-lg text-center transition ${currentDate.getFullYear() === year ? "bg-[var(--primary)] text-white" : "hover:bg-[var(--bg-secondary)]"}`}
+                                    className={`block w-full text-sm px-2 py-1.5 rounded-lg text-center transition ${currentDate.getFullYear() === year ? "bg-[var(--primary)] text-[var(--text-on-primary)]" : "hover:bg-[var(--bg-secondary)]"}`}
                                   >
                                     {year}
                                   </button>
@@ -670,7 +670,7 @@ export default function ManageSchedule() {
                   const isToday = day === today.getDate() && currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
                   return (
                     <div key={idx} className="flex justify-center">
-                      <span className={`h-8 w-8 flex items-center justify-center rounded-lg transition cursor-pointer ${isToday ? "bg-[var(--primary)] text-white font-bold shadow-md" : "text-[var(--text-main)] hover:bg-[var(--bg-secondary)]"}`}>
+                      <span className={`h-8 w-8 flex items-center justify-center rounded-lg transition cursor-pointer ${isToday ? "bg-[var(--primary)] text-[var(--text-on-primary)] font-bold shadow-md" : "text-[var(--text-main)] hover:bg-[var(--bg-secondary)]"}`}>
                         {day}
                       </span>
                     </div>
@@ -726,7 +726,7 @@ export default function ManageSchedule() {
           </div>
         </div>
         {showTemplates && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-[var(--overlay)] z-50 flex items-center justify-center">
             <div className="bg-[var(--bg-card)] w-full max-w-2xl p-6 rounded-2xl border border-[var(--border-color)] shadow-xl">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold">Custom Templates</h3>
@@ -772,13 +772,13 @@ export default function ManageSchedule() {
                             Preview
                           </button>
                           <button
-                            className="text-xs bg-[var(--primary)] text-white px-3 py-1.5 rounded hover:opacity-90 transition"
+                            className="text-xs bg-[var(--primary)] text-[var(--text-on-primary)] px-3 py-1.5 rounded hover:opacity-90 transition"
                             onClick={() => applyTemplate(t)}
                           >
                             Apply
                           </button>
                           <button
-                            className="text-xs text-red-500 hover:bg-red-50/10 px-2 py-1.5 rounded transition"
+                            className="text-xs text-[var(--danger)] hover:bg-[var(--danger)]/10 px-2 py-1.5 rounded transition"
                             onClick={() => deleteTemplate(t.id)}
                             title="Delete template"
                           >
@@ -791,7 +791,7 @@ export default function ManageSchedule() {
                 )}
 
                 <button
-                  className="w-full bg-[var(--primary)] text-white py-3 rounded-lg font-medium hover:opacity-90 transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full bg-[var(--primary)] text-[var(--text-on-primary)] py-3 rounded-lg font-medium hover:opacity-90 transition shadow-md flex items-center justify-center gap-2"
                   onClick={saveTemplate}
                 >
                   <Save size={18} />

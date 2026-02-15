@@ -11,6 +11,7 @@ const navLinks = [
   { to: "/reports", label: "Reports" },
   { to: "/manage-schedule", label: "Schedule" },
   { to: "/broadcast", label: "Broadcast" },
+  { to: "/messaging", label: "Messaging" },
 ];
 
 /**
