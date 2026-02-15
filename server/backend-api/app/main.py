@@ -13,11 +13,13 @@ from .api.routes.attendance import router as attendance_router
 from .api.routes.auth import router as auth_router
 from .api.routes.students import router as students_router
 from .api.routes.notifications import router as notifications_router
+from .api.routes.in_app_notifications import router as in_app_notifications_router
 from .core.config import APP_NAME, ORIGINS
 from .api.routes.analytics import router as analytics_router
 from app.services.attendance_daily import (
     ensure_indexes as ensure_attendance_daily_indexes,
 )
+from app.services.in_app_notification import InAppNotificationService
 from app.services.ml_client import ml_client
 from app.db.nonce_store import close_redis
 
@@ -57,6 +59,8 @@ if SENTRY_DSN := os.getenv("SENTRY_DSN"):
 async def lifespan(app: FastAPI):
     try:
         await ensure_attendance_daily_indexes()
+        await InAppNotificationService.ensure_indexes()
+        logger.info("in_app_notification indexes ensured")
         logger.info("attendance_daily indexes ensured")
     except Exception as e:
         logger.warning(
@@ -114,6 +118,7 @@ def create_app() -> FastAPI:
     app.include_router(attendance_router)
     app.include_router(settings_router.router)
     app.include_router(notifications_router)
+    app.include_router(in_app_notifications_router)
     app.include_router(analytics_router)
     app.include_router(health_router, tags=["Health"])
 

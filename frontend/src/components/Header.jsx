@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Bell, User, ChevronDown, Menu, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import NotificationDropdown from "./NotificationDropdown";
 
 /** Navigation link definitions for the main header. */
 const navLinks = [
@@ -115,14 +116,9 @@ export default function Header() {
             </button>
           </div>
 
-          <button
-            type="button"
-            disabled
-            aria-label="Notifications"
-            className="bg-[var(--primary)] p-1.5 rounded-full opacity-60"
-          >
-            <Bell size={16} className="text-[var(--text-on-primary)]" />
-          </button>
+          {/* Notification Dropdown */}
+          <NotificationDropdown />
+
           <Link
             to="/settings"
             className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"

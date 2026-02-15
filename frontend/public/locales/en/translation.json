@@ -217,6 +217,20 @@
     "schedule": "Schedule",
     "messaging": "Messaging"
   },
+  "notifications": {
+    "title": "Notifications",
+    "aria_label": "Notifications",
+    "menu_label": "Notifications menu",
+    "mark_all_read": "Mark all as read",
+    "loading": "Loading notifications...",
+    "no_notifications": "No notifications",
+    "empty_subtitle": "You're all caught up!",
+    "view_all": "View all notifications",
+    "just_now": "Just now",
+    "mins_ago": "{{count}}m ago",
+    "hours_ago": "{{count}}h ago",
+    "days_ago": "{{count}}d ago"
+  },
   "dashboard": {
     "startAttendance": "Start Attendance",
     "title": "Teacher dashboard",

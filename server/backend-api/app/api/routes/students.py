@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from bson import ObjectId
+import logging
 
 from ...db.mongo import db
 from ...core.security import get_current_user
@@ -10,6 +11,7 @@ import base64
 from app.services.ml_client import ml_client
 
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/students", tags=["students"])
 
 
@@ -220,7 +222,7 @@ async def add_subject(subject_id: str, current_user: dict = Depends(get_current_
     )
 
     # 4️⃣ Add student to subject.students (CORRECT)
-    await db.subjects.update_one(
+    result = await db.subjects.update_one(
         {
             "_id": subject_oid,
             "students.student_id": {"$ne": student_oid},  # ✅ FIX
@@ -241,6 +243,29 @@ async def add_subject(subject_id: str, current_user: dict = Depends(get_current_
             }
         },
     )
+
+    # 5️⃣ Create notification for teacher (if enrollment was successful)
+    if result.modified_count > 0:
+        try:
+            from ...services.in_app_notification import InAppNotificationService
+            
+            teacher_id = str(subject.get("teacherId"))
+            subject_name = subject.get("name", "Unknown Subject")
+            
+            await InAppNotificationService.create_notification(
+                user_id=teacher_id,
+                message=f"{student_name} has enrolled in {subject_name}",
+                notification_type="info",
+                metadata={
+                    "student_id": str(student_oid),
+                    "student_name": student_name,
+                    "subject_id": subject_id,
+                    "subject_name": subject_name,
+                },
+            )
+        except Exception as e:
+            # Don't fail enrollment if notification fails
+            logger.error(f"Failed to create enrollment notification: {e}")
 
     return {"message": "Subject added successfully"}
 
