@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Mail,
   Lock,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 export default function Register() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState(null); // 'student' or 'teacher'
@@ -102,7 +104,7 @@ export default function Register() {
               onClick={() => setStep(1)}
               className="absolute top-8 left-8 text-[var(--text-body)] opacity-70 hover:text-[var(--text-main)] hover:opacity-100 flex items-center gap-2 text-sm font-medium transition-colors"
             >
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} /> {t('register.back')}
             </button>
           )}
 
@@ -110,9 +112,9 @@ export default function Register() {
 
             {/* Header */}
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-[var(--text-main)]">Create account</h1>
+              <h1 className="text-3xl font-bold text-[var(--text-main)]">{t('register.title')}</h1>
               <p className="text-[var(--text-body)] opacity-80">
-                {step === 1 ? "Choose your role to get started." : `Sign up as a ${role}.`}
+                {step === 1 ? t('register.subtitle_start') : t('register.subtitle_role', { role })}
               </p>
             </div>
 
@@ -127,8 +129,8 @@ export default function Register() {
                     <GraduationCap size={24} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[var(--text-main)]">I am a Student</h3>
-                    <p className="text-sm text-[var(--text-body)] opacity-80">Track attendance & view analytics</p>
+                    <h3 className="font-semibold text-[var(--text-main)]">{t('register.role_student')}</h3>
+                    <p className="text-sm text-[var(--text-body)] opacity-80">{t('register.role_student_desc')}</p>
                   </div>
                 </button>
 
@@ -140,8 +142,8 @@ export default function Register() {
                     <Briefcase size={24} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[var(--text-main)]">I am a Teacher</h3>
-                    <p className="text-sm text-[var(--text-body)] opacity-80">Manage classes & reports</p>
+                    <h3 className="font-semibold text-[var(--text-main)]">{t('register.role_teacher')}</h3>
+                    <p className="text-sm text-[var(--text-body)] opacity-80">{t('register.role_teacher_desc')}</p>
                   </div>
                 </button>
               </div>
@@ -155,7 +157,7 @@ export default function Register() {
 
                 {/* Common: Full Name */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-main)]">Full Name</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.full_name')}</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -171,7 +173,7 @@ export default function Register() {
 
                 {/* Common: Email */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-main)]">Email Address</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.email')}</label>
                   <div className="relative">
                     <input
                       type="email"
@@ -186,14 +188,14 @@ export default function Register() {
                 </div>
                 {/* Common: College Name */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-main)]">College Name</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.college_name')}</label>
                   <div className="relative">
                     <input
                       type="text"
                       name="collegeName"
                       value={formData.collegeName}
                       onChange={handleChange}
-                      placeholder="Your college/institution"
+                      placeholder={t('register.college_name')}
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                     />
                     <GraduationCap size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
@@ -201,7 +203,7 @@ export default function Register() {
                 </div>
                 {/* -------- Branch -------- */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-main)]">Branch</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.branch')}</label>
                   <div className="relative">
                     <select
                       name="branch"
@@ -209,7 +211,7 @@ export default function Register() {
                       onChange={handleChange}
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 appearance-none text-[var(--text-body)]"
                     >
-                      <option value="" disabled>Select Branch</option>
+                      <option value="" disabled>{t('register.select_branch')}</option>
                       <option value="cse">Computer Science (CSE)</option>
                       <option value="ece">Electronics (ECE)</option>
                       <option value="me">Mechanical (ME)</option>
@@ -229,7 +231,7 @@ export default function Register() {
 
                     {/* -------- Year -------- */}
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-main)]">Year</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.year')}</label>
                       <div className="relative">
                         <select
                           name="year"
@@ -237,7 +239,7 @@ export default function Register() {
                           onChange={handleChange}
                           className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 appearance-none text-[var(--text-body)]"
                         >
-                          <option value="" disabled>Select Year</option>
+                          <option value="" disabled>{t('register.select_year')}</option>
                           <option value="1">1st Year</option>
                           <option value="2">2nd Year</option>
                           <option value="3">3rd Year</option>
@@ -253,14 +255,14 @@ export default function Register() {
 
                     {/* -------- Roll Number -------- */}
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-main)]">Roll Number</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.roll_number')}</label>
                       <div className="relative">
                         <input
                           type="text"
                           name="roll"
                           value={formData.roll}
                           onChange={handleChange}
-                          placeholder="Enter roll number"
+                          placeholder={t('register.roll_number')}
                           className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 text-[var(--text-body)]"
                         />
                         <User
@@ -275,7 +277,7 @@ export default function Register() {
                 {role === 'teacher' && (
                   <>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-main)]">Employee ID</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.employee_id')}</label>
                       <div className="relative">
                         <input
                           type="text"
@@ -289,7 +291,7 @@ export default function Register() {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-[var(--text-main)]">Phone Number</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.phone_number')}</label>
                       <div className="relative">
                         <input
                           type="tel"
@@ -307,14 +309,14 @@ export default function Register() {
 
                 {/* Common: Password */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-main)]">Password</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.password_label')}</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder="Create a password"
+                      placeholder={t('register.create_password')}
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 pr-10"
                     />
                     <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
@@ -332,7 +334,7 @@ export default function Register() {
                   type="submit"
                   disabled={loading}
                   className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] shadow-md transition-all active:scale-[0.98] mt-2">
-                  {loading ? "Creating..." : "Create Account"}
+                  {loading ? t('register.submitting') : t('register.submit')}
                 </button>
 
                 {error && (
@@ -343,9 +345,9 @@ export default function Register() {
             )}
 
             <p className="text-center text-sm text-[var(--text-body)]">
-              Already have an account?{" "}
+              {t('register.already_have_account')}{" "}
               <Link to="/login" className="font-semibold text-[var(--primary)] hover:underline">
-                Sign in
+                {t('register.sign_in')}
               </Link>
             </p>
 

@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Bell, User, ChevronDown, Menu, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /** Navigation link definitions for the main header. */
 const navLinks = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/attendance", label: "Attendance" },
-  { to: "/students", label: "Students" },
-  { to: "/analytics", label: "Analytics" },
-  { to: "/reports", label: "Reports" },
-  { to: "/manage-schedule", label: "Schedule" },
-  { to: "/messaging", label: "Messaging" },
+  { to: "/dashboard", label: "dashboard" },
+  { to: "/attendance", label: "attendance" },
+  { to: "/students", label: "students" },
+  { to: "/analytics", label: "analytics" },
+  { to: "/reports", label: "reports" },
+  { to: "/manage-schedule", label: "schedule" },
+  { to: "/messaging", label: "messaging" },
 ];
 
 /**
@@ -22,6 +23,7 @@ const navLinks = [
  * @returns {React.ReactElement} The rendered header.
  */
 export default function Header() {
+  const { t, i18n } = useTranslation();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
@@ -89,13 +91,30 @@ export default function Header() {
                   : "text-[var(--text-body)] hover:text-[var(--primary)] hover:bg-[var(--bg-secondary)]"
               }`}
             >
-              {link.label}
+              {t(`nav.${link.label}`)}
             </Link>
           ))}
         </nav>
 
         {/* Right: Profile section */}
         <div className="flex items-center gap-3">
+          {/* Language Switcher */}
+          <div className="flex items-center gap-2 mr-2">
+            <button 
+              onClick={() => i18n.changeLanguage('en')} 
+              className={`text-sm transition-colors ${i18n.language === 'en' ? 'font-bold text-[var(--primary)]' : 'text-[var(--text-body)] hover:text-[var(--text-main)]'}`}
+            >
+              English
+            </button>
+            <span className="text-[var(--border-color)]">|</span>
+            <button 
+              onClick={() => i18n.changeLanguage('hi')} 
+              className={`text-sm transition-colors ${i18n.language === 'hi' ? 'font-bold text-[var(--primary)]' : 'text-[var(--text-body)] hover:text-[var(--text-main)]'}`}
+            >
+              हिंदी
+            </button>
+          </div>
+
           <button
             type="button"
             disabled
@@ -133,7 +152,7 @@ export default function Header() {
                   : "text-[var(--text-body)] hover:text-[var(--primary)] hover:bg-[var(--bg-secondary)]"
               }`}
             >
-              {link.label}
+              {t(`nav.${link.label}`)}
             </Link>
           ))}
           {/* Mobile-only profile link */}

@@ -1,0 +1,640 @@
+{
+  "welcome": "Welcome",
+  "login": {
+    "title": "Welcome",
+    "subtitle": "Please enter your details to sign in.",
+    "google": "Google",
+    "or_continue": "Or continue with",
+    "email_label": "Email address",
+    "email_placeholder": "Enter your email",
+    "password_label": "Password",
+    "password_placeholder": "••••••••",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot password?",
+    "submit": "Sign in",
+    "no_account": "Don't have an account yet?",
+    "register_link": "Register for free",
+    "hero_title": "Smart Attendance System",
+    "hero_subtitle": "Automate your classroom attendance with face recognition. Secure, fast, and reliable."
+  },
+  "register": {
+    "title": "Create Account",
+    "subtitle_start": "Identify your role to get started",
+    "subtitle_role": "Complete your registration as a {{role}}",
+    "role_student": "I am a Student",
+    "role_student_desc": "For attending classes and tracking progress",
+    "role_teacher": "I am a Teacher",
+    "role_teacher_desc": "For managing classes and taking attendance",
+    "back": "Back",
+    "full_name": "Full Name",
+    "email": "Email Address",
+    "college_name": "College Name",
+    "branch": "Branch",
+    "year": "Year",
+    "roll_no": "Roll Number",
+    "employee_id": "Employee ID",
+    "phone": "Phone Number",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "password_placeholder": "Min 6 characters",
+    "confirm_placeholder": "Re-enter password",
+    "submit": "Create Account",
+    "sign_in": "Sign in"
+  },
+  "forgot_password": {
+    "title_step1": "Reset your password",
+    "title_step2": "Verify & Reset",
+    "subtitle_step1": "Enter your email to receive a verification code.",
+    "subtitle_step2": "Enter the code sent to your email and set a new password.",
+    "step_1_label": "Email",
+    "step_2_label": "Reset",
+    "email_label": "Email address",
+    "email_placeholder": "Enter your registered email",
+    "email_help": "Press Enter or click the arrow to send code.",
+    "otp_label": "Verification code",
+    "otp_placeholder": "6-digit code",
+    "resend_code": "Resend code",
+    "resend_in": "Resend in {{seconds}}s",
+    "new_password_label": "New password",
+    "new_password_placeholder": "Min 8 chars",
+    "confirm_password_label": "Confirm password",
+    "confirm_password_placeholder": "Re-enter password",
+    "change_email": "Change",
+    "back_button": "Back",
+    "reset_button": "Reset Password",
+    "resetting_button": "Resetting...",
+    "remembered_password": "Remembered your password?",
+    "login_link": "Log in instead",
+    "alerts": {
+      "invalid_email": "Please enter a valid email address.",
+      "code_sent": "Verification code sent to {{email}}",
+      "otp_sent": "A new code has been sent.",
+      "enter_otp": "Please enter the 6-digit code.",
+      "invalid_password": "Password must be 8+ chars with at least 1 number.",
+      "password_mismatch": "Passwords do not match.",
+      "success": "Password reset successfully! Redirecting..."
+    }
+  },
+  "register": {
+    "title": "Create account",
+    "subtitle_start": "Choose your role to get started.",
+    "subtitle_role": "Sign up as a {{role}}.",
+    "back": "Back",
+    "role_student": "I am a Student",
+    "role_student_desc": "Track attendance & view analytics",
+    "role_teacher": "I am a Teacher",
+    "role_teacher_desc": "Manage classes & reports",
+    "full_name": "Full Name",
+    "email": "Email Address",
+    "college_name": "College Name",
+    "branch": "Branch",
+    "select_branch": "Select Branch",
+    "year": "Year",
+    "select_year": "Select Year",
+    "roll_number": "Roll Number",
+    "employee_id": "Employee ID",
+    "phone_number": "Phone Number",
+    "create_password": "Create a password",
+    "submit": "Create Account",
+    "submitting": "Creating...",
+    "already_have_account": "Already have an account?",
+    "sign_in": "Sign in"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "attendance": "Attendance",
+    "students": "Students",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "schedule": "Schedule",
+    "messaging": "Messaging"
+  },
+  "dashboard": {
+    "title": "Teacher dashboard",
+    "subtitle": "Overview of today's attendance and upcoming classes",
+    "download_report": "Download report",
+    "start_attendance": "Start attendance",
+    "greeting": "Good morning, {{name}}",
+    "start_session": "Start attendance session",
+    "camera_checked": "Camera and permissions checked",
+    "status": {
+      "ready": "Face recognition is ready",
+      "waking_up": "Waking up ML service...",
+      "checking": "Checking system status..."
+    },
+    "stats": {
+      "attendance_rate": "Today's attendance rate",
+      "increase": "+3% vs last week",
+      "absent": "Absent",
+      "all_classes": "Across all classes",
+      "late_arrivals": "Late arrivals",
+      "first_period": "First period"
+    },
+    "quick_actions": {
+      "view_students": "View student list",
+      "view_students_desc": "Search, filter and manage profiles",
+      "go_to_attendance": "Go to attendance",
+      "go_to_attendance_desc": "Open live marking screen",
+      "manage_schedule": "Manage schedule",
+      "manage_schedule_desc": "Edit classes and timetables"
+    },
+    "trends": {
+      "title": "Attendance trends",
+      "this_week": "This week",
+      "chart_area": "Chart Area",
+      "present": "Present",
+      "absent": "Absent",
+      "late": "Late"
+    },
+    "classes": {
+      "completed": "Completed",
+      "upcoming": "Upcoming",
+      "pending": "Pending",
+      "starts_in": "Starts in 30 min",
+      "not_started": "Attendance not started"
+    }
+  },
+  "mark_attendance": {
+    "title": "Start attendance session",
+    "subtitle": "Use face recognition to mark students present in real-time",
+    "session_settings": "Session settings",
+    "class_label": "Class",
+    "select_subject": "Select subject",
+    "date_label": "Date",
+    "camera_feed": "Camera feed",
+    "status": {
+      "live": "Live • Active",
+      "waking_up": "Waking up...",
+      "connecting": "Connecting..."
+    },
+    "camera_overlay": {
+      "recognition_running": "Recognition running • Auto-marking present",
+      "tip": "Tip: Ask students to face the camera directly."
+    },
+    "detected_students": {
+      "title": "Detected students",
+      "subtitle": "Auto-marking based on face recognition"
+    },
+    "tabs": {
+      "present": "Present",
+      "all": "All students"
+    },
+    "search_placeholder": "Search by name or roll no.",
+    "confirm_button": "Confirm Attendance",
+    "submitted_button": "Attendance Submitted",
+    "summary": {
+      "present": "present",
+      "absent": "absent"
+    },
+    "alerts": {
+      "already_marked": "Attendance already marked for this session",
+      "success": "Attendance saved successfully",
+      "failed": "Failed to save attendance"
+    }
+  },
+  "students": {
+    "title": "Students",
+    "subtitle": "Browse all students and compare attendance performance",
+    "export_list": "Export list",
+    "add_student": "Add student",
+    "search_placeholder": "Search by name or ID",
+    "select_subject": "Select subject",
+    "sort_by_attendance": "Sort by attendance",
+    "filters": {
+      "all": "All",
+      "high": "High (> 90%)",
+      "medium": "Medium (75-90%)",
+      "low": "Low (< 75%)"
+    },
+    "table": {
+      "roll_number": "Roll Number",
+      "student": "Student",
+      "visual_grade": "Visual grade",
+      "trend": "Trend",
+      "actions": "Actions"
+    },
+    "status": {
+      "excellent": "Excellent",
+      "moderate": "Moderate",
+      "at_risk": "At risk"
+    },
+    "trend": {
+      "no_change": "No change",
+      "vs_last_month": "vs last month"
+    },
+    "no_students_found": "No students found",
+    "no_match": "No students match \"{{query}}\"",
+    "no_match_filter": "No students match \"{{query}}\" with filter \"{{filter}}\"",
+    "no_match_selected_filter": "No students match the selected filter \"{{filter}}\"",
+    "pagination": {
+      "showing": "Showing {{current}} of {{total}} students",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "stats": {
+      "attendance_bands": "Attendance bands",
+      "bands_desc": "Color grading from best to worst",
+      "high_attendance": "High attendance",
+      "medium_attendance": "Medium attendance",
+      "low_attendance": "Low attendance",
+      "top_performers": "Top performers",
+      "top_performers_desc": "Students with best attendance this term",
+      "needs_support": "Needs support",
+      "needs_support_desc": "Students with the lowest attendance"
+    }
+  },
+  "manage_schedule": {
+    "title": "Manage schedule",
+    "subtitle": "Editing schedule for {{day}}",
+    "save_schedule": "Save schedule",
+    "add_class": "Add class",
+    "edit_class": "Edit Class",
+    "delete_class": "Delete Class",
+    "confirm_delete": "Are you sure you want to delete this class?",
+    "calendar_overview": "Calendar overview",
+    "manage_holidays": "Manage holidays and events",
+    "month": "Month",
+    "year": "Year",
+    "recurring_timetable": "Recurring timetable",
+    "recurring_desc": "Mon-Fri use default weekly pattern",
+    "exam_days": "Exam days",
+    "exam_desc": "Override schedule for exams",
+    "custom_templates": "Custom templates",
+    "templates_desc": "Save and reuse schedule presets",
+    "save_template": "Save current week as template",
+    "no_classes": "No classes scheduled for {{day}}.",
+    "saved_as": "Saved as {{name}}!",
+    "apply_template_confirm": "Apply \"{{name}}\"? This will replace classes for all days included in the template.",
+    "template_applied": "Template applied! Don't forget to click 'Save schedule' to persist changes.",
+    "confirm_delete_template": "Delete this template?",
+    "subject_name": "Subject Name",
+    "start_time": "Start Time",
+    "end_time": "End Time",
+    "room": "Room",
+    "teacher": "Teacher",
+    "template": "Template",
+    "template_no_data": "Template has no data",
+    "editing_schedule_for": "Editing schedule for {{day}}",
+    "subject_room": "Room",
+    "delete_template": "Delete template",
+    "preview_template": "Preview template",
+    "preview": "Preview",
+    "apply": "Apply",
+    "save_week_as_template": "Save current week as template",
+    "no_templates_saved": "No templates saved yet. Create your schedule for the week, then save it as a template to reuse later.",
+    "classes_lowercase": "classes",
+    "new_subject": "New Subject",
+    "assign_teacher": "Assign Teacher",
+    "confirm_delete_class": "Are you sure you want to delete this class?",
+    "apply_template": "Apply Template",
+    "alerts": {
+      "save_success": "Schedule saved successfully",
+      "error_loading": "Error loading schedule"
+    }
+  },
+  "add_students": {
+    "title": "Add students",
+    "unverified_list": "Unverified list",
+    "description": "Students who added subjects in their profile appear here automatically. Review and verify them for face-recognition attendance.",
+    "refresh": "Refresh",
+    "verify_all": "Verify all visible",
+    "search_label": "Search",
+    "search_placeholder": "Search by name or roll number",
+    "subjects_label": "Subjects",
+    "select_subject": "Select subject",
+    "year_label": "Year",
+    "all_years": "All years",
+    "first_year": "1st Year",
+    "second_year": "2nd Year",
+    "auto_populated_title": "Auto-populated list:",
+    "auto_populated_desc": "Whenever a student adds a new subject on their profile, they appear here as {{bold}} until you confirm or delete.",
+    "unverified_bold": "unverified",
+    "filter_unverified": "Unverified only",
+    "filter_all": "All requests",
+    "unverified_students_title": "Unverified students",
+    "unverified_students_desc": "Review face images, details, and linked subjects before allowing them into attendance sessions.",
+    "pending_approvals": "{{count}} pending approvals",
+    "table": {
+      "roll_no": "Roll no",
+      "student": "Student",
+      "year": "Year",
+      "branch": "Branch",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status_unverified": "Unverified",
+    "status_waiting_image": "Waiting image",
+    "added_time": "Added {{time}}",
+    "actions": {
+      "verify": "Verify",
+      "delete": "Delete"
+    },
+    "confirm_verify": "Verify this student for attendance?",
+    "confirm_delete": "Remove this student from subject?",
+    "footer_note": "Older requests are hidden. Adjust filters above to see all previously verified or deleted students.",
+    "bottom_note": "Note: Verified students will start appearing in the attendance marking list for their selected subjects and classes. You can revoke access anytime by deleting their entry from the main Students page."
+  },
+  "students": {
+    "title": "Students",
+    "subtitle": "Manage and track student enrollment",
+    "export_list": "Export list",
+    "add_student": "Add student",
+    "search_placeholder": "Search by name, roll no...",
+    "select_subject": "Select subject",
+    "sort_by_attendance": "Sort by attendance",
+    "table": {
+        "roll_number": "Roll Number",
+        "student": "Student",
+        "visual_grade": "Visual Grade",
+        "attendance": "Attendance %",
+        "status": "Status",
+        "actions": "Actions"
+    },
+    "filters": {
+       "all": "All",
+       "high": "High (>75%)",
+       "medium": "Medium (50-75%)",
+       "low": "Low (<50%)"
+    }
+  },
+  "mark_attendance": {
+    "title": "Mark Attendance",
+    "subtitle": "Real-time face recognition",
+    "status": {
+        "live": "LIVE",
+        "waking_up": "Starting ML service...",
+        "connecting": "Connecting..."
+    },
+    "alerts": {
+        "already_marked": "Student already marked present!",
+        "success": "Attendance submitted!",
+        "failed": "Submission failed."
+    }
+  },
+  "days": {
+    "short": {
+      "sun": "Sun", "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat"
+    },
+    "long": {
+       "monday": "Monday", "tuesday": "Tuesday", "wednesday": "Wednesday", "thursday": "Thursday", "friday": "Friday", "saturday": "Saturday", "sunday": "Sunday"
+    }
+  },
+  "months": {
+      "january": "January", "february": "February", "march": "March", "april": "April", "may": "May", "june": "June", "july": "July", "august": "August", "september": "September", "october": "October", "november": "November", "december": "December"
+  },
+  "common": {
+      "cancel": "Cancel",
+      "save_changes": "Save Changes",
+      "close": "Close"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Track attendance trends over time and compare classes",
+    "export": "Export analytics",
+    "generate_report": "Generate report",
+    "stats": {
+      "overall": "Overall attendance this month",
+      "increase": "+3% vs last month",
+      "avg_late": "Average late arrivals",
+      "per_week": "per week",
+      "avg_time": "Average time: {{time}}",
+      "at_risk": "Classes at risk (< 75%)",
+      "sections": "sections",
+      "more_than_last_month": "1 more than last month"
+    },
+    "chart": {
+      "trend_title": "Attendance trend",
+      "trend_desc": "Weekly attendance for the selected range",
+      "week": "Week",
+      "month": "Month",
+      "semester": "Semester",
+      "reset": "Reset"
+    },
+    "donut": {
+      "title": "Present / Late / Absent",
+      "subtitle": "Distribution for the selected period",
+      "avg": "avg"
+    },
+    "lists": {
+      "best": "Best performing classes",
+      "needs_support": "Classes needing support"
+    },
+    "breakdown": {
+      "title": "Class-wise breakdown",
+      "subtitle": "Percentage of present, late, and absent students per class",
+      "present_val": "{{val}}% present",
+      "late_absent": "{{late}}% late · {{absent}}% absent",
+      "students": "{{count}} students"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Generate and export attendance reports for your classes",
+    "export_csv": "Export CSV",
+    "export_pdf": "Export PDF",
+    "filters": {
+      "title": "Report filters",
+      "subtitle": "Choose a date range, classes, and minimum attendance threshold",
+      "generate": "Generate report",
+      "classes": "Classes",
+      "select_subject": "Select subject",
+      "threshold": "Threshold (minimum %)",
+      "reset": "Reset",
+      "threshold_desc": "Show students below {{threshold}}% attendance"
+    },
+    "preview": {
+      "title": "Report preview",
+      "subtitle": "Summary of student attendance for the selected filters",
+      "view_full": "View full report"
+    },
+    "table": {
+      "student": "Student",
+      "student_id": "ID",
+      "total_classes": "Total classes",
+      "attended": "Attended",
+      "percentage": "Attendance %",
+      "status": "Status",
+      "no_students": "No verified students found for this subject.",
+      "select_subject_prompt": "Please select a subject to view reports."
+    },
+    "footer": {
+      "showing": "Showing {{count}} students",
+      "sorted_by": "Sorted by {{key}} ({{direction}})",
+      "sort_keys": {
+          "total": "Total Classes",
+          "attended": "Attended",
+          "percentage": "Attendance %"
+      },
+      "sort_dir": {
+          "asc": "Low to High",
+          "desc": "High to Low"
+      },
+      "good": "Good (≥ {{threshold}}%)",
+      "warning": "Warning",
+      "at_risk": "At Risk"
+    },
+    "status_labels": {
+        "good": "Good",
+        "warning": "Warning",
+        "at_risk": "At Risk",
+        "unknown": "Unknown"
+    }
+  },
+  "settings": {
+    "title": "Settings for {{name}}",
+    "subtitle": "Configure attendance thresholds, profile and face recognition preferences",
+    "sidebar": {
+        "heading": "Settings",
+        "general": "General",
+        "thresholds": "Thresholds",
+        "profile": "Profile",
+        "face_settings": "Face settings",
+        "credits": "Credits",
+        "logout": "Logout"
+    },
+    "general": {
+      "title": "General preferences",
+      "subtitle": "Customize how the app looks and how you receive alerts.",
+      "theme": "Theme",
+      "notifications_title": "Notification permissions",
+      "push": "Push notifications",
+      "push_desc": "Allow browser notifications for critical events.",
+      "sound": "Sound effects",
+      "sound_desc": "Play a sound when a student is marked present.",
+      "email_title": "Email preferences",
+      "email_daily": "Daily attendance summary",
+      "email_critical": "Critical attendance alerts",
+      "email_updates": "Product updates",
+      "cancel": "Cancel",
+      "save": "Save changes",
+      "saving": "Saving..."
+    },
+    "thresholds": {
+        "title": "Attendance thresholds",
+        "subtitle": "Define when a student is considered at risk or critical based on attendance percentage.",
+        "ranges": "Warning and critical ranges",
+        "warning": "Warning",
+        "critical": "Critical",
+        "zone_critical": "Critical zone",
+        "zone_warning": "Warning zone",
+        "zone_safe": "Safe zone",
+        "info": "Adjusting these values will update visual alerts across dashboards, student profiles and reports."
+    },
+    "profile": {
+        "title": "Profile details",
+        "subtitle": "Keep your basic information and contact details up to date.",
+        "view_public": "View public profile",
+        "change_photo": "Change photo",
+        "full_name": "Full Name",
+        "role": "Role",
+        "email": "Email Address",
+        "phone": "Phone Number",
+        "subjects": "Subjects Taught",
+        "no_subjects": "No subjects added",
+        "add_subject": "Add subject",
+        "add_subject_modal": {
+            "title": "Add New Subject",
+            "name_label": "Subject Name",
+            "name_placeholder": "e.g. Data Structures",
+            "code_label": "Subject Code",
+            "code_placeholder": "e.g. CS101",
+            "cancel": "Cancel",
+            "add": "Add Subject"
+        }
+    },
+    "face_settings": {
+        "title": "Face recognition configuration",
+        "subtitle": "Manage enrolment data and tune the recognition engine parameters.",
+        "face_data": "Face data enrolled",
+        "last_updated": "Last updated: 3 days ago via Mobile App",
+        "recalibrate": "Re-calibrate",
+        "threshold": "Recognition confidence threshold",
+        "threshold_desc": "Higher values reduce false positives but might require better lighting conditions. Recommended: 80%.",
+        "security": "Security measures",
+        "liveness": "Liveness detection (Anti-spoofing)",
+        "liveness_desc": "Requires subjects to blink or move slightly to prevent photo attacks.",
+        "danger_zone": "Danger Zone",
+        "reset_model": "Reset recognition model",
+        "reset_desc": "This will clear all learned face patterns for this profile.",
+        "reset_data": "Reset data",
+        "discard": "Discard",
+        "apply": "Apply settings"
+    },
+    "credits": {
+        "title": "Our Contributors",
+        "badge": "Open Source",
+        "subtitle": "The amazing people who have contributed code to this project.",
+        "send_thanks": "Send thanks",
+        "commits": "commits",
+         "no_contributors": "No contributors found.",
+         "footer": "Thank you to every developer who helped build the Smart Attendance System."
+    },
+    "alerts": {
+      "load_failed": "Failed to load settings: {{error}}",
+      "save_failed": "Failed to save profile",
+      "avatar_failed": "Avatar Upload Failed"
+    }
+  },
+  "messaging": {
+    "title": "Student Messaging",
+    "subtitle": "Send notifications and messages to your students",
+    "stats": {
+      "emails_sent": "Emails sent (30 days)",
+      "total_recipients": "Total Recipients",
+      "successfully_sent": "Successfully Sent",
+      "failed": "Failed",
+      "total_sent": "Total Sent",
+      "total_failed": "Failed",
+      "by_type": "By Type",
+      "email_statistics": "Email Statistics (30 days)"
+    },
+    "tabs": {
+      "absence": "Absence",
+      "assignment": "Assignment",
+      "exam": "Exam Alert",
+      "custom": "Custom Message"
+    },
+    "form": {
+        "subject_class": "Subject/Class",
+        "date": "Date",
+        "assignment_title": "Assignment Title",
+        "subject": "Subject",
+        "due_date": "Due Date",
+        "exam_name": "Exam Name",
+        "exam_date": "Exam Date",
+        "time": "Time",
+        "venue": "Venue",
+        "message_title": "Message Title",
+        "message": "Message",
+        "placeholders": {
+            "subject_class": "e.g., Mathematics 101",
+            "assignment_title": "e.g., Chapter 5 Homework",
+            "subject": "e.g., Mathematics",
+            "exam_name": "e.g., Midterm Examination",
+            "venue": "e.g., Room 101, Main Building",
+            "message_title": "e.g., Important Announcement",
+            "message": "Type your message here..."
+        },
+        "buttons": {
+            "send_absence": "Send Absence Notification",
+            "send_assignment": "Send Assignment Reminder",
+            "send_exam": "Send Exam Alert",
+            "send_custom": "Send Custom Message"
+        }
+    },
+    "recipients": {
+        "select": "Select Recipients",
+        "select_all": "Select All",
+        "deselect_all": "Deselect All",
+        "selected_count": "{{count}} student selected",
+        "selected_count_plural": "{{count}} students selected",
+        "loading": "Loading students...",
+        "no_students": "No students found"
+    },
+    "alerts": {
+        "fill_all": "Please fill in all fields and select at least one student",
+        "success": "Email Send Summary",
+        "failed_send": "Failed to send message. Please try again."
+    }
+  }
+}

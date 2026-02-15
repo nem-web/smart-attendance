@@ -1,0 +1,100 @@
+name: Issue Policy Enforcer
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Runs every 6 hours
+  workflow_dispatch:      # Allows manual trigger
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  audit-assignments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Policy Violations
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ISSUE_LIMIT = 2; // Threshold to trigger warning
+            const POLICY_NAME = "Aperture 3.0";
+            
+            // 1. Fetch all Open Pull Requests
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            
+            // Create a Set of users who have at least one open PR
+            const usersWithPRs = new Set(prs.map(pr => pr.user.login));
+
+            // 2. Fetch all Open Issues
+            const allIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            // Filter out PRs (since listForRepo returns both) and unassigned issues
+            const realIssues = allIssues.filter(i => !i.pull_request && i.assignees.length > 0);
+
+            // 3. Group Issues by User
+            const userIssueMap = {};
+            
+            for (const issue of realIssues) {
+              for (const assignee of issue.assignees) {
+                const user = assignee.login;
+                if (!userIssueMap[user]) {
+                  userIssueMap[user] = [];
+                }
+                userIssueMap[user].push(issue);
+              }
+            }
+
+            // 4. Identify Violators and Comment
+            for (const [user, issues] of Object.entries(userIssueMap)) {
+              
+              // Condition: User has >= 2 issues AND has 0 Open PRs
+              if (issues.length >= ISSUE_LIMIT && !usersWithPRs.has(user)) {
+                
+                console.log(`Violation detected: ${user} has ${issues.length} issues and 0 PRs.`);
+
+                // Comment on EACH of their issues
+                for (const issue of issues) {
+                  
+                  // Anti-Spam Check: Don't comment if the last comment is already from this bot
+                  const comments = await github.rest.issues.listComments({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    per_page: 100 // Check last 100 comments
+                  });
+                  
+                  const lastComment = comments.data.length > 0 ? comments.data[comments.data.length - 1] : null;
+                  
+                  // If the last comment was made by the bot (actions-user), skip.
+                  if (lastComment && lastComment.user.type === 'Bot' && lastComment.body.includes(POLICY_NAME)) {
+                    console.log(`Skipping issue #${issue.number} (already warned).`);
+                    continue;
+                  }
+
+                  // Post the Warning
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: `👋 @${user}
+                    
+                    You have been assigned **${issues.length} issues** but have not opened any Pull Requests yet.
+                    
+                    According to **${POLICY_NAME} policy**, you can only work on **one issue at a time**.
+                    
+                    ⚠️ **Action Required:** Please unassign yourself from the issues you have not started working on yet.`
+                  });
+                }
+              }
+            }

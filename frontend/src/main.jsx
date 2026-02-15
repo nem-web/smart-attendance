@@ -1,9 +1,10 @@
 // frontend/src/main.jsx
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
+import "./i18n";
 import { ThemeProvider } from "./theme/ThemeContext";
 import { initializeKeepAlive } from "./utils/keepAlive";
 
@@ -23,7 +24,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <ThemeProvider>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <Suspense fallback={<div>Loading...</div>}>
+            <App />
+          </Suspense>
         </QueryClientProvider>
       </BrowserRouter>
     </ThemeProvider>

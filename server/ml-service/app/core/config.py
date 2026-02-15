@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: Union[str, List[str]] = ["*"]
 
     LOG_LEVEL: str = "info"
+    API_KEY: str = "your-secret-api-key-here"
 
     class Config:
         env_file = ".env"

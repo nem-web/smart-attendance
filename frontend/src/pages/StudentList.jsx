@@ -10,9 +10,11 @@ import {
   ArrowDownRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
 
 export default function StudentList() {
+  const { t } = useTranslation();
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
@@ -121,19 +123,19 @@ export default function StudentList() {
       {/* --- HEADER --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-main)]">Students</h2>
-          <p className="text-[var(--text-body)]">Browse all students and compare attendance performance</p>
+          <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('students.title')}</h2>
+          <p className="text-[var(--text-body)]">{t('students.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--bg-secondary)] font-medium flex items-center gap-2 transition cursor-pointer">
             <Download size={18} />
-            Export list
+            {t('students.export_list')}
           </button>
           <button
            onClick={() => navigate('/add-students')}
            className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:bg-[var(--primary-hover)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <Plus size={18} />
-            Add student
+            {t('students.add_student')}
           </button>
         </div>
       </div>
@@ -144,28 +146,28 @@ export default function StudentList() {
         <div className="xl:col-span-3 space-y-4">
           
           {/* Filters Bar */}
-          <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[color:var(--border-color)] shadow-sm">
             
             {/* Search */}
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" size={18} />
+            <div className="relative w-full mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-body)]" size={18} />
               <input 
                 type="text" 
-                placeholder="Search by name or ID" 
+                placeholder={t('students.search_placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border-none rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
+                className="w-full pl-10 pr-4 py-2 bg-[color:var(--bg-secondary)] border-none rounded-lg text-sm focus:ring-2 focus:ring-[color:var(--primary)] outline-none"
               />
             </div>
 
             {/* Filter Controls */}
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={selectedSubject || ""}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="flex items-center gap-1 text-sm font-medium text-[var(--text-body)] px-3 py-1.5 hover:bg-[var(--bg-hover)] rounded-lg whitespace-nowrap cursor-pointer"
+                className="flex items-center gap-1 text-sm font-medium text-[color:var(--text-body)] px-3 py-1.5 hover:bg-[color:var(--bg-secondary)] rounded-lg cursor-pointer"
               >
-                <option value="">Select subject</option>
+                <option value="">{t('students.select_subject')}</option>
                 {subjects.map(s => (
                   <option key={s._id} value={s._id}>
                     {s.name} ({s.code})
@@ -175,30 +177,52 @@ export default function StudentList() {
 
               <button 
                 onClick={handleSortToggle}
-                className="flex items-center gap-1 text-sm font-medium text-[var(--text-body)] px-3 py-1.5 hover:bg-[var(--bg-hover)] rounded-lg whitespace-nowrap cursor-pointer"
+                className="flex items-center gap-1 text-sm font-medium text-[color:var(--text-body)] px-3 py-1.5 hover:bg-[color:var(--bg-secondary)] rounded-lg cursor-pointer"
+                title="Sort by attendance"
               >
-                Sort by attendance 
+                <span className="hidden sm:inline">{t('students.sort_by_attendance')}</span>
+                <span className="sm:hidden">{t('common.sort', 'Sort')}</span>
                 <ChevronDown 
                   size={14} 
                   className={`transition-transform ${sortOrder === "asc" ? "rotate-180" : ""}`} 
                 />
               </button>
               
-              <div className="h-6 w-px bg-[var(--border-color)] mx-1"></div>
+              <div className="hidden sm:block h-6 w-px bg-[color:var(--border-color)] mx-1"></div>
 
-              {["All", "High (> 90%)", "Medium (75-90%)", "Low (< 75%)"].map((filter) => (
-                <button 
-                  key={filter}
-                  onClick={() => setSelectedFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                    selectedFilter === filter
+              {["All", "High (> 90%)", "Medium (75-90%)", "Low (< 75%)"].map((filter) => {
+                const getLabel = () => {
+                   if (filter === "All") return t('students.filters.all');
+                   if (filter.includes("High")) return t('students.filters.high');
+                   if (filter.includes("Medium")) return t('students.filters.medium');
+                   if (filter.includes("Low")) return t('students.filters.low');
+                   return filter;
+                };
+
+                const getShortLabel = () => {
+                   const label = getLabel();
+                   // Heuristic: take first word if manageable or specific logic
+                   if (label.includes("High")) return "High"; // Fallback specific logic 
+                   if (label.includes("Medium")) return "Med";
+                   return label.split(' ')[0];
+                };
+
+                return (
+                  <button 
+                    key={filter}
+                    onClick={() => setSelectedFilter(filter)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      selectedFilter === filter 
                       ? "bg-[var(--primary)]/10 text-[var(--primary)]"
                       : "text-[var(--text-body)] hover:bg-[var(--bg-hover)]"
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
+                    }`}
+                    title={getLabel()}
+                  >
+                    <span className="hidden sm:inline">{getLabel()}</span>
+                    <span className="sm:hidden">{getShortLabel()}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -208,11 +232,11 @@ export default function StudentList() {
               <table className="w-full min-w-[800px]">
                 <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
                   <tr className="text-left text-xs font-semibold text-[var(--text-body)] opacity-80 uppercase tracking-wider">
-                    <th className="px-6 py-4">Roll Number</th>
-                    <th className="px-6 py-4">Student</th>
-                    <th className="px-6 py-4">Visual grade</th>
-                    <th className="px-6 py-4">Trend</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4">{t('students.table.roll_number')}</th>
+                    <th className="px-6 py-4">{t('students.table.student')}</th>
+                    <th className="px-6 py-4">{t('students.table.visual_grade')}</th>
+                    <th className="px-6 py-4">{t('students.table.trend')}</th>
+                    <th className="px-6 py-4 text-right">{t('students.table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border-color)]">
@@ -220,13 +244,13 @@ export default function StudentList() {
                     <tr>
                       <td colSpan="5" className="px-6 py-12 text-center">
                         <div className="text-[var(--text-body)] opacity-80">
-                          <p className="text-lg font-medium">No students found</p>
+                          <p className="text-lg font-medium">{t('students.no_students_found')}</p>
                           <p className="text-sm mt-1">
                             {searchTerm && selectedFilter !== "All" 
-                              ? `No students match "${searchTerm}" with filter "${selectedFilter}"`
+                              ? t('students.no_match_filter', { query: searchTerm, filter: selectedFilter })
                               : searchTerm
-                              ? `No students match "${searchTerm}"`
-                              : `No students match the selected filter "${selectedFilter}"`}
+                              ? t('students.no_match', { query: searchTerm })
+                              : t('students.no_match_selected_filter', { filter: selectedFilter })}
                           </p>
                         </div>
                       </td>
@@ -237,15 +261,15 @@ export default function StudentList() {
 
                     // derive UI-only values (NO design change)
                     let color = "amber";
-                    let status = "Moderate";
+                    let status = t('students.status.moderate');
                     let trend = 0;
 
                     if (percentage > 90) {
                       color = "green";
-                      status = "Excellent";
+                      status = t('students.status.excellent');
                     } else if (percentage < 75) {
                       color = "red";
-                      status = "At risk";
+                      status = t('students.status.at_risk');
                     }
 
                     return (
@@ -299,16 +323,16 @@ export default function StudentList() {
                           {trend > 0 ? (
                             <div className="flex items-center gap-1 text-xs font-semibold text-[var(--success)]">
                               <ArrowUpRight size={14} />
-                              +{trend}% vs last month
+                              +{trend}% {t('students.trend.vs_last_month')}
                             </div>
                           ) : trend < 0 ? (
                             <div className="flex items-center gap-1 text-xs font-semibold text-[var(--danger)]">
                               <ArrowDownRight size={14} />
-                              {trend}% vs last month
+                              {trend}% {t('students.trend.vs_last_month')}
                             </div>
                           ) : (
                             <div className="text-xs font-medium text-[var(--text-body)] opacity-70">
-                              No change
+                              {t('students.trend.no_change')}
                             </div>
                           )}
                         </td>
@@ -330,10 +354,10 @@ export default function StudentList() {
             
             {/* Pagination Footer */}
             <div className="px-6 py-4 border-t border-[var(--border-color)] flex items-center justify-between text-xs text-[var(--text-body)] opacity-80">
-              <span>Showing {sortedStudents.length} of {verifiedStudents.length} students</span>
+              <span>{t('students.pagination.showing', { current: sortedStudents.length, total: verifiedStudents.length })}</span>
               <div className="flex gap-2">
-                <button className="px-3 py-1 border rounded hover:bg-[var(--bg-secondary)] cursor-pointer">Previous</button>
-                <button className="px-3 py-1 border rounded hover:bg-[var(--bg-secondary)] cursor-pointer">Next</button>
+                <button className="px-3 py-1 border rounded hover:bg-[var(--bg-secondary)] cursor-pointer">{t('students.pagination.previous')}</button>
+                <button className="px-3 py-1 border rounded hover:bg-[var(--bg-secondary)] cursor-pointer">{t('students.pagination.next')}</button>
               </div>
             </div>
           </div>
@@ -344,20 +368,20 @@ export default function StudentList() {
           
           {/* Card 1: Attendance Bands */}
           <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
-            <h3 className="font-semibold text-[var(--text-main)] mb-1">Attendance bands</h3>
-            <p className="text-xs text-[var(--text-body)] mb-4">Color grading from best to worst</p>
+            <h3 className="font-semibold text-[var(--text-main)] mb-1">{t('students.stats.attendance_bands')}</h3>
+            <p className="text-xs text-[var(--text-body)] mb-4">{t('students.stats.bands_desc')}</p>
             
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-[var(--text-body)]">High attendance</span>
+                <span className="text-[var(--text-body)]">{t('students.stats.high_attendance')}</span>
                 <span className="px-2 py-0.5 bg-[var(--success)]/10 text-[var(--success)] rounded text-xs font-bold">{"> 90%"}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-[var(--text-body)]">Medium attendance</span>
+                <span className="text-[var(--text-body)]">{t('students.stats.medium_attendance')}</span>
                 <span className="px-2 py-0.5 bg-[var(--warning)]/10 text-[var(--warning)] rounded text-xs font-bold">75-90%</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-[var(--text-body)]">Low attendance</span>
+                <span className="text-[var(--text-body)]">{t('students.stats.low_attendance')}</span>
                 <span className="px-2 py-0.5 bg-[var(--danger)]/10 text-[var(--danger)] rounded text-xs font-bold">{"< 75%"}</span>
               </div>
             </div>
@@ -366,8 +390,8 @@ export default function StudentList() {
           {/* Card 2: Top Performers */}
           {topPerformers.length > 0 && (
             <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="font-semibold text-[var(--text-main)] mb-1">Top performers</h3>
-              <p className="text-xs text-[var(--text-body)] mb-4">Students with best attendance this term</p>
+              <h3 className="font-semibold text-[var(--text-main)] mb-1">{t('students.stats.top_performers')}</h3>
+              <p className="text-xs text-[var(--text-body)] mb-4">{t('students.stats.top_performers_desc')}</p>
               
               <div className="space-y-4">
                 {topPerformers.map((s, i) => (
@@ -386,8 +410,8 @@ export default function StudentList() {
           {/* Card 3: Needs Support */}
           {needsSupport.length > 0 && (
             <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="font-semibold text-[var(--text-main)] mb-1">Needs support</h3>
-              <p className="text-xs text-[var(--text-body)] mb-4">Students with the lowest attendance</p>
+              <h3 className="font-semibold text-[var(--text-main)] mb-1">{t('students.stats.needs_support')}</h3>
+              <p className="text-xs text-[var(--text-body)] mb-4">{t('students.stats.needs_support_desc')}</p>
               
               <div className="space-y-4">
                 {needsSupport.map((s, i) => (

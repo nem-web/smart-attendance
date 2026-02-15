@@ -1,12 +1,18 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Login() {
+  const { t, i18n } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
 
   const [remember, setRemeber] = useState(false);
 
@@ -40,6 +46,7 @@ export default function Login() {
       const data = await res.json();
 
       localStorage.setItem("token", data.token)
+      if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
       localStorage.setItem("user", JSON.stringify(data));
 
       // --- FIX: Handle role case sensitivity (Teacher/Student vs teacher/student) ---
@@ -70,15 +77,33 @@ export default function Login() {
 
             {/* Header */}
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-[var(--text-main)] text-center">Welcome</h1>
-              <p className="text-[var(--text-body)]">Please enter your details to sign in.</p>
+              <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold text-[var(--text-main)] text-center">{t('login.title')}</h1>
+                {/* Language Switcher */}
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => changeLanguage('en')} 
+                    className={`text-sm ${i18n.language === 'en' ? 'font-bold text-blue-600' : 'text-gray-500'}`}
+                  >
+                    English
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button 
+                    onClick={() => changeLanguage('hi')} 
+                    className={`text-sm ${i18n.language === 'hi' ? 'font-bold text-blue-600' : 'text-gray-500'}`}
+                  >
+                    हिंदी
+                  </button>
+                </div>
+              </div>
+              <p className="text-[var(--text-body)]">{t('login.subtitle')}</p>
             </div>
 
             {/* Social Login Buttons */}
             <div className="w-full">
               <button onClick={googleLogin} className="w-full flex items-center justify-center gap-2 py-2.5 border border-[var(--border-color)] rounded-xl hover:bg-[var(--bg-secondary)] transition">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-                <span className="text-sm font-medium text-[var(--text-body)]">Google</span>
+                <span className="text-sm font-medium text-[var(--text-body)]">{t('login.google')}</span>
               </button>
             </div>
 
@@ -87,7 +112,7 @@ export default function Login() {
                 <span className="w-full border-t border-[var(--border-color)]" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[var(--bg-card)] px-2 text-[var(--text-body)] opacity-70 font-medium">Or continue with</span>
+                <span className="bg-[var(--bg-card)] px-2 text-[var(--text-body)] opacity-70 font-medium">{t('login.or_continue')}</span>
               </div>
             </div>
 
@@ -97,11 +122,11 @@ export default function Login() {
 
                 {/* Email Input */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-body)]">Email address</label>
+                  <label className="text-sm font-semibold text-[var(--text-body)]">{t('login.email_label')}</label>
                   <div className="relative">
                     <input
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t('login.email_placeholder')}
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -112,11 +137,11 @@ export default function Login() {
 
                 {/* Password Input */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-body)]">Password</label>
+                  <label className="text-sm font-semibold text-[var(--text-body)]">{t('login.password_label')}</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder={t('login.password_placeholder')}
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 pr-10"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -139,10 +164,10 @@ export default function Login() {
                       checked={remember}
                       onChange={(e) => setRemeber(e.target.checked)}
                       className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary)] focus:ring-[var(--primary)]" />
-                    <span className="text-sm text-[var(--text-body)] select-none">Remember me</span>
+                    <span className="text-sm text-[var(--text-body)] select-none">{t('login.remember_me')}</span>
                   </label>
                   <Link to="/forgot-password" className="text-sm font-medium text-[var(--primary)] opacity-80 hover:text-[var(--primary)] hover:underline">
-                    Forgot password?
+                    {t('login.forgot_password')}
                   </Link>
                 </div>
               </div>
@@ -153,14 +178,14 @@ export default function Login() {
               )}
 
               <button className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] hover:text-[var(--text-main)] shadow-md transition-all active:scale-[0.98]">
-                Sign in
+                {t('login.submit')}
               </button>
             </form>
 
             <p className="text-center text-sm text-[var(--text-body)]">
-              Don't have an account yet?{" "}
+              {t('login.no_account')}{" "}
               <Link to="/register" className="font-semibold text-[var(--primary)] hover:underline">
-                Register for free
+                {t('login.register_link')}
               </Link>
             </p>
 
@@ -179,9 +204,9 @@ export default function Login() {
                 <div className="w-48 h-48 bg-[var(--primary)] rounded-full opacity-20 blur-3xl absolute"></div>
                 <span className="text-6xl">🎓</span>
               </div>
-              <h2 className="text-2xl font-bold text-[var(--text-main)]">Smart Attendance System</h2>
+              <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('login.hero_title')}</h2>
               <p className="text-[var(--text-body)] max-w-sm mx-auto">
-                Automate your classroom attendance with face recognition. Secure, fast, and reliable.
+                {t('login.hero_subtitle')}
               </p>
             </div>
           </div>

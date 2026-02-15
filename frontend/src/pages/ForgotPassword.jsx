@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,6 +19,7 @@ const OTP_REGEX = /^\d{6}$/;
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   // Form State
   const [step, setStep] = useState(1); // 1: Send OTP, 2: Verify & Reset
   const [email, setEmail] = useState("");
@@ -69,7 +71,7 @@ export default function ForgotPassword() {
     clearMessages();
 
     if (!isEmailValid) {
-      setError("Please enter a valid email address.");
+      setError(t('forgot_password.alerts.invalid_email'));
       return;
     }
 
@@ -80,7 +82,7 @@ export default function ForgotPassword() {
 
     setStep(2);
     setResendCooldown(30);
-    setSuccess(`Verification code sent to ${email}`);
+    setSuccess(t('forgot_password.alerts.code_sent', { email }));
   };
 
   // Step 2: Resend OTP (Only updates timer/message, stays on step 2)
@@ -90,7 +92,7 @@ export default function ForgotPassword() {
     await new Promise((resolve) => window.setTimeout(resolve, 800));
     setLoading(false);
     setResendCooldown(30);
-    setSuccess("A new code has been sent.");
+    setSuccess(t('forgot_password.alerts.otp_sent'));
   };
 
   // Step 3: Final Reset
@@ -99,15 +101,15 @@ export default function ForgotPassword() {
     clearMessages();
 
     if (!isOtpValid) {
-      setError("Please enter the 6-digit code.");
+      setError(t('forgot_password.alerts.enter_otp'));
       return;
     }
     if (!isPasswordValid) {
-      setError("Password must be 8+ chars with at least 1 number.");
+      setError(t('forgot_password.alerts.invalid_password'));
       return;
     }
     if (!isPasswordMatch) {
-      setError("Passwords do not match.");
+      setError(t('forgot_password.alerts.password_mismatch'));
       return;
     }
 
@@ -116,7 +118,7 @@ export default function ForgotPassword() {
     await new Promise((resolve) => window.setTimeout(resolve, 1500));
     setLoading(false);
 
-    setSuccess("Password reset successfully! Redirecting...");
+    setSuccess(t('forgot_password.alerts.success'));
     setOtp("");
     setNewPassword("");
     setConfirmPassword("");
@@ -161,12 +163,12 @@ export default function ForgotPassword() {
 
         <div className="mt-5 space-y-2">
           <h1 className="text-3xl font-bold tracking-tight text-[var(--text-main)]">
-            {step === 1 ? "Reset your password" : "Verify & Reset"}
+            {step === 1 ? t('forgot_password.title_step1') : t('forgot_password.title_step2')}
           </h1>
           <p className="text-base text-[var(--text-body)]">
             {step === 1
-              ? "Enter your email to receive a verification code."
-              : "Enter the code sent to your email and set a new password."}
+              ? t('forgot_password.subtitle_step1')
+              : t('forgot_password.subtitle_step2')}
           </p>
         </div>
 
@@ -185,7 +187,7 @@ export default function ForgotPassword() {
                 step >= 1 ? "text-[var(--text-main)]" : "text-[var(--text-body)]"
               }
             >
-              Email
+              {t('forgot_password.step_1_label')}
             </span>
           </div>
           <div className="h-px w-8 bg-[var(--border-color)]"></div>
@@ -202,7 +204,7 @@ export default function ForgotPassword() {
                 step === 2 ? "text-[var(--text-main)]" : "text-[var(--text-body)]"
               }
             >
-              Reset
+              {t('forgot_password.step_2_label')}
             </span>
           </div>
         </div>
@@ -216,7 +218,7 @@ export default function ForgotPassword() {
               htmlFor="email"
               className="text-sm font-semibold text-[var(--text-main)]"
             >
-              Email address
+              {t('forgot_password.email_label')}
             </label>
             <div className="relative">
               <Mail
@@ -232,7 +234,7 @@ export default function ForgotPassword() {
                   setEmail(e.target.value);
                   clearMessages();
                 }}
-                placeholder="Enter your registered email"
+                placeholder={t('forgot_password.email_placeholder')}
                 autoComplete="email"
                 className={`w-full rounded-2xl border bg-[var(--bg-primary)] py-3 pl-10 pr-14 text-base text-[var(--text-main)] placeholder:text-[var(--text-body)] placeholder:opacity-80 outline-none transition focus:ring-2 focus:ring-[var(--primary)] ${
                   step === 2
@@ -269,13 +271,13 @@ export default function ForgotPassword() {
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--primary)] hover:underline"
                 >
-                  Change
+                  {t('forgot_password.change_email')}
                 </button>
               )}
             </div>
             {step === 1 && (
               <p className="text-xs text-[var(--text-body)]">
-                Press <strong>Enter</strong> or click the arrow to send code.
+                {t('forgot_password.email_help')}
               </p>
             )}
           </div>
@@ -291,7 +293,7 @@ export default function ForgotPassword() {
                     htmlFor="otp"
                     className="text-sm font-semibold text-[var(--text-main)]"
                   >
-                    Verification code
+                    {t('forgot_password.otp_label')}
                   </label>
                   <button
                     type="button"
@@ -300,8 +302,8 @@ export default function ForgotPassword() {
                     className="text-sm font-semibold text-[var(--primary)] transition hover:underline disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {resendCooldown > 0
-                      ? `Resend in ${resendCooldown}s`
-                      : "Resend code"}
+                      ? t('forgot_password.resend_in', { seconds: resendCooldown })
+                      : t('forgot_password.resend_code')}
                   </button>
                 </div>
                 <div className="relative">
@@ -320,7 +322,7 @@ export default function ForgotPassword() {
                       setOtp(next);
                       clearMessages();
                     }}
-                    placeholder="6-digit code"
+                    placeholder={t('forgot_password.otp_placeholder')}
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     autoFocus
@@ -336,7 +338,7 @@ export default function ForgotPassword() {
                     htmlFor="newPassword"
                     className="text-sm font-semibold text-[var(--text-main)]"
                   >
-                    New password
+                    {t('forgot_password.new_password_label')}
                   </label>
                   <div className="relative">
                     <Lock
@@ -351,7 +353,7 @@ export default function ForgotPassword() {
                         setNewPassword(e.target.value);
                         clearMessages();
                       }}
-                      placeholder="Min 8 chars"
+                      placeholder={t('forgot_password.new_password_placeholder')}
                       autoComplete="new-password"
                       className="w-full rounded-2xl border border-[var(--border-color)] bg-[var(--bg-primary)] py-3 pl-10 pr-4 text-base text-[var(--text-main)] outline-none transition focus:ring-2 focus:ring-[var(--primary)]"
                     />
@@ -363,7 +365,7 @@ export default function ForgotPassword() {
                     htmlFor="confirmPassword"
                     className="text-sm font-semibold text-[var(--text-main)]"
                   >
-                    Confirm password
+                    {t('forgot_password.confirm_password_label')}
                   </label>
                   <div className="relative">
                     <Lock
@@ -378,7 +380,7 @@ export default function ForgotPassword() {
                         setConfirmPassword(e.target.value);
                         clearMessages();
                       }}
-                      placeholder="Re-enter password"
+                      placeholder={t('forgot_password.confirm_password_placeholder')}
                       autoComplete="new-password"
                       className="w-full rounded-2xl border border-[var(--border-color)] bg-[var(--bg-primary)] py-3 pl-10 pr-4 text-base text-[var(--text-main)] outline-none transition focus:ring-2 focus:ring-[var(--primary)]"
                     />
@@ -416,7 +418,7 @@ export default function ForgotPassword() {
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--border-color)] px-5 py-3 text-base font-semibold text-[var(--text-main)] transition hover:bg-[var(--bg-secondary)]"
             >
               <ArrowLeft size={18} />
-              Back
+              {t('forgot_password.back_button')}
             </Link>
 
             {/* Main Submit Button (Visible only in Step 2) */}
@@ -431,12 +433,12 @@ export default function ForgotPassword() {
                 {loading ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Resetting...
+                    {t('forgot_password.resetting_button')}
                   </>
                 ) : (
                   <>
                     <Send size={18} />
-                    Reset Password
+                    {t('forgot_password.reset_button')}
                   </>
                 )}
               </button>
@@ -445,12 +447,12 @@ export default function ForgotPassword() {
         </form>
 
         <p className="mt-6 text-center text-sm text-[var(--text-body)]">
-          Remembered your password?{" "}
+          {t('forgot_password.remembered_password')}{" "}
           <Link
             to="/login"
             className="font-semibold text-[var(--primary)] hover:underline"
           >
-            Log in instead
+            {t('forgot_password.login_link')}
           </Link>
         </p>
       </div>

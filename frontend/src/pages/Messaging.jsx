@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Mail,
   Send,
-  Clock,
   AlertTriangle,
   BookOpen,
   GraduationCap,
   MessageSquare,
   Users,
   CheckCircle,
-  XCircle,
   BarChart3,
   Loader2,
 } from "lucide-react";
@@ -25,6 +24,7 @@ import { getStudents } from "../api/students";
 import Spinner from "../components/Spinner";
 
 export default function Messaging() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [user] = useState(() => {
     try {
@@ -118,7 +118,7 @@ export default function Messaging() {
 
   const handleSendAbsence = async () => {
     if (!absenceData.subject || selectedStudents.length === 0) {
-      alert("Please fill in all fields and select at least one student");
+      alert(t('messaging.alerts.fill_all'));
       return;
     }
 
@@ -139,7 +139,7 @@ export default function Messaging() {
       loadStats(); // Refresh stats
     } catch (error) {
       console.error("Failed to send notifications:", error);
-      alert("Failed to send notifications. Please try again.");
+      alert(t('messaging.alerts.failed_send'));
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,7 @@ export default function Messaging() {
       !assignmentData.due_date ||
       selectedStudents.length === 0
     ) {
-      alert("Please fill in all fields and select at least one student");
+      alert(t('messaging.alerts.fill_all'));
       return;
     }
 
@@ -174,7 +174,7 @@ export default function Messaging() {
       loadStats();
     } catch (error) {
       console.error("Failed to send reminders:", error);
-      alert("Failed to send reminders. Please try again.");
+      alert(t('messaging.alerts.failed_send'));
     } finally {
       setLoading(false);
     }
@@ -189,7 +189,7 @@ export default function Messaging() {
       !examData.venue ||
       selectedStudents.length === 0
     ) {
-      alert("Please fill in all fields and select at least one student");
+      alert(t('messaging.alerts.fill_all'));
       return;
     }
 
@@ -212,7 +212,7 @@ export default function Messaging() {
       loadStats();
     } catch (error) {
       console.error("Failed to send alerts:", error);
-      alert("Failed to send alerts. Please try again.");
+      alert(t('messaging.alerts.failed_send'));
     } finally {
       setLoading(false);
     }
@@ -224,7 +224,7 @@ export default function Messaging() {
       !customData.message_body ||
       selectedStudents.length === 0
     ) {
-      alert("Please fill in all fields and select at least one student");
+      alert(t('messaging.alerts.fill_all'));
       return;
     }
 
@@ -245,17 +245,17 @@ export default function Messaging() {
       loadStats();
     } catch (error) {
       console.error("Failed to send message:", error);
-      alert("Failed to send message. Please try again.");
+      alert(t('messaging.alerts.failed_send'));
     } finally {
       setLoading(false);
     }
   };
 
   const tabs = [
-    { id: "absence", label: "Absence", icon: AlertTriangle },
-    { id: "assignment", label: "Assignment", icon: BookOpen },
-    { id: "exam", label: "Exam Alert", icon: GraduationCap },
-    { id: "custom", label: "Custom Message", icon: MessageSquare },
+    { id: "absence", label: t('messaging.tabs.absence'), icon: AlertTriangle },
+    { id: "assignment", label: t('messaging.tabs.assignment'), icon: BookOpen },
+    { id: "exam", label: t('messaging.tabs.exam'), icon: GraduationCap },
+    { id: "custom", label: t('messaging.tabs.custom'), icon: MessageSquare },
   ];
 
   return (
@@ -264,9 +264,9 @@ export default function Messaging() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Student Messaging</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('messaging.title')}</h1>
             <p className="text-gray-600 mt-1">
-              Send notifications and messages to your students
+              {t('messaging.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -274,7 +274,7 @@ export default function Messaging() {
               <div className="flex items-center gap-2">
                 <Mail className="text-indigo-600" size={18} />
                 <div className="text-sm">
-                  <div className="text-gray-500">Emails sent (30 days)</div>
+                  <div className="text-gray-500">{t('messaging.stats.emails_sent')}</div>
                   <div className="font-bold text-gray-900">
                     {stats ? stats.total_sent : "—"}
                   </div>
@@ -315,7 +315,7 @@ export default function Messaging() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject/Class
+                        {t('messaging.form.subject')}
                       </label>
                       <input
                         type="text"
@@ -323,13 +323,13 @@ export default function Messaging() {
                         onChange={(e) =>
                           setAbsenceData({ ...absenceData, subject: e.target.value })
                         }
-                        placeholder="e.g., Mathematics 101"
+                        placeholder={t('messaging.placeholders.subject')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date
+                        {t('messaging.form.date')}
                       </label>
                       <input
                         type="date"
@@ -350,7 +350,7 @@ export default function Messaging() {
                       ) : (
                         <Send size={18} />
                       )}
-                      Send Absence Notification
+                      {t('messaging.form.send_absence')}
                     </button>
                   </div>
                 )}
@@ -360,7 +360,7 @@ export default function Messaging() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Assignment Title
+                        {t('messaging.form.assignment_title')}
                       </label>
                       <input
                         type="text"
@@ -371,13 +371,13 @@ export default function Messaging() {
                             assignment_title: e.target.value,
                           })
                         }
-                        placeholder="e.g., Chapter 5 Homework"
+                        placeholder={t('messaging.placeholders.assignment_title')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject
+                        {t('messaging.form.subject')}
                       </label>
                       <input
                         type="text"
@@ -385,13 +385,13 @@ export default function Messaging() {
                         onChange={(e) =>
                           setAssignmentData({ ...assignmentData, subject: e.target.value })
                         }
-                        placeholder="e.g., Mathematics"
+                        placeholder={t('messaging.placeholders.subject')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Due Date
+                        {t('messaging.form.due_date')}
                       </label>
                       <input
                         type="date"
@@ -412,7 +412,7 @@ export default function Messaging() {
                       ) : (
                         <Send size={18} />
                       )}
-                      Send Assignment Reminder
+                      {t('messaging.form.send_assignment')}
                     </button>
                   </div>
                 )}
@@ -422,7 +422,7 @@ export default function Messaging() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Exam Name
+                        {t('messaging.form.exam_name')}
                       </label>
                       <input
                         type="text"
@@ -430,13 +430,13 @@ export default function Messaging() {
                         onChange={(e) =>
                           setExamData({ ...examData, exam_name: e.target.value })
                         }
-                        placeholder="e.g., Midterm Examination"
+                        placeholder={t('messaging.placeholders.exam_name')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subject
+                        {t('messaging.form.subject')}
                       </label>
                       <input
                         type="text"
@@ -444,14 +444,14 @@ export default function Messaging() {
                         onChange={(e) =>
                           setExamData({ ...examData, subject: e.target.value })
                         }
-                        placeholder="e.g., Mathematics"
+                        placeholder={t('messaging.placeholders.subject')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Exam Date
+                          {t('messaging.form.exam_date')}
                         </label>
                         <input
                           type="date"
@@ -464,7 +464,7 @@ export default function Messaging() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Time
+                          {t('messaging.form.time')}
                         </label>
                         <input
                           type="time"
@@ -478,7 +478,7 @@ export default function Messaging() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Venue
+                        {t('messaging.form.venue')}
                       </label>
                       <input
                         type="text"
@@ -486,7 +486,7 @@ export default function Messaging() {
                         onChange={(e) =>
                           setExamData({ ...examData, venue: e.target.value })
                         }
-                        placeholder="e.g., Room 101, Main Building"
+                        placeholder={t('messaging.placeholders.venue')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
@@ -500,7 +500,7 @@ export default function Messaging() {
                       ) : (
                         <Send size={18} />
                       )}
-                      Send Exam Alert
+                      {t('messaging.form.send_exam')}
                     </button>
                   </div>
                 )}
@@ -510,7 +510,7 @@ export default function Messaging() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Message Title
+                         {t('messaging.form.message_title')}
                       </label>
                       <input
                         type="text"
@@ -518,20 +518,20 @@ export default function Messaging() {
                         onChange={(e) =>
                           setCustomData({ ...customData, message_title: e.target.value })
                         }
-                        placeholder="e.g., Important Announcement"
+                        placeholder={t('messaging.placeholders.message_title')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Message
+                         {t('messaging.form.message_body')}
                       </label>
                       <textarea
                         value={customData.message_body}
                         onChange={(e) =>
                           setCustomData({ ...customData, message_body: e.target.value })
                         }
-                        placeholder="Type your message here..."
+                        placeholder={t('messaging.placeholders.message_placeholder')}
                         rows={6}
                         maxLength={2000}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
@@ -550,7 +550,7 @@ export default function Messaging() {
                       ) : (
                         <Send size={18} />
                       )}
-                      Send Custom Message
+                      {t('messaging.form.send_custom')}
                     </button>
                   </div>
                 )}
@@ -572,13 +572,13 @@ export default function Messaging() {
                       )}
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 mb-2">
-                          Email Send Summary
+                          {t('messaging.summary.title')}
                         </h3>
                         <div className="text-sm text-gray-700 space-y-1">
-                          <div>Total Recipients: {result.total}</div>
-                          <div className="text-green-700">✓ Successfully Sent: {result.sent}</div>
+                          <div>{t('messaging.summary.total')}: {result.total}</div>
+                          <div className="text-green-700">✓ {t('messaging.summary.success')}: {result.sent}</div>
                           {result.failed > 0 && (
-                            <div className="text-red-700">✗ Failed: {result.failed}</div>
+                            <div className="text-red-700">✗ {t('messaging.summary.failed')}: {result.failed}</div>
                           )}
                         </div>
                       </div>
@@ -595,32 +595,31 @@ export default function Messaging() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                   <Users size={18} />
-                  Select Recipients
+                  {t('messaging.recipients.select')}
                 </h3>
                 <button
                   onClick={handleSelectAll}
                   className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                  {selectedStudents.length === students.length ? "Deselect All" : "Select All"}
+                  {selectedStudents.length === students.length ? t('messaging.recipients.deselect_all') : t('messaging.recipients.select_all')}
                 </button>
               </div>
 
               <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
                 <div className="text-sm text-indigo-900">
-                  <span className="font-semibold">{selectedStudents.length}</span> student
-                  {selectedStudents.length !== 1 ? "s" : ""} selected
+                  <span className="font-semibold">{selectedStudents.length}</span> {t('messaging.recipients.students_selected')}
                 </div>
               </div>
 
               {loadingStudents ? (
                 <div className="flex justify-center py-8">
-                  <Spinner message="Loading students..." />
+                  <Spinner message={t('common.loading')} />
                 </div>
               ) : (
                 <div className="max-h-96 overflow-y-auto space-y-2">
                   {students.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      No students found
+                      {t('messaging.recipients.no_students')}
                     </div>
                   ) : (
                     students.map((student) => (
@@ -652,21 +651,21 @@ export default function Messaging() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
                   <BarChart3 size={18} />
-                  Email Statistics (30 days)
+                  {t('messaging.stats.title')}
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Sent</span>
+                    <span className="text-sm text-gray-600">{t('messaging.stats.total_sent')}</span>
                     <span className="font-semibold text-green-600">{stats.total_sent}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Failed</span>
+                    <span className="text-sm text-gray-600">{t('messaging.stats.failed')}</span>
                     <span className="font-semibold text-red-600">{stats.total_failed}</span>
                   </div>
                   {stats.sent_by_type && Object.keys(stats.sent_by_type).length > 0 && (
                     <>
                       <hr className="my-3" />
-                      <div className="text-xs font-medium text-gray-500 uppercase">By Type</div>
+                      <div className="text-xs font-medium text-gray-500 uppercase">{t('messaging.stats.by_type')}</div>
                       {Object.entries(stats.sent_by_type).map(([type, counts]) => (
                         <div key={type} className="flex justify-between items-center text-sm">
                           <span className="text-gray-600 capitalize">

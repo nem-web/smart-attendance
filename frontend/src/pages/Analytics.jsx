@@ -18,6 +18,7 @@ import {
   Pie,
   Cell
 } from "recharts";
+import { useTranslation } from "react-i18next";
 
 // --- Mock Data ---
 
@@ -54,12 +55,28 @@ const CLASS_BREAKDOWN = [
   { class: 'Grade 11C', students: 29, present: 71, late: 11, absent: 18, color: 'red' },
 ];
 
+// Mock subjects data
+const MOCK_SUBJECTS = [
+  { id: '1', name: 'Mathematics', code: 'MATH101' },
+  { id: '2', name: 'Physics', code: 'PHY201' },
+  { id: '3', name: 'Chemistry', code: 'CHEM201' },
+  { id: '4', name: 'Computer Science', code: 'CS301' },
+  { id: '5', name: 'English Literature', code: 'ENG101' },
+];
+
 export default function Analytics() {
+  const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState("Month");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState("all");
   const dropdownRef = useRef(null);
 
   const periodOptions = ["Week", "Month", "Semester"];
+  const periodLabels = {
+    "Week": t('analytics.chart.week'),
+    "Month": t('analytics.chart.month'),
+    "Semester": t('analytics.chart.semester')
+  };
 
   // Handle outside click to close dropdown
   useEffect(() => {
@@ -90,17 +107,31 @@ export default function Analytics() {
       {/* --- HEADER --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-main)]">Analytics</h2>
-          <p className="text-[var(--text-body)]">Track attendance trends over time and compare classes</p>
+          <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('analytics.title')}</h2>
+          <p className="text-[var(--text-body)]">{t('analytics.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Subject Selector Dropdown */}
+          <select
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
+            className="px-4 py-2 bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-secondary)] font-medium shadow-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+          >
+            <option value="all">All Subjects</option>
+            {MOCK_SUBJECTS.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name} ({subject.code})
+              </option>
+            ))}
+          </select>
+
           <button className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:bg-[var(--primary-hover)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <Download size={18} />
-            Export analytics
+            {t('analytics.export')}
           </button>
           <button className="px-4 py-2 bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-lg hover:bg-[var(--action-info-hover)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
             <FileText size={18} />
-            Generate report
+            {t('analytics.generate_report')}
           </button>
         </div>
       </div>
@@ -110,38 +141,38 @@ export default function Analytics() {
         
         {/* Stat 1 */}
         <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
-          <p className="text-sm font-medium text-[var(--text-body)] mb-2">Overall attendance this month</p>
+          <p className="text-sm font-medium text-[var(--text-body)] mb-2">{t('analytics.stats.overall')}</p>
           <div className="flex items-end gap-3 mb-1">
             <h3 className="text-4xl font-bold text-[var(--text-main)]">89 <span className="text-lg font-normal text-[var(--text-body)]">%</span></h3>
           </div>
           <div className="flex items-center text-xs font-semibold text-[var(--success)]">
             <ArrowUpRight size={14} className="mr-1" />
-            +3% vs last month
+            {t('analytics.stats.increase')}
           </div>
         </div>
 
         {/* Stat 2 */}
         <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
-          <p className="text-sm font-medium text-[var(--text-body)] mb-2">Average late arrivals</p>
+          <p className="text-sm font-medium text-[var(--text-body)] mb-2">{t('analytics.stats.avg_late')}</p>
           <div className="flex items-end gap-3 mb-1">
             <h3 className="text-4xl font-bold text-[var(--text-main)]">7</h3>
-            <span className="text-sm text-[var(--text-body)] mb-2">per week</span>
+            <span className="text-sm text-[var(--text-body)] mb-2">{t('analytics.stats.per_week')}</span>
           </div>
           <div className="flex items-center text-xs font-medium text-[var(--text-body)] opacity-70">
             <Clock size={14} className="mr-1" />
-            Average time: 09:15 AM
+            {t('analytics.stats.avg_time', {time: '09:15 AM'})}
           </div>
         </div>
 
         {/* Stat 3 */}
         <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
-          <p className="text-sm font-medium text-[var(--text-body)] mb-2">Classes at risk (&lt; 75%)</p>
+          <p className="text-sm font-medium text-[var(--text-body)] mb-2">{t('analytics.stats.at_risk')}</p>
           <div className="flex items-end gap-3 mb-1">
             <h3 className="text-4xl font-bold text-[var(--text-main)]">3</h3>
-            <span className="text-sm text-[var(--text-body)] mb-2">sections</span>
+            <span className="text-sm text-[var(--text-body)] mb-2">{t('analytics.stats.sections')}</span>
           </div>
           <div className="flex items-center text-xs font-semibold text-[var(--success)]">
-             <span className="text-[var(--text-body)] mr-1">1 more than last month</span>
+             <span className="text-[var(--text-body)] mr-1">{t('analytics.stats.more_than_last_month')}</span>
           </div>
         </div>
       </div>
@@ -153,8 +184,8 @@ export default function Analytics() {
         <div className="lg:col-span-2 bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h3 className="font-bold text-lg text-[var(--text-main)]">Attendance trend</h3>
-              <p className="text-sm text-[var(--text-body)]">Weekly attendance for the selected range</p>
+              <h3 className="font-bold text-lg text-[var(--text-main)]">{t('analytics.chart.trend_title')}</h3>
+              <p className="text-sm text-[var(--text-body)]">{t('analytics.chart.trend_desc')}</p>
             </div>
             
             {/* --- DROPDOWN SECTION (Fixed) --- */}
@@ -164,7 +195,7 @@ export default function Analytics() {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="text-sm text-[var(--text-body)] flex items-center gap-1 hover:bg-[var(--bg-secondary)] px-3 py-1.5 rounded border border-[var(--border-color)] transition"
                 >
-                  {selectedPeriod} <ChevronDown size={14} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}/>
+                  {periodLabels[selectedPeriod]} <ChevronDown size={14} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}/>
                 </button>
 
                 {isDropdownOpen && (
@@ -179,7 +210,7 @@ export default function Analytics() {
                             : 'text-[var(--text-main)] hover:bg-[var(--bg-secondary)]'
                         }`}
                       >
-                        {option}
+                        {periodLabels[option]}
                       </button>
                     ))}
                   </div>
@@ -189,7 +220,7 @@ export default function Analytics() {
                 onClick={() => setSelectedPeriod("Month")} 
                 className="text-sm text-[var(--primary)] font-medium hover:underline"
               >
-                Reset
+                {t('analytics.chart.reset')}
               </button>
             </div>
             {/* --- END DROPDOWN SECTION --- */}
@@ -222,14 +253,14 @@ export default function Analytics() {
           
           {/* Donut Chart */}
           <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
-            <h3 className="font-bold text-[var(--text-main)] mb-1">Present / Late / Absent</h3>
-            <p className="text-xs text-[var(--text-body)] mb-4">Distribution for the selected period</p>
+            <h3 className="font-bold text-[var(--text-main)] mb-1">{t('analytics.donut.title')}</h3>
+            <p className="text-xs text-[var(--text-body)] mb-4">{t('analytics.donut.subtitle')}</p>
             
             <div className="flex items-center justify-between">
               <div className="h-32 w-32 relative">
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-xl font-bold text-[var(--text-main)]">89%</span>
-                  <span className="text-[10px] text-[var(--text-body)] opacity-80">avg</span>
+                  <span className="text-[10px] text-[var(--text-body)] opacity-80">{t('analytics.donut.avg')}</span>
                 </div>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -254,7 +285,7 @@ export default function Analytics() {
                   <div key={i} className="flex items-center justify-between text-xs w-28">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full" style={{backgroundColor: item.color}}></span>
-                        <span className="text-[var(--text-body)] opacity-80">{item.name}</span>
+                        <span className="text-[var(--text-body)] opacity-80">{t(`trends.${item.name.toLowerCase()}`, item.name)}</span>
                       </div>
                       <span className="font-bold text-[var(--text-main)]">{item.value}%</span>
                   </div>
@@ -265,7 +296,7 @@ export default function Analytics() {
 
           {/* Best Performing List */}
           <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
-            <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">Best performing classes</h3>
+            <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.best')}</h3>
             <div className="space-y-3">
               {CLASS_PERFORMANCE.map((c, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
@@ -281,7 +312,7 @@ export default function Analytics() {
           
            {/* Needs Support List */}
            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
-            <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">Classes needing support</h3>
+            <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.needs_support')}</h3>
             <div className="space-y-3">
               {CLASS_RISK.map((c, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
@@ -300,15 +331,15 @@ export default function Analytics() {
 
       {/* --- BOTTOM SECTION: CLASS BREAKDOWN --- */}
       <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
-        <h3 className="font-bold text-lg text-[var(--text-main)] mb-1">Class-wise breakdown</h3>
-        <p className="text-sm text-[var(--text-body)] mb-6">Percentage of present, late, and absent students per class</p>
+        <h3 className="font-bold text-lg text-[var(--text-main)] mb-1">{t('analytics.breakdown.title')}</h3>
+        <p className="text-sm text-[var(--text-body)] mb-6">{t('analytics.breakdown.subtitle')}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {CLASS_BREAKDOWN.map((cls, idx) => (
             <div key={idx} className="p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-bold text-[var(--text-main)]">{cls.class}</h4>
-                <span className="text-xs text-[var(--text-body)] opacity-80">{cls.students} students</span>
+                <span className="text-xs text-[var(--text-body)] opacity-80">{t('analytics.breakdown.students', {count: cls.students})}</span>
               </div>
               
               {/* Progress Bar Container */}
@@ -323,10 +354,10 @@ export default function Analytics() {
 
               <div className="flex justify-between items-center text-xs">
                   <span className={`px-2 py-0.5 rounded text-[var(--text-on-primary)] font-bold ${cls.color === 'red' ? 'bg-[var(--danger)]' : cls.color === 'amber' ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'}`}>
-                    {cls.present}% present
+                    {t('analytics.breakdown.present_val', {val: cls.present})}
                   </span>
                   <span className="text-[var(--text-body)] opacity-80">
-                    {cls.late}% late · {cls.absent}% absent
+                    {t('analytics.breakdown.late_absent', {late: cls.late, absent: cls.absent})}
                   </span>
               </div>
             </div>

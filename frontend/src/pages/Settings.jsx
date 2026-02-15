@@ -29,9 +29,11 @@ import {
   addSubject,
 } from "../api/settings";
 import AddSubjectModal from "../components/AddSubjectModal";
+import { useTranslation } from "react-i18next";
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState("Thresholds");
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState("general");
 
   const [showSubjectModal, setShowSubjectModal] = useState(false);
 
@@ -98,7 +100,7 @@ export default function Settings() {
   const [loadingContributors, setLoadingContributors] = useState(false);
 
   useEffect(() => {
-    if (activeTab === "Credits") {
+    if (activeTab === "credits") {
       setLoadingContributors(true);
       fetch("https://api.github.com/repos/udaykiran243/smart-attendance/contributors")
         .then((res) => res.json())
@@ -247,7 +249,7 @@ export default function Settings() {
       // optional: show toast success
     } catch (err) {
       console.error("Save profile failed", err);
-      setSaveError(err.message || "Failed to save profile");
+      setSaveError(err.message || t('settings.alerts.save_failed'));
     } finally {
       setSaving(false);
     }
@@ -289,7 +291,7 @@ export default function Settings() {
       }));
     } catch {
       console.error("Avatar upload failed");
-      setSaveError("Avatar Upload Failed");
+      setSaveError(t('settings.alerts.avatar_failed'));
     }
   }
 
@@ -301,9 +303,15 @@ export default function Settings() {
   if (loadError)
     return (
       <div className="p-6 text-rose-600">
-        Failed to load settings: {loadError}
+        {t('settings.alerts.load_failed', {error: loadError})}
       </div>
     );
+  
+  const emailPreferencesList = [
+      { key: "settings.general.email_daily", label: "Daily attendance summary" },
+      { key: "settings.general.email_critical", label: "Critical attendance alerts" },
+      { key: "settings.general.email_updates", label: "Product updates" },
+  ];
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
@@ -311,11 +319,10 @@ export default function Settings() {
         {/* Page Header */}
         <div>
           <h2 className="text-2xl font-bold text-[var(--text-main)]">
-            Settings for {profile?.name || "Alex Johnson"}
+            {t('settings.title', {name: profile?.name || "User"})}
           </h2>
           <p className="text-[var(--text-body)] opacity-90 mt-1">
-            Configure attendance thresholds, profile and face recognition
-            preferences
+            {t('settings.subtitle')}
           </p>
         </div>
 
@@ -324,21 +331,21 @@ export default function Settings() {
 
           <div className="flex-1 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-sm p-8 w-full min-h-[600px]">
             {/* ================= GENERAL TAB ================= */}
-            {activeTab === "General" && (
+            {activeTab === "general" && (
               <div className="space-y-8">
                 <div>
                   <h3 className="text-xl font-bold text-[var(--text-main)]">
-                    General preferences
+                    {t('settings.general.title')}
                   </h3>
                   <p className="text-sm text-[var(--text-body)] opacity-90 mt-1">
-                    Customize how the app looks and how you receive alerts.
+                    {t('settings.general.subtitle')}
                   </p>
                 </div>
 
                 {/* Theme Selection */}
                 <div className="space-y-4">
                   <label className="text-sm font-semibold text-[var(--text-main)]">
-                    Theme
+                    {t('settings.general.theme')}
                   </label>
                   <div className="flex gap-4">
                     {["Light", "Dark", "Forest", "Cyber"].map((mode) => (
@@ -366,7 +373,7 @@ export default function Settings() {
                 {/* Notification Permissions */}
                 <div className="space-y-6">
                   <label className="text-sm font-semibold text-[var(--text-main)]">
-                    Notification permissions
+                    {t('settings.general.notifications_title')}
                   </label>
 
                   {/* Toggle Item */}
@@ -377,10 +384,10 @@ export default function Settings() {
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-[var(--text-main)]">
-                          Push notifications
+                          {t('settings.general.push')}
                         </h4>
                         <p className="text-xs text-[var(--text-body)] opacity-90 mt-1">
-                          Allow browser notifications for critical events.
+                          {t('settings.general.push_desc')}
                         </p>
                       </div>
                     </div>
@@ -407,10 +414,10 @@ export default function Settings() {
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-[var(--text-main)]">
-                          Sound effects
+                          {t('settings.general.sound')}
                         </h4>
                         <p className="text-xs text-[var(--text-body)] opacity-90 mt-1">
-                          Play a sound when a student is marked present.
+                          {t('settings.general.sound_desc')}
                         </p>
                       </div>
                     </div>
@@ -433,14 +440,10 @@ export default function Settings() {
                 {/* Email Permissions */}
                 <div className="space-y-4">
                   <label className="text-sm font-semibold text-[var(--text-main)]">
-                    Email preferences
+                    {t('settings.general.email_title')}
                   </label>
                   <div className="space-y-3">
-                    {[
-                      "Daily attendance summary",
-                      "Critical attendance alerts",
-                      "Product updates",
-                    ].map((item, idx) => (
+                    {emailPreferencesList.map((item, idx) => (
                       <label
                         key={idx}
                         className="flex items-center gap-3 cursor-pointer group"
@@ -454,7 +457,7 @@ export default function Settings() {
                           <Check size={14} />
                         </div>
                         <span className="text-sm text-[var(--text-body)] group-hover:text-[var(--text-main)]">
-                          {item}
+                          {t(item.key)}
                         </span>
                       </label>
                     ))}
@@ -464,43 +467,42 @@ export default function Settings() {
                 {/* Footer Buttons */}
                 <div className="pt-6 flex justify-end gap-3 border-t border-[var(--border-color)]">
                   <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-[var(--text-body)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]">
-                    Cancel
+                    {t('settings.general.cancel')}
                   </button>
                   <button 
                     onClick={saveProfile}
                     disabled={saving}
                     className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[var(--primary)] text-[var(--text-on-primary)] hover:bg-[var(--primary-hover)] shadow-md disabled:opacity-50"
                   >
-                    {saving ? "Saving..." : "Save changes"}
+                    {saving ? t('settings.general.saving') : t('settings.general.save')}
                   </button>
                 </div>
               </div>
             )}
 
             {/* ================= THRESHOLDS TAB ================= */}
-            {activeTab === "Thresholds" && (
+            {activeTab === "thresholds" && (
               <div className="space-y-8">
                 <div>
                   <h3 className="text-xl font-bold text-[var(--text-main)]">
-                    Attendance thresholds
+                    {t('settings.thresholds.title')}
                   </h3>
                   <p className="text-sm text-[var(--text-body)] opacity-90 mt-1">
-                    Define when a student is considered at risk or critical
-                    based on attendance percentage.
+                    {t('settings.thresholds.subtitle')}
                   </p>
                 </div>
 
                 <div className="p-8 border border-[var(--border-color)] rounded-xl bg-[var(--bg-card)] space-y-8 shadow-sm">
                   <div className="flex justify-between items-end border-b border-[var(--border-color)] pb-4">
                     <label className="text-base font-semibold text-[var(--text-main)]">
-                      Warning and critical ranges
+                      {t('settings.thresholds.ranges')}
                     </label>
                     <div className="text-xs font-medium text-[var(--text-body)] opacity-70">
-                      Warning:{" "}
+                      {t('settings.thresholds.warning')}:{" "}
                       <span className="text-[var(--warning)]">
                         {warningVal}% – {safeVal}%
                       </span>{" "}
-                      · Critical:{" "}
+                      · {t('settings.thresholds.critical')}:{" "}
                       <span className="text-[var(--danger)]">&lt; {warningVal}%</span>
                     </div>
                   </div>
@@ -549,21 +551,21 @@ export default function Settings() {
                         style={{ left: "2%" }}
                       >
                         <span className="w-2 h-2 rounded-full bg-[var(--danger)]"></span>
-                        <span className="text-[var(--text-body)]">Critical zone</span>
+                        <span className="text-[var(--text-body)]">{t('settings.thresholds.zone_critical')}</span>
                       </div>
                       <div
                         className="flex items-center gap-1.5 absolute"
                         style={{ left: "52%" }}
                       >
                         <span className="w-2 h-2 rounded-full bg-[var(--warning)]"></span>
-                        <span className="text-[var(--text-body)]">Warning zone</span>
+                        <span className="text-[var(--text-body)]">{t('settings.thresholds.zone_warning')}</span>
                       </div>
                       <div
                         className="flex items-center gap-1.5 absolute"
                         style={{ left: "87%" }}
                       >
                         <span className="w-2 h-2 rounded-full bg-[var(--success)]"></span>
-                        <span className="text-[var(--text-body)]">Safe zone</span>
+                        <span className="text-[var(--text-body)]">{t('settings.thresholds.zone_safe')}</span>
                       </div>
                     </div>
                   </div>
@@ -574,21 +576,20 @@ export default function Settings() {
                       size={20}
                     />
                     <p className="text-sm leading-relaxed text-[var(--text-main)]/90 font-medium">
-                      Adjusting these values will update visual alerts across
-                      dashboards, student profiles and reports.
+                      {t('settings.thresholds.info')}
                     </p>
                   </div>
 
                   <div className="pt-8 flex justify-end gap-3 border-t border-[var(--border-color)]">
                     <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-[var(--text-body)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] cursor-pointer">
-                      Cancel
+                      {t('settings.general.cancel')}
                     </button>
                     <button 
                       onClick={saveProfile}
                       disabled={saving}
                       className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[var(--primary)] text-[var(--text-on-primary)] hover:bg-[var(--primary-hover)] shadow-md cursor-pointer disabled:opacity-50"
                     >
-                      {saving ? "Saving..." : "Save changes"}
+                      {saving ? t('settings.general.saving') : t('settings.general.save')}
                     </button>
                   </div>
                 </div>
@@ -596,20 +597,19 @@ export default function Settings() {
             )}
 
             {/* ================= PROFILE TAB ================= */}
-            {activeTab === "Profile" && (
+            {activeTab === "profile" && (
               <div className="space-y-8">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-xl font-bold text-[var(--text-main)]">
-                      Profile details
+                      {t('settings.profile.title')}
                     </h3>
                     <p className="text-sm text-[var(--text-body)] opacity-90 mt-1">
-                      Keep your basic information and contact details up to
-                      date.
+                      {t('settings.profile.subtitle')}
                     </p>
                   </div>
                   <button className="text-[var(--primary)] text-sm font-medium hover:underline cursor-pointer">
-                    View public profile
+                    {t('settings.profile.view_public')}
                   </button>
                 </div>
 
@@ -635,7 +635,7 @@ export default function Settings() {
                   </div>
                   <label className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm font-medium text-[var(--text-body)] hover:bg-[var(--bg-hover)] transition shadow-sm cursor-pointer">
                     <Upload size={16} />
-                    <span>Change photo</span>
+                    <span>{t('settings.profile.change_photo')}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -648,7 +648,7 @@ export default function Settings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-[var(--text-main)]">
-                      Full Name
+                      {t('settings.profile.full_name')}
                     </label>
                     <input
                       type="text"
@@ -664,7 +664,7 @@ export default function Settings() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-[var(--text-main)]">
-                      Role
+                      {t('settings.profile.role')}
                     </label>
                     <input
                       type="text"
@@ -683,7 +683,7 @@ export default function Settings() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-[var(--text-main)]">
-                      Email Address
+                      {t('settings.profile.email')}
                     </label>
                     <input
                       type="email"
@@ -694,7 +694,7 @@ export default function Settings() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-[var(--text-main)]">
-                      Phone Number
+                      {t('settings.profile.phone')}
                     </label>
                     <input
                       type="tel"
@@ -712,7 +712,7 @@ export default function Settings() {
 
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-[var(--text-main)]">
-                    Subjects Taught
+                    {t('settings.profile.subjects')}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {profile.subjects && profile.subjects.length > 0 ? (
@@ -728,14 +728,14 @@ export default function Settings() {
                       ))
                     ) : (
                       <div className="text-sm text-[var(--text-body)] opacity-90">
-                        No subjects added
+                        {t('settings.profile.no_subjects')}
                       </div>
                     )}
                     <button
                       onClick={() => setShowSubjectModal(true)}
                       className="px-3 py-1.5 border border-dashed border-[var(--border-color)] text-[var(--text-body)] opacity-90 rounded-full text-sm font-medium hover:border-[var(--primary)] hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer"
                     >
-                      <Plus size={14} /> Add subject
+                      <Plus size={14} /> {t('settings.profile.add_subject')}
                     </button>
                     <AddSubjectModal
                       open={showSubjectModal}
@@ -752,8 +752,6 @@ export default function Settings() {
                   <button
                     type="button"
                     onClick={() => {
-                      // reset to last loaded server profile if you saved it in state 'loadedProfile' or reload from server
-                      // For now we simply reload by calling getSettings again:
                       (async () => {
                         try {
                           const fresh = await getSettings();
@@ -765,7 +763,7 @@ export default function Settings() {
                     }}
                     className="px-6 py-2.5 rounded-xl text-sm font-medium text-[var(--text-body)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] cursor-pointer"
                   >
-                    Cancel
+                    {t('settings.general.cancel')}
                   </button>
 
                   <button
@@ -774,22 +772,21 @@ export default function Settings() {
                     disabled={saving}
                     className={`px-8 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-on-primary)] ${saving ? "bg-[var(--border-color)]" : "bg-[var(--primary)] hover:bg-[var(--primary-hover)]"} shadow-md cursor-pointer`}
                   >
-                    {saving ? "Saving..." : "Save changes"}
+                    {saving ? t('settings.general.saving') : t('settings.general.save')}
                   </button>
                 </div>
               </div>
             )}
 
             {/* ================= FACE SETTINGS TAB ================= */}
-            {activeTab === "Face settings" && (
+            {activeTab === "face_settings" && (
               <div className="space-y-8">
                 <div>
                   <h3 className="text-xl font-bold text-[var(--text-main)]">
-                    Face recognition configuration
+                    {t('settings.face_settings.title')}
                   </h3>
                   <p className="text-sm text-[var(--text-body)] opacity-90 mt-1">
-                    Manage enrolment data and tune the recognition engine
-                    parameters.
+                    {t('settings.face_settings.subtitle')}
                   </p>
                 </div>
 
@@ -801,15 +798,15 @@ export default function Settings() {
                     </div>
                     <div>
                       <h4 className="font-bold text-[var(--text-main)]">
-                        Face data enrolled
+                        {t('settings.face_settings.face_data')}
                       </h4>
                       <p className="text-sm text-[var(--text-body)] opacity-70">
-                        Last updated: 3 days ago via Mobile App
+                        {t('settings.face_settings.last_updated')}
                       </p>
                     </div>
                   </div>
                   <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-hover)] shadow-sm flex items-center gap-2 cursor-pointer">
-                    <RefreshCw size={16} /> Re-calibrate
+                    <RefreshCw size={16} /> {t('settings.face_settings.recalibrate')}
                   </button>
                 </div>
 
@@ -817,7 +814,7 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <label className="text-sm font-semibold text-[var(--text-main)]">
-                      Recognition confidence threshold
+                      {t('settings.face_settings.threshold')}
                     </label>
                     <span className="text-sm font-bold text-[var(--primary)]">
                       {sensitivity}%
@@ -832,15 +829,14 @@ export default function Settings() {
                     className="w-full h-2 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--primary)]"
                   />
                   <p className="text-xs text-[var(--text-body)] opacity-90">
-                    Higher values reduce false positives but might require
-                    better lighting conditions. Recommended: 80%.
+                    {t('settings.face_settings.threshold_desc')}
                   </p>
                 </div>
 
                 {/* 3. Security Toggles */}
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-[var(--text-main)]">
-                    Security measures
+                    {t('settings.face_settings.security')}
                   </h4>
 
                   <div className="flex items-center justify-between p-4 border border-[var(--border-color)] rounded-xl">
@@ -850,11 +846,10 @@ export default function Settings() {
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-[var(--text-main)]">
-                          Liveness detection (Anti-spoofing)
+                          {t('settings.face_settings.liveness')}
                         </h4>
                         <p className="text-xs text-[var(--text-body)] opacity-90 mt-1">
-                          Requires subjects to blink or move slightly to prevent
-                          photo attacks.
+                          {t('settings.face_settings.liveness_desc')}
                         </p>
                       </div>
                     </div>
@@ -872,20 +867,19 @@ export default function Settings() {
                 {/* 4. Danger Zone */}
                 <div className="pt-6 border-t border-[var(--border-color)]">
                   <h4 className="text-sm font-bold text-[var(--danger)] mb-4">
-                    Danger Zone
+                    {t('settings.face_settings.danger_zone')}
                   </h4>
                   <div className="flex items-center justify-between p-4 bg-[var(--danger)]/10 border border-[var(--danger)]/20 rounded-xl">
                     <div>
                       <h5 className="text-sm font-semibold text-[var(--danger)]">
-                        Reset recognition model
+                        {t('settings.face_settings.reset_model')}
                       </h5>
                       <p className="text-xs text-[var(--danger)] mt-1">
-                        This will clear all learned face patterns for this
-                        profile.
+                       {t('settings.face_settings.reset_desc')}
                       </p>
                     </div>
                     <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--danger)]/20 text-[var(--danger)] rounded-lg text-sm font-medium hover:bg-[var(--danger)]/20 transition shadow-sm flex items-center gap-2 cursor-pointer">
-                      <Trash2 size={16} /> Reset data
+                      <Trash2 size={16} /> {t('settings.face_settings.reset_data')}
                     </button>
                   </div>
                 </div>
@@ -893,40 +887,39 @@ export default function Settings() {
                 {/* Footer Buttons */}
                 <div className="pt-6 flex justify-end gap-3 border-t border-[var(--border-color)]">
                   <button className="px-6 py-2.5 rounded-xl text-sm font-medium text-[var(--text-body)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] cursor-pointer">
-                    Discard
+                    {t('settings.face_settings.discard')}
                   </button>
                   <button 
                     onClick={saveProfile}
                     disabled={saving}
                     className="px-8 py-2.5 rounded-xl text-sm font-semibold bg-[var(--primary)] text-[var(--text-on-primary)] hover:bg-[var(--primary-hover)] shadow-md cursor-pointer disabled:opacity-50"
                   >
-                    {saving ? "Saving..." : "Apply settings"}
+                    {saving ? t('settings.general.saving') : t('settings.face_settings.apply')}
                   </button>
                 </div>
               </div>
             )}
 
             {/* ================= CREDITS TAB (NEW) ================= */}
-            {activeTab === "Credits" && (
+            {activeTab === "credits" && (
               <div className="space-y-8 animate-in fade-in duration-300">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-3">
                       <h3 className="text-xl font-bold text-[var(--text-main)]">
-                        Our Contributors
+                        {t('settings.credits.title')}
                       </h3>
                       <span className="px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-bold">
-                        Open Source
+                        {t('settings.credits.badge')}
                       </span>
                     </div>
                     <p className="text-sm text-[var(--text-body)] opacity-90 mt-1">
-                      The amazing people who have contributed code to this
-                      project.
+                      {t('settings.credits.subtitle')}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <button className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg text-sm font-medium hover:bg-[var(--primary-hover)] flex items-center gap-2 shadow-sm transition cursor-pointer">
-                      <Sparkles size={16} /> Send thanks
+                      <Sparkles size={16} /> {t('settings.credits.send_thanks')}
                     </button>
                   </div>
                 </div>
@@ -953,7 +946,7 @@ export default function Settings() {
                           </h3>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs font-medium px-2 py-0.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full">
-                              {contributor.contributions} commits
+                              {contributor.contributions} {t('settings.credits.commits')}
                             </span>
                           </div>
                         </div>
@@ -972,13 +965,12 @@ export default function Settings() {
 
                 {contributors.length === 0 && !loadingContributors && (
                   <div className="text-center text-[var(--text-body)] opacity-90 py-10">
-                    No contributors found.
+                    {t('settings.credits.no_contributors')}
                   </div>
                 )}
 
                 <div className="text-center text-xs text-[var(--text-body)] opacity-70 mt-12 pt-8 border-t border-[var(--border-color)]">
-                  Thank you to every developer who helped build the Smart
-                  Attendance System.
+                  {t('settings.credits.footer')}
                 </div>
               </div>
             )}

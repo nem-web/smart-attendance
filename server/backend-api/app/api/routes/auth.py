@@ -4,13 +4,15 @@ from authlib.integrations.starlette_client import OAuth
 from datetime import datetime, timedelta, UTC, timezone
 import secrets
 import os
-from app.utils.jwt_token import create_jwt
+from bson import ObjectId
+from app.utils.jwt_token import create_access_token, create_refresh_token, decode_jwt
 from urllib.parse import quote
 
 from ...schemas.auth import (
     RegisterRequest,
     UserResponse,
     LoginRequest,
+    RefreshTokenRequest,
     RegisterResponse,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
@@ -25,6 +27,7 @@ from ...core.security import hash_password, verify_password
 from ...core.email import BrevoEmailService
 from ...core.config import BACKEND_BASE_URL
 from ...db.mongo import db
+from ...core.limiter import limiter
 import logging
 
 logger = logging.getLogger(__name__)
@@ -34,7 +37,10 @@ oauth = OAuth()
 
 
 @router.post("/register", response_model=RegisterResponse)
-async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
+@limiter.limit("5/hour")
+async def register(
+    request: Request, payload: RegisterRequest, background_tasks: BackgroundTasks
+):
 
     # Check existing user
     existing = await db.users.find_one({"email": payload.email})
@@ -158,7 +164,8 @@ async def register(payload: RegisterRequest, background_tasks: BackgroundTasks):
 
 
 @router.post("/login", response_model=UserResponse)
-async def login(payload: LoginRequest):
+@limiter.limit("5/minute")
+async def login(request: Request, payload: LoginRequest):
     logger.info(f"Login request received for email: {payload.email}")
     email = payload.email
 
@@ -177,7 +184,10 @@ async def login(payload: LoginRequest):
         raise HTTPException(status_code=403, detail="Please verify your email first..")
 
     # 4. Generate JWT token
-    token = create_jwt(user_id=str(user["_id"]), role=user["role"], email=user["email"])
+    access_token = create_access_token(
+        user_id=str(user["_id"]), role=user["role"], email=user["email"]
+    )
+    refresh_token = create_refresh_token(user_id=str(user["_id"]))
 
     return {
         "user_id": str(user["_id"]),
@@ -185,8 +195,41 @@ async def login(payload: LoginRequest):
         "role": user["role"],
         "name": user["name"],
         "college_name": user.get("college_name", ""),
-        "token": token,
+        "token": access_token,
+        "refresh_token": refresh_token,
     }
+
+
+@router.post("/refresh-token", response_model=UserResponse)
+@limiter.limit("5/minute")
+async def refresh_token(request: Request, payload: RefreshTokenRequest):
+    try:
+        decoded = decode_jwt(payload.refresh_token)
+        if decoded.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+
+        user_id = decoded.get("user_id")
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        access_token = create_access_token(
+            user_id=str(user["_id"]), role=user["role"], email=user["email"]
+        )
+        new_refresh_token = create_refresh_token(user_id=str(user["_id"]))
+
+        return {
+            "user_id": str(user["_id"]),
+            "email": user["email"],
+            "role": user["role"],
+            "name": user["name"],
+            "college_name": user.get("college_name", ""),
+            "token": access_token,
+            "refresh_token": new_refresh_token,
+        }
+    except Exception as e:
+        logger.error(f"Refresh token error: {e}")
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
 
 # ----- Forgot Password flow (Issue #196, #226) -----
@@ -477,9 +520,10 @@ async def google_callback(request: Request):
         user["is_verified"] = True
 
     # CREATE JWT (MATCH NORMAL LOGIN)
-    jwt_token = create_jwt(
+    access_token = create_access_token(
         user_id=str(user["_id"]), role=user["role"], email=user["email"]
     )
+    refresh_token = create_refresh_token(user_id=str(user["_id"]))
 
     FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip(
         "/"
@@ -487,7 +531,8 @@ async def google_callback(request: Request):
 
     redirect_url = (
         f"{FRONTEND_BASE_URL}/oauth-callback"
-        f"#token={quote(jwt_token)}"
+        f"#token={quote(access_token)}"
+        f"&refresh_token={quote(refresh_token)}"
         f"&user_id={quote(str(user['_id']))}"
         f"&email={quote(user['email'])}"
         f"&role={quote(user['role'])}"

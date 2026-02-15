@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 import base64
 from io import BytesIO
 import time
@@ -30,12 +30,13 @@ from app.core.constants import (
     ERROR_FACE_TOO_SMALL,
     ERROR_PROCESSING,
 )
+from app.core.security import verify_api_key
 
 from app.ml.face_detector import detect_faces
 from app.ml.face_encoder import get_face_embedding
 from app.ml.face_matcher import cosine_similarity
 
-router = APIRouter(prefix="/api/ml", tags=["ML"])
+router = APIRouter(prefix="/api/ml", tags=["ML"], dependencies=[Depends(verify_api_key)])
 
 
 @router.post("/encode-face", response_model=EncodeFaceResponse)
@@ -59,11 +60,17 @@ async def encode_face(request: EncodeFaceRequest):
                 error_code=ERROR_MULTIPLE_FACES,
             )
 
-        top, right, bottom, left = faces[0]
-        h, w, _ = image_np.shape
-        face_area = (bottom - top) * (right - left)
+        x, y, face_w, face_h = faces[0]
+        top = y
+        right = x + face_w
+        bottom = y + face_h
+        left = x 
+        
+        im_h, im_w, _ = image_np.shape
+        face_area = face_w * face_h
+        image_area = im_h * im_w
 
-        if (face_area / (h * w)) < request.min_face_area_ratio:
+        if (face_area / image_area) < request.min_face_area_ratio:
             return EncodeFaceResponse(
                 success=False, error="Face too small", error_code=ERROR_FACE_TOO_SMALL
             )
@@ -76,7 +83,7 @@ async def encode_face(request: EncodeFaceRequest):
             embedding=embedding,
             face_location=FaceLocation(top=top, right=right, bottom=bottom, left=left),
             metadata=EncodeFaceMetadata(
-                face_area_ratio=face_area / (h * w), image_dimensions=[w, h]
+                face_area_ratio=face_area / image_area, image_dimensions=[im_w, im_h]
             ),
         )
 
@@ -100,8 +107,15 @@ async def detect_faces_api(request: DetectFacesRequest):
         image_area = h * w
 
         detected = []
-        for top, right, bottom, left in faces:
-            face_area = (bottom - top) * (right - left)
+        for x, y, cw, ch in faces:
+            # Convert to TRBL
+            top = y
+            left = x
+            bottom = y + ch
+            right = x + cw
+            
+            face_area = cw * ch
+            
             if face_area / image_area < request.min_face_area_ratio:
                 continue
 
