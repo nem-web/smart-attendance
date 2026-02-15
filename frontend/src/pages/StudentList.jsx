@@ -144,26 +144,26 @@ export default function StudentList() {
         <div className="xl:col-span-3 space-y-4">
           
           {/* Filters Bar */}
-          <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[color:var(--border-color)] shadow-sm">
             
             {/* Search */}
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" size={18} />
+            <div className="relative w-full mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-body)]" size={18} />
               <input 
                 type="text" 
                 placeholder="Search by name or ID" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border-none rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
+                className="w-full pl-10 pr-4 py-2 bg-[color:var(--bg-secondary)] border-none rounded-lg text-sm focus:ring-2 focus:ring-[color:var(--primary)] outline-none"
               />
             </div>
 
             {/* Filter Controls */}
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={selectedSubject || ""}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="flex items-center gap-1 text-sm font-medium text-[var(--text-body)] px-3 py-1.5 hover:bg-[var(--bg-hover)] rounded-lg whitespace-nowrap cursor-pointer"
+                className="flex items-center gap-1 text-sm font-medium text-[color:var(--text-body)] px-3 py-1.5 hover:bg-[color:var(--bg-secondary)] rounded-lg cursor-pointer"
               >
                 <option value="">Select subject</option>
                 {subjects.map(s => (
@@ -175,30 +175,43 @@ export default function StudentList() {
 
               <button 
                 onClick={handleSortToggle}
-                className="flex items-center gap-1 text-sm font-medium text-[var(--text-body)] px-3 py-1.5 hover:bg-[var(--bg-hover)] rounded-lg whitespace-nowrap cursor-pointer"
+                className="flex items-center gap-1 text-sm font-medium text-[color:var(--text-body)] px-3 py-1.5 hover:bg-[color:var(--bg-secondary)] rounded-lg cursor-pointer"
+                title="Sort by attendance"
               >
-                Sort by attendance 
+                <span className="hidden sm:inline">Sort by attendance</span>
+                <span className="sm:hidden">Sort</span>
                 <ChevronDown 
                   size={14} 
                   className={`transition-transform ${sortOrder === "asc" ? "rotate-180" : ""}`} 
                 />
               </button>
               
-              <div className="h-6 w-px bg-[var(--border-color)] mx-1"></div>
+              <div className="hidden sm:block h-6 w-px bg-[color:var(--border-color)] mx-1"></div>
 
-              {["All", "High (> 90%)", "Medium (75-90%)", "Low (< 75%)"].map((filter) => (
-                <button 
-                  key={filter}
-                  onClick={() => setSelectedFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                    selectedFilter === filter
-                      ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                      : "text-[var(--text-body)] hover:bg-[var(--bg-hover)]"
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
+              {["All", "High (> 90%)", "Medium (75-90%)", "Low (< 75%)"].map((filter) => {
+                const shortLabels = {
+                  "All": "All",
+                  "High (> 90%)": "High",
+                  "Medium (75-90%)": "Med",
+                  "Low (< 75%)": "Low"
+                };
+                
+                return (
+                  <button 
+                    key={filter}
+                    onClick={() => setSelectedFilter(filter)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      selectedFilter === filter 
+                        ? "bg-[color:var(--primary)] text-white" 
+                        : "text-[color:var(--text-body)] hover:bg-[color:var(--bg-secondary)]"
+                    }`}
+                    title={filter}
+                  >
+                    <span className="hidden sm:inline">{filter}</span>
+                    <span className="sm:hidden">{shortLabels[filter]}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
