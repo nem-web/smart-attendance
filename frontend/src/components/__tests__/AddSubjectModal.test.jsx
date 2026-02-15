@@ -16,7 +16,7 @@ describe('AddSubjectModal Component', () => {
         render(<AddSubjectModal open={true} onSave={onSave} onClose={onClose} />);
 
         // Check modal content is visible
-        expect(screen.getByText(/add subject/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /add subject/i })).toBeInTheDocument();
 
         // Fill inputs
         const nameInput = screen.getByPlaceholderText(/subject name/i);
@@ -26,7 +26,7 @@ describe('AddSubjectModal Component', () => {
         fireEvent.change(codeInput, { target: { value: 'MTH101' } });
 
         // Submit
-        const addButton = screen.getByText('Add');
+        const addButton = screen.getByRole('button', { name: /add subject/i });
         fireEvent.click(addButton);
 
         // Verify onSave called with correct data

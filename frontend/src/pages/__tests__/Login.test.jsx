@@ -25,7 +25,16 @@ describe('Login Page', () => {
         global.fetch = vi.fn();
 
         // Mock localStorage
-        Storage.prototype.setItem = vi.fn();
+        // Using Object.defineProperty to ensure we can overwrite it in JSDOM
+        Object.defineProperty(window, 'localStorage', {
+            value: {
+                setItem: vi.fn(),
+                getItem: vi.fn(),
+                removeItem: vi.fn(),
+                clear: vi.fn(),
+            },
+            writable: true
+        });
     });
 
     afterEach(() => {
@@ -39,9 +48,9 @@ describe('Login Page', () => {
             </BrowserRouter>
         );
 
-        expect(screen.getByRole('heading', { name: /welcome/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/enter your email/i)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/••••••••/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/enter your password/i)).toBeInTheDocument();
     });
 
     it('handles successful teacher login', async () => {
@@ -64,7 +73,7 @@ describe('Login Page', () => {
 
         // Fill form
         fireEvent.change(screen.getByPlaceholderText(/enter your email/i), { target: { value: 'teacher@test.com' } });
-        fireEvent.change(screen.getByPlaceholderText(/••••••••/i), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'password123' } });
 
         // Submit
         const submitBtn = screen.getByRole('button', { name: /sign in/i });
@@ -104,7 +113,7 @@ describe('Login Page', () => {
         );
 
         fireEvent.change(screen.getByPlaceholderText(/enter your email/i), { target: { value: 'wrong@test.com' } });
-        fireEvent.change(screen.getByPlaceholderText(/••••••••/i), { target: { value: 'wrongpass' } });
+        fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'wrongpass' } });
 
         const submitBtn = screen.getByRole('button', { name: /sign in/i });
         fireEvent.click(submitBtn);

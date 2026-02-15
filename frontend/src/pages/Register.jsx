@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Mail,
   Lock,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 export default function Register() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState(null); // 'student' or 'teacher'
@@ -76,10 +78,10 @@ export default function Register() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.detail || "Registration Failed");
+        throw new Error(data.detail || t('register.alerts.failed'));
       }
 
-      alert("Account created! Please check your email to verify before logging in.");
+      alert(t('register.alerts.account_created'));
       navigate("/login");
     }
     catch (err) {
@@ -91,8 +93,8 @@ export default function Register() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-5xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
+      <div className="max-w-5xl w-full bg-[var(--bg-card)] rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
 
         {/* Left Side: Form Area */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative">
@@ -100,9 +102,9 @@ export default function Register() {
           {step === 2 && (
             <button
               onClick={() => setStep(1)}
-              className="absolute top-8 left-8 text-gray-400 hover:text-gray-600 flex items-center gap-2 text-sm font-medium transition-colors"
+              className="absolute top-8 left-8 text-[var(--text-body)] opacity-70 hover:text-[var(--text-main)] hover:opacity-100 flex items-center gap-2 text-sm font-medium transition-colors"
             >
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} /> {t('register.back')}
             </button>
           )}
 
@@ -110,9 +112,9 @@ export default function Register() {
 
             {/* Header */}
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900">Create account</h1>
-              <p className="text-gray-500">
-                {step === 1 ? "Choose your role to get started." : `Sign up as a ${role}.`}
+              <h1 className="text-3xl font-bold text-[var(--text-main)]">{t('register.title')}</h1>
+              <p className="text-[var(--text-body)] opacity-80">
+                {step === 1 ? t('register.subtitle_start') : t('register.subtitle_role', { role })}
               </p>
             </div>
 
@@ -121,27 +123,27 @@ export default function Register() {
               <div className="space-y-4">
                 <button
                   onClick={() => handleRoleSelect('student')}
-                  className="w-full p-4 border border-gray-200 rounded-2xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group flex items-center gap-4 text-left"
+                  className="w-full p-4 border border-[var(--border-color)] rounded-2xl hover:border-[var(--primary)] hover:bg-[var(--bg-secondary)] transition-all group flex items-center gap-4 text-left"
                 >
-                  <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <div className="w-12 h-12 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full flex items-center justify-center group-hover:bg-[var(--primary)] group-hover:text-[var(--text-on-primary)] transition-colors">
                     <GraduationCap size={24} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">I am a Student</h3>
-                    <p className="text-sm text-gray-500">Track attendance & view analytics</p>
+                    <h3 className="font-semibold text-[var(--text-main)]">{t('register.role_student')}</h3>
+                    <p className="text-sm text-[var(--text-body)] opacity-80">{t('register.role_student_desc')}</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleRoleSelect('teacher')}
-                  className="w-full p-4 border border-gray-200 rounded-2xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group flex items-center gap-4 text-left"
+                  className="w-full p-4 border border-[var(--border-color)] rounded-2xl hover:border-[var(--primary)] hover:bg-[var(--bg-secondary)] transition-all group flex items-center gap-4 text-left"
                 >
-                  <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                  <div className="w-12 h-12 bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] rounded-full flex items-center justify-center group-hover:bg-[var(--action-info-bg)] group-hover:text-[var(--text-on-primary)] transition-colors">
                     <Briefcase size={24} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">I am a Teacher</h3>
-                    <p className="text-sm text-gray-500">Manage classes & reports</p>
+                    <h3 className="font-semibold text-[var(--text-main)]">{t('register.role_teacher')}</h3>
+                    <p className="text-sm text-[var(--text-body)] opacity-80">{t('register.role_teacher_desc')}</p>
                   </div>
                 </button>
               </div>
@@ -155,7 +157,7 @@ export default function Register() {
 
                 {/* Common: Full Name */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-gray-700">Full Name</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.full_name')}</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -163,15 +165,15 @@ export default function Register() {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="John Doe"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                     />
-                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
                   </div>
                 </div>
 
                 {/* Common: Email */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-gray-700">Email Address</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('auth.emailLabel')}</label>
                   <div className="relative">
                     <input
                       type="email"
@@ -179,37 +181,37 @@ export default function Register() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="john@university.edu"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                     />
-                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
                   </div>
                 </div>
                 {/* Common: College Name */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-gray-700">College Name</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.college_name')}</label>
                   <div className="relative">
                     <input
                       type="text"
                       name="collegeName"
                       value={formData.collegeName}
                       onChange={handleChange}
-                      placeholder="Your college/institution"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
+                      placeholder={t('register.college_name')}
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                     />
-                    <GraduationCap size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <GraduationCap size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
                   </div>
                 </div>
                 {/* -------- Branch -------- */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-gray-700">Branch</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.branch')}</label>
                   <div className="relative">
                     <select
                       name="branch"
                       value={formData.branch}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10 appearance-none text-gray-600"
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 appearance-none text-[var(--text-body)]"
                     >
-                      <option value="" disabled>Select Branch</option>
+                      <option value="" disabled>{t('register.select_branch')}</option>
                       <option value="cse">Computer Science (CSE)</option>
                       <option value="ece">Electronics (ECE)</option>
                       <option value="me">Mechanical (ME)</option>
@@ -218,7 +220,7 @@ export default function Register() {
                     </select>
                     <BookOpen
                       size={18}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70"
                     />
                   </div>
                 </div>
@@ -229,15 +231,15 @@ export default function Register() {
 
                     {/* -------- Year -------- */}
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-gray-700">Year</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.year')}</label>
                       <div className="relative">
                         <select
                           name="year"
                           value={formData.year}
                           onChange={handleChange}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10 appearance-none text-gray-600"
+                          className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 appearance-none text-[var(--text-body)]"
                         >
-                          <option value="" disabled>Select Year</option>
+                          <option value="" disabled>{t('register.select_year')}</option>
                           <option value="1">1st Year</option>
                           <option value="2">2nd Year</option>
                           <option value="3">3rd Year</option>
@@ -246,26 +248,26 @@ export default function Register() {
                         </select>
                         <TrendingUp
                           size={18}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70"
                         />
                       </div>
                     </div>
 
                     {/* -------- Roll Number -------- */}
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-gray-700">Roll Number</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.roll_number')}</label>
                       <div className="relative">
                         <input
                           type="text"
                           name="roll"
                           value={formData.roll}
                           onChange={handleChange}
-                          placeholder="Enter roll number"
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10 text-gray-600"
+                          placeholder={t('register.roll_number')}
+                          className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 text-[var(--text-body)]"
                         />
                         <User
                           size={18}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70"
                         />
                       </div>
                     </div>
@@ -275,7 +277,7 @@ export default function Register() {
                 {role === 'teacher' && (
                   <>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-gray-700">Employee ID</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.employee_id')}</label>
                       <div className="relative">
                         <input
                           type="text"
@@ -283,13 +285,13 @@ export default function Register() {
                           value={formData.employee_id}
                           onChange={handleChange}
                           placeholder="EMP-12345"
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
+                          className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                         />
-                        <Hash size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Hash size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-semibold text-gray-700">Phone Number</label>
+                      <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.phone_number')}</label>
                       <div className="relative">
                         <input
                           type="tel"
@@ -297,9 +299,9 @@ export default function Register() {
                           value={formData.phone}
                           onChange={handleChange}
                           placeholder="+91 98765 43210"
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10"
+                          className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                         />
-                        <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
                       </div>
                     </div>
                   </>
@@ -307,21 +309,21 @@ export default function Register() {
 
                 {/* Common: Password */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-gray-700">Password</label>
+                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.password_label')}</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder="Create a password"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all pl-10 pr-10"
+                      placeholder={t('register.create_password')}
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 pr-10"
                     />
-                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70 hover:opacity-100 hover:text-[var(--text-main)] focus:outline-none"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -331,21 +333,21 @@ export default function Register() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 shadow-md transition-all active:scale-[0.98] mt-2">
-                  {loading ? "Creating..." : "Create Account"}
+                  className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] shadow-md transition-all active:scale-[0.98] mt-2">
+                  {loading ? t('register.submitting') : t('register.submit')}
                 </button>
 
                 {error && (
-                  <p className="text-sm text-red-500 text-center mt-1">{error}</p>
+                  <p className="text-sm text-[var(--danger)] text-center mt-1">{error}</p>
                 )}
 
               </form>
             )}
 
-            <p className="text-center text-sm text-gray-500">
-              Already have an account?{" "}
-              <Link to="/login" className="font-semibold text-indigo-600 hover:underline">
-                Sign in
+            <p className="text-center text-sm text-[var(--text-body)]">
+              {t('register.already_have_account')}{" "}
+              <Link to="/login" className="font-semibold text-[var(--primary)] hover:underline">
+                {t('register.sign_in')}
               </Link>
             </p>
 
@@ -353,21 +355,28 @@ export default function Register() {
         </div>
 
         {/* Right Side: Illustration/Image (Dynamic based on role) */}
-        <div className="hidden md:block w-1/2 bg-indigo-50 relative overflow-hidden transition-colors duration-500">
-          <div className={`absolute top-0 right-0 w-full h-full bg-gradient-to-br opacity-10 ${role === 'teacher' ? 'from-purple-500 to-indigo-600' : 'from-blue-500 to-cyan-600'}`}></div>
+        <div className="hidden md:block w-1/2 bg-[var(--bg-secondary)] relative overflow-hidden transition-colors duration-500">
+          <div className="absolute top-0 right-0 w-full h-full opacity-10"
+          style={{ background: role === "teacher"
+          ? `linear-gradient(to bottom right, var(--action-info-bg), var(--primary))`
+          : `linear-gradient(to bottom right, var(--primary), var(--action-info-bg))` }}>
+          </div>
 
           <div className="absolute inset-0 flex items-center justify-center p-12">
             <div className="text-center space-y-4 relative z-10">
-              <div className="w-64 h-64 bg-white/30 backdrop-blur-xl rounded-full mx-auto flex items-center justify-center border border-white/50 shadow-lg mb-8 relative">
-                <div className={`w-48 h-48 rounded-full opacity-20 blur-3xl absolute ${role === 'teacher' ? 'bg-purple-600' : 'bg-blue-600'}`}></div>
+              <div className="w-64 h-64 bg-[var(--bg-card)]/30 backdrop-blur-xl rounded-full mx-auto flex items-center justify-center border border-[var(--border-color)]/50 shadow-lg mb-8 relative">
+                <div className="w-48 h-48 rounded-full opacity-20 blur-3xl absolute" style={{ backgroundColor: role === "teacher"
+                  ? "var(--action-info-bg)"
+                  : "var(--primary)" }}>
+                </div>
                 <span className="text-6xl">
                   {role === 'teacher' ? '👨‍🏫' : role === 'student' ? '👨‍🎓' : '🚀'}
                 </span>
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-[var(--text-main)]">
                 {role === 'teacher' ? 'Empower your Classroom' : role === 'student' ? 'Track your Progress' : 'Smart Attendance System'}
               </h2>
-              <p className="text-gray-600 max-w-sm mx-auto">
+              <p className="text-[var(--text-body)] max-w-sm mx-auto">
                 {role === 'teacher'
                   ? "Manage attendance, view analytics, and streamline your teaching workflow."
                   : role === 'student'

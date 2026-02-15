@@ -2,11 +2,17 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, Home, BookOpen, TrendingUp, User } from "lucide-react";
 import StudentNavigation from "../components/StudentNavigation";
 import { fetchMySubjects } from "../../api/students";
+import { useTranslation } from "react-i18next";
 
 export default function StudentSubjects() {
+  const { t, i18n } = useTranslation();
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -21,10 +27,10 @@ export default function StudentSubjects() {
           const total = sub.total || 0;
           const attended = sub.attended || 0;
           
-          let status = "On track";
+          let status = "on_track";
           let statusColor = "bg-emerald-100 text-emerald-700";
           let barColor = "bg-emerald-500";
-          let message = "Safe above 75% rule";
+          let message = "safe_rule";
           let typeColor = "bg-blue-600"; // default
 
           // Color coded by type loosely
@@ -33,25 +39,21 @@ export default function StudentSubjects() {
 
           // Calculate status based on 75% rule
           if (att < 75) {
-             status = "At risk";
+             status = "at_risk";
              statusColor = "bg-rose-100 text-rose-700";
              barColor = "bg-rose-500";
              
              // How many more classes to attend to reach 75%?
-             // (attended + x) / (total + x) >= 0.75
-             // attended + x >= 0.75*total + 0.75x
-             // 0.25x >= 0.75*total - attended
-             // x >= 3*total - 4*attended
              const needed = Math.ceil(3 * total - 4 * attended);
              message = needed > 0 
-               ? `Need ${needed} more classes to reach 75%` 
-               : "Attendance is critical";
+               ? { key: "need_more", params: { needed } } 
+               : "critical";
 
           } else if (att < 85) {
-             status = "Near threshold";
+             status = "near_threshold";
              statusColor = "bg-amber-100 text-amber-700";
              barColor = "bg-amber-500";
-             message = "Stay regular to keep 75%+";
+             message = "stay_regular";
           }
 
           return {
@@ -67,7 +69,7 @@ export default function StudentSubjects() {
         setSubjects(transformed);
       } catch (err) {
         console.error("Failed to load subjects", err);
-        setError("Failed to load subjects");
+        setError("load_failed");
       } finally {
         setLoading(false);
       }
@@ -90,7 +92,26 @@ export default function StudentSubjects() {
       <StudentNavigation activePage="subjects" />
 
       {/* 3. Main Content */}
-      <main className="md:ml-64 p-6 md:p-8 pb-24 md:pb-8 animate-in fade-in duration-500">
+      <main className="md:ml-64 p-6 md:p-8 pb-24 md:pb-8 animate-in fade-in duration-500 relative">
+        {/* Language Switcher */}
+        <div className="absolute top-6 right-6 z-10">
+            <div className="flex gap-2 items-center bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+              <button 
+                onClick={() => changeLanguage('en')} 
+                className={`text-xs ${i18n.language === 'en' ? 'font-bold text-blue-900 border-b-2 border-blue-900' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                English
+              </button>
+              <span className="text-gray-300 text-xs">|</span>
+              <button 
+                onClick={() => changeLanguage('hi')} 
+                className={`text-xs ${i18n.language === 'hi' ? 'font-bold text-blue-900 border-b-2 border-blue-900' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                हिंदी
+              </button>
+            </div>
+        </div>
+
         <div className="max-w-4xl mx-auto space-y-6">
           
           {/* Header */}
@@ -99,14 +120,14 @@ export default function StudentSubjects() {
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">Subjects</h2>
-              <p className="text-slate-500 text-sm">Attendance overview by subject</p>
+              <h2 className="text-2xl font-bold text-slate-800">{t('subjects.title')}</h2>
+              <p className="text-slate-500 text-sm">{t('subjects.subtitle')}</p>
             </div>
           </div>
           
           {error && (
             <div className="p-4 bg-rose-50 text-rose-600 rounded-lg">
-               {error}
+               {t(`subjects.errors.${error}`)}
             </div>
           )}
 
@@ -114,7 +135,7 @@ export default function StudentSubjects() {
           <div className="space-y-6">
             {subjects.length === 0 ? (
                <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-gray-100">
-                  No subjects enrolled yet.
+                  {t('subjects.no_subjects')}
                </div>
             ) : (
                 subjects.map((sub) => (
@@ -124,13 +145,13 @@ export default function StudentSubjects() {
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-lg font-semibold text-slate-800">{sub.name}</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${sub.typeColor}`}>
-                    {sub.type}
+                    {t(`subjects.types.${sub.type}`) || sub.type}
                   </span>
                 </div>
 
                 {/* Percentage Row */}
                 <div className="flex justify-between items-end mb-2">
-                  <span className="text-sm text-slate-400 font-medium">Attendance</span>
+                  <span className="text-sm text-slate-400 font-medium">{t('subjects.attendance_label')}</span>
                   <span className="text-lg font-bold text-slate-800">{sub.attendance}%</span>
                 </div>
 
@@ -146,13 +167,15 @@ export default function StudentSubjects() {
                 <div className="flex justify-between items-start mt-4">
                   <div className="space-y-3">
                     <p className="text-xs font-medium text-slate-400">
-                      Attended: {sub.attended}/{sub.total} classes ({sub.attendance}%)
+                      {t('subjects.attended_stats', { attended: sub.attended, total: sub.total, percentage: sub.attendance })}
                     </p>
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${sub.statusColor}`}>
-                      {sub.status}
+                      {t(`subjects.status.${sub.status}`)}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-400 mt-auto">{sub.message}</span>
+                  <span className="text-xs text-slate-400 mt-auto">
+                    {typeof sub.message === 'string' ? t(`subjects.status.${sub.message}`) : t(`subjects.status.${sub.message.key}`, sub.message.params)}
+                  </span>
                 </div>
 
               </div>

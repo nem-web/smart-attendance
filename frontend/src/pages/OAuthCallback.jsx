@@ -17,6 +17,8 @@ export default function OAuthCallback() {
 
     const token =
       hashParams.get("token") || queryParams.get("token") || null;
+    const refreshToken =
+      hashParams.get("refresh_token") || queryParams.get("refresh_token") || null;
     const email =
       hashParams.get("email") || queryParams.get("email") || null;
     const role =
@@ -37,6 +39,7 @@ export default function OAuthCallback() {
    // Save as your normal login flow does
     try {
       localStorage.setItem("token", token);
+      if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
       localStorage.setItem("user", JSON.stringify({ email, role , name, userId}));
       // optionally set global auth header for axios/fetch here
       // axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;

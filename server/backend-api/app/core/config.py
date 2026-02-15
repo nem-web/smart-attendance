@@ -5,9 +5,10 @@ from pydantic_settings import BaseSettings
 from typing import List
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent
+# config.py is in app/core/, so go up 2 levels to backend-api/
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Load .env from root
+# Load .env from backend-api/.env
 load_dotenv(BASE_DIR / ".env")
 
 APP_NAME = "Smart Attendance API"
@@ -15,9 +16,11 @@ APP_NAME = "Smart Attendance API"
 # CORS origins (can override via env as comma-separated in production)
 _default_origins = [
     "http://localhost:5173",
+    "http://localhost:4173",
     "https://sa-gl.vercel.app",
     "https://studentcheck.vercel.app",
     "http://127.0.0.1:5173",
+    "http://127.0.0.1:4173",
 ]
 ORIGINS: List[str] = [
     o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()

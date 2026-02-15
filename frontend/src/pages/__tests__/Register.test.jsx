@@ -28,7 +28,7 @@ describe('Register Page', () => {
                 <Register />
             </BrowserRouter>
         );
-        expect(screen.getByRole('heading', { name: /create account/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /register/i })).toBeInTheDocument();
         // The form fields appear only after role selection
     });
 

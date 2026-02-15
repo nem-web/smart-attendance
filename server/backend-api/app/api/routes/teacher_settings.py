@@ -1,7 +1,7 @@
 # backend/app/api/routes/settings.py
 from app.db.mongo import db
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from datetime import datetime, UTC
+from datetime import datetime
 
 from app.core.cloudinary_config import cloudinary
 
@@ -69,7 +69,7 @@ async def patch_settings_route(
         raise HTTPException(status_code=400, detail="Invalid payload")
 
     user_id = validate_object_id(current["id"])
-    now = datetime.now(UTC)
+    now = datetime.utcnow()
 
     # Extract fields that need to sync across collections
     user_updates = {}
@@ -201,10 +201,43 @@ async def add_subject(payload: dict, current: dict = Depends(get_current_teacher
     if not name or not code:
         raise HTTPException(status_code=400, detail="Name and Code required")
 
+    # Extract location if provided
+    location = None
+    if "latitude" in payload and "longitude" in payload:
+        lat_raw = payload.get("latitude")
+        lng_raw = payload.get("longitude")
+        
+        # Check for valid values (allow 0 but reject empty strings or None)
+        if (
+            lat_raw is not None
+            and lng_raw is not None
+            and lat_raw != ""
+            and lng_raw != ""
+        ):
+            try:
+                lat = float(lat_raw)
+                lng = float(lng_raw)
+                rad = float(payload.get("radius", 50))  # Default 50m
+                
+                if not (-90 <= lat <= 90):
+                    raise ValueError("Invalid latitude")
+                if not (-180 <= lng <= 180):
+                    raise ValueError("Invalid longitude")
+                if rad <= 0:
+                     raise ValueError("Invalid radius")
+
+                location = {"lat": lat, "long": lng, "radius": rad}
+            except (ValueError, TypeError):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid location coordinates or radius",
+                )
+
     subject = await add_subject_for_teacher(
         current["id"],
         name.strip(),
         code.strip().upper(),
+        location=location,
     )
 
     return serialize_bson(subject)
@@ -358,7 +391,7 @@ async def verify_student(
 
     result = await db.subjects.update_one(
         {"_id": subj_id, "professor_ids": prof_id, "students.student_id": stud_id},
-        {"$set": {"students.$.verified": True, "updated_at": datetime.now(UTC)}},
+        {"$set": {"students.$.verified": True, "updated_at": datetime.utcnow()}},
     )
 
     if result.modified_count == 0:
@@ -395,3 +428,39 @@ async def remove_student(
     await db.students.update_one({"userId": stud_id}, {"$pull": {"subjects": subj_id}})
 
     return {"message": "Student removed from subject"}
+
+
+# ---------------- GET ALL STUDENTS (FOR MESSAGING) ----------------
+@router.get("/teachers/students")
+async def get_all_students(current_user: dict = Depends(get_current_teacher)):
+    """Get all students for messaging purposes"""
+    # Get all students (with limit to avoid memory issues)
+    students = await db.students.find({}).to_list(length=None)
+
+    if not students:
+        return {"students": []}
+
+    # Batch fetch all user data
+    user_ids = [s.get("userId") for s in students if s.get("userId")]
+    users_cursor = db.users.find({"_id": {"$in": user_ids}})
+    users_map = {str(u["_id"]): u async for u in users_cursor}
+
+    student_list = []
+    for student in students:
+        uid = str(student.get("userId"))
+        user = users_map.get(uid)
+        if user:
+            student_list.append(
+                {
+                    "id": str(student["_id"]),
+                    "user_id": uid,
+                    "name": user.get("name", "Unknown"),
+                    "email": user.get("email", ""),
+                    "usn": user.get("usn", ""),
+                    "branch": student.get("branch", ""),
+                    "semester": student.get("semester", 0),
+                    "verified": student.get("verified", False),
+                }
+            )
+
+    return {"students": student_list}

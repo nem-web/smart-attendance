@@ -7,15 +7,24 @@ from app.db.subjects_repo import (
 )
 
 
-async def add_subject_for_teacher(teacher_id: ObjectId, name: str, code: str):
+async def add_subject_for_teacher(
+    teacher_id: ObjectId, name: str, code: str, location: dict = None
+):
     # 1. Find or create subject
     subject = await get_subject_by_code(code)
 
     if subject:
         if teacher_id not in subject.get("professor_ids", []):
             await add_professor_to_subject(subject["_id"], teacher_id)
+        
+        # Update location if provided (even if subject exists)
+        if location:
+            await db.subjects.update_one(
+                {"_id": subject["_id"]},
+                {"$set": {"location": location}}
+            )
     else:
-        subject = await create_subject(name, code, teacher_id)
+        subject = await create_subject(name, code, teacher_id, location=location)
 
     # 2. DIRECTLY update teacher subjects (no service call)
     await db.teachers.update_one(

@@ -8,12 +8,14 @@ class MLClient:
 
     def __init__(self):
         self.base_url = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
+        self.api_key = os.getenv("ML_API_KEY", "your-secret-api-key-here")
         self.timeout = float(os.getenv("ML_SERVICE_TIMEOUT", "30"))
         self.max_retries = int(os.getenv("ML_SERVICE_MAX_RETRIES", "3"))
 
         # Create httpx client with connection pooling
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
+            headers={"X-API-KEY": self.api_key},
             timeout=self.timeout,
             limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
         )

@@ -1,0 +1,27 @@
+# =========================
+# Apertre 3.0 – CODEOWNERS
+# =========================
+
+# Default owner (Project Admin)
+* @nem-web
+
+# -------------------------
+# Backend / API
+# -------------------------
+/server/backend-api/** @nem-web
+/app/api/** @nem-web
+/app/services/** @nem-web
+/app/db/** @nem-web
+
+# -------------------------
+# Frontend (Light UI work)
+# -------------------------
+/frontend/** @adi271001
+
+# -------------------------
+# ML / Security / Testing
+# -------------------------
+/server/ml-service/** @Suvam-paul145
+/app/ml/** @Suvam-paul145
+/tests/** @Suvam-paul145
+/security/** @Suvam-paul145

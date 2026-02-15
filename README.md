@@ -96,44 +96,44 @@ Smart Attendance is a modern, intelligent attendance management system designed 
 
 ### Frontend
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **React** | 19.2.0 | Modern UI library for building interactive interfaces |
-| **React Router DOM** | 7.9.6 | Client-side routing and navigation |
-| **Vite** | 7.2.4 | Lightning-fast build tool and dev server |
-| **Tailwind CSS** | 4.1.17 | Utility-first CSS framework for styling |
-| **Material-UI** | 7.3.5 | React UI component library |
-| **Recharts** | 3.5.1 | Composable charting library for data visualization |
-| **React Webcam** | 7.2.0 | Webcam component for capturing images |
-| **Axios** | 1.13.2 | Promise-based HTTP client |
-| **TanStack Query** | 5.90.12 | Powerful data fetching and state management |
-| **Lucide React** | 0.555.0 | Beautiful & consistent icon toolkit |
+| Technology           | Version | Purpose                                               |
+| -------------------- | ------- | ----------------------------------------------------- |
+| **React**            | 19.2.0  | Modern UI library for building interactive interfaces |
+| **React Router DOM** | 7.9.6   | Client-side routing and navigation                    |
+| **Vite**             | 7.2.4   | Lightning-fast build tool and dev server              |
+| **Tailwind CSS**     | 4.1.17  | Utility-first CSS framework for styling               |
+| **Material-UI**      | 7.3.5   | React UI component library                            |
+| **Recharts**         | 3.5.1   | Composable charting library for data visualization    |
+| **React Webcam**     | 7.2.0   | Webcam component for capturing images                 |
+| **Axios**            | 1.13.2  | Promise-based HTTP client                             |
+| **TanStack Query**   | 5.90.12 | Powerful data fetching and state management           |
+| **Lucide React**     | 0.555.0 | Beautiful & consistent icon toolkit                   |
 
 ### Backend API
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **FastAPI** | 0.115.5 | High-performance Python web framework |
-| **Uvicorn** | 0.32.1 | Lightning-fast ASGI server |
-| **MongoDB** | - | NoSQL database for flexible data storage |
-| **Motor** | - | Asynchronous MongoDB driver for Python |
-| **PyJWT** | - | JSON Web Token implementation |
-| **Cloudinary** | - | Cloud-based image storage and management |
-| **Passlib** | 1.7.4 | Password hashing library |
-| **Python Dotenv** | - | Environment variable management |
-| **Authlib** | - | OAuth and authentication library |
+| Technology        | Version | Purpose                                  |
+| ----------------- | ------- | ---------------------------------------- |
+| **FastAPI**       | 0.115.5 | High-performance Python web framework    |
+| **Uvicorn**       | 0.32.1  | Lightning-fast ASGI server               |
+| **MongoDB**       | -       | NoSQL database for flexible data storage |
+| **Motor**         | -       | Asynchronous MongoDB driver for Python   |
+| **PyJWT**         | -       | JSON Web Token implementation            |
+| **Cloudinary**    | -       | Cloud-based image storage and management |
+| **Passlib**       | 1.7.4   | Password hashing library                 |
+| **Python Dotenv** | -       | Environment variable management          |
+| **Authlib**       | -       | OAuth and authentication library         |
 
 ### ML Service
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **FastAPI** | 0.115.5 | High-performance Python web framework |
-| **Uvicorn** | 0.32.1 | Lightning-fast ASGI server |
-| **MediaPipe** | 0.10.9 | Face detection and mesh analysis |
-| **OpenCV** | - | Computer vision and image processing |
-| **NumPy** | 1.26.4 | Numerical computing library |
-| **Pillow** | 11.0.0 | Python Imaging Library |
-| **Scikit-learn** | - | Machine learning utilities |
+| Technology       | Version | Purpose                               |
+| ---------------- | ------- | ------------------------------------- |
+| **FastAPI**      | 0.115.5 | High-performance Python web framework |
+| **Uvicorn**      | 0.32.1  | Lightning-fast ASGI server            |
+| **MediaPipe**    | 0.10.9  | Face detection and mesh analysis      |
+| **OpenCV**       | -       | Computer vision and image processing  |
+| **NumPy**        | 1.26.4  | Numerical computing library           |
+| **Pillow**       | 11.0.0  | Python Imaging Library                |
+| **Scikit-learn** | -       | Machine learning utilities            |
 
 ---
 
@@ -176,12 +176,14 @@ cd server/backend-api
 #### Step 2: Create and Activate Virtual Environment
 
 **On Windows:**
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
 **On macOS/Linux:**
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -232,6 +234,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 The backend API server will start on `http://localhost:8000`
 
 You can access the interactive API documentation at:
+
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
@@ -246,12 +249,14 @@ cd server/ml-service
 #### Step 2: Create and Activate Virtual Environment
 
 **On Windows:**
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
 **On macOS/Linux:**
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -267,12 +272,14 @@ pip install -r requirements.txt
 **Note**: Installing `mediapipe` and `opencv-python-headless` may take several minutes. Ensure you have build tools installed if compilation is required.
 
 **For Ubuntu/Debian:**
+
 ```bash
 sudo apt-get update
 sudo apt-get install build-essential cmake python3-dev
 ```
 
 **For macOS:**
+
 ```bash
 brew install cmake
 ```
@@ -300,6 +307,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 The ML service will start on `http://localhost:8001`
 
 You can access the interactive API documentation at:
+
 - Swagger UI: `http://localhost:8001/docs`
 - ReDoc: `http://localhost:8001/redoc`
 
@@ -320,6 +328,7 @@ npm install
 ```
 
 If you encounter any issues, try:
+
 ```bash
 npm install --legacy-peer-deps
 ```
@@ -399,6 +408,19 @@ BACKEND_API_URL=http://localhost:8000
 # Add any ML model specific configurations here
 ```
 
+#### Frontend (.env)
+
+Create a `.env` file in the `frontend` directory with the following variables:
+
+```env
+# Backend API URL
+# Development: http://localhost:8000
+# Production: Your deployed backend URL (e.g., Render service)
+VITE_API_URL=http://localhost:8000
+```
+
+**Keep-Alive Feature**: The frontend automatically implements a background ping mechanism to keep the backend service warm (prevents cold starts on platforms like Render). This ping is triggered on app startup, is non-blocking, and uses the `VITE_API_URL` configured above. No additional configuration is required.
+
 ---
 
 ## 🧪 Running Tests
@@ -406,7 +428,9 @@ BACKEND_API_URL=http://localhost:8000
 We maintain a comprehensive testing suite covering Backend, ML Service, and Frontend.
 
 ### Backend Tests (Pytest)
+
 Ensure MongoDB is running locally or set `MONGO_URI`.
+
 ```bash
 cd server/backend-api
 pip install -r requirements.txt
@@ -414,6 +438,7 @@ pytest --cov=app --cov-report=term-missing
 ```
 
 ### ML Service Tests (Pytest)
+
 ```bash
 cd server/ml-service
 pip install -r requirements.txt
@@ -421,6 +446,7 @@ pytest --cov=app --cov-report=term-missing
 ```
 
 ### Frontend Tests (Vitest)
+
 ```bash
 cd frontend
 npm install
@@ -430,7 +456,9 @@ npm run test:coverage
 ```
 
 ### End-to-End Tests (Playwright)
+
 Requires all services (Backend, ML, Frontend) to be running.
+
 ```bash
 cd frontend
 npx playwright install
@@ -444,17 +472,18 @@ For more details, see [TESTING.md](TESTING.md).
 #### Important Notes:
 
 1. **JWT_SECRET**: Generate a strong random secret:
+
    ```bash
    python -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
 
-2. **Google OAuth**: 
+2. **Google OAuth**:
    - Create a project in [Google Cloud Console](https://console.cloud.google.com/)
    - Enable Google+ API
    - Create OAuth 2.0 credentials
    - Add authorized redirect URIs
 
-3. **Gmail SMTP**: 
+3. **Gmail SMTP**:
    - Enable 2-factor authentication on your Gmail account
    - Generate an [App Password](https://myaccount.google.com/apppasswords)
    - Use the app password in `SMTP_PASS`
@@ -479,6 +508,7 @@ For more details, see [TESTING.md](TESTING.md).
 #### 2. Dashboard Overview
 
 After logging in, you'll see:
+
 - **Total Students**: Number of students across all subjects
 - **Today's Attendance**: Attendance marked today
 - **Average Attendance**: Overall attendance percentage
@@ -551,6 +581,7 @@ After logging in, you'll see:
 #### 2. Student Dashboard
 
 After logging in, view:
+
 - **Overall Attendance**: Your attendance percentage
 - **Subject-wise Attendance**: Attendance in each subject
 - **Recent Classes**: Latest attendance records
@@ -740,17 +771,20 @@ smart-attendance/
 ## 📡 API Documentation
 
 ### Base URL
-```
+
+```text
 http://localhost:8000
 ```
 
 ### Interactive Documentation
+
 - **Swagger UI**: `http://localhost:8000/docs`
 - **ReDoc**: `http://localhost:8000/redoc`
 
 ### Authentication
 
 All protected endpoints require a JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your-jwt-token>
 ```
@@ -760,6 +794,7 @@ Authorization: Bearer <your-jwt-token>
 #### Authentication
 
 ##### Register User
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -773,6 +808,7 @@ Content-Type: application/json
 ```
 
 ##### Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -784,6 +820,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIs...",
@@ -798,12 +835,15 @@ Content-Type: application/json
 ```
 
 ##### Google OAuth Login
+
 ```http
 GET /auth/google/login
 ```
+
 Redirects to Google OAuth consent screen.
 
 ##### Google OAuth Callback
+
 ```http
 GET /auth/google/callback?code=<authorization-code>
 ```
@@ -811,12 +851,14 @@ GET /auth/google/callback?code=<authorization-code>
 #### Students
 
 ##### Get All Students
+
 ```http
 GET /api/students
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 [
   {
@@ -831,6 +873,7 @@ Authorization: Bearer <token>
 ```
 
 ##### Add Student
+
 ```http
 POST /api/students
 Authorization: Bearer <token>
@@ -845,6 +888,7 @@ Content-Type: multipart/form-data
 ```
 
 ##### Get Student Details
+
 ```http
 GET /api/students/{student_id}
 Authorization: Bearer <token>
@@ -853,6 +897,7 @@ Authorization: Bearer <token>
 #### Attendance
 
 ##### Mark Attendance
+
 ```http
 POST /api/attendance/mark
 Authorization: Bearer <token>
@@ -865,6 +910,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -890,12 +936,14 @@ Content-Type: application/json
 ```
 
 ##### Get Attendance Records
+
 ```http
 GET /api/attendance?subject_id={id}&date={YYYY-MM-DD}
 Authorization: Bearer <token>
 ```
 
 ##### Get Student Attendance
+
 ```http
 GET /api/attendance/student/{student_id}
 Authorization: Bearer <token>
@@ -904,12 +952,14 @@ Authorization: Bearer <token>
 #### Subjects/Classes
 
 ##### Get All Subjects
+
 ```http
 GET /api/classes
 Authorization: Bearer <token>
 ```
 
 ##### Create Subject
+
 ```http
 POST /api/classes
 Authorization: Bearer <token>
@@ -923,6 +973,7 @@ Content-Type: application/json
 ```
 
 ##### Get Subject Details
+
 ```http
 GET /api/classes/{subject_id}
 Authorization: Bearer <token>
@@ -931,6 +982,7 @@ Authorization: Bearer <token>
 #### Face Recognition
 
 ##### Upload Student Face
+
 ```http
 POST /api/face/upload
 Authorization: Bearer <token>
@@ -943,6 +995,7 @@ Content-Type: multipart/form-data
 ```
 
 ##### Verify Face
+
 ```http
 POST /api/face/verify
 Authorization: Bearer <token>
@@ -957,12 +1010,14 @@ Content-Type: application/json
 #### Teacher Settings
 
 ##### Get Settings
+
 ```http
 GET /api/teacher-settings
 Authorization: Bearer <token>
 ```
 
 ##### Update Settings
+
 ```http
 PUT /api/teacher-settings
 Authorization: Bearer <token>
@@ -978,6 +1033,7 @@ Content-Type: application/json
 ### Error Responses
 
 #### 400 Bad Request
+
 ```json
 {
   "detail": "Invalid request parameters"
@@ -985,6 +1041,7 @@ Content-Type: application/json
 ```
 
 #### 401 Unauthorized
+
 ```json
 {
   "detail": "Could not validate credentials"
@@ -992,6 +1049,7 @@ Content-Type: application/json
 ```
 
 #### 404 Not Found
+
 ```json
 {
   "detail": "Resource not found"
@@ -999,6 +1057,7 @@ Content-Type: application/json
 ```
 
 #### 500 Internal Server Error
+
 ```json
 {
   "detail": "Internal server error"
@@ -1010,22 +1069,27 @@ Content-Type: application/json
 ## 📸 Screenshots
 
 ### Teacher Dashboard
+
 <img width="1891" height="1025" alt="image" src="https://github.com/user-attachments/assets/3a75afd6-b8b0-4f49-af2f-f9cb28cfeb18" />
 *Comprehensive overview of attendance statistics and analytics*
 
 ### Mark Attendance
+
 <img width="1894" height="1029" alt="image" src="https://github.com/user-attachments/assets/1c82ad55-00d1-42ca-adb2-9f4506f53cb7" />
 *Real-time facial recognition attendance marking*
 
 ### Student List
+
 <img width="1900" height="1032" alt="image" src="https://github.com/user-attachments/assets/12aaa1ed-bd6a-49c2-a623-d2682a79aa74" />
 *Manage and view all enrolled students*
 
 ### Analytics
+
 <img width="1900" height="1033" alt="image" src="https://github.com/user-attachments/assets/9856f3eb-37aa-496b-82f2-a7d34a79796b" />
 *Detailed attendance analytics and reports*
 
 ### Student Dashboard
+
 <img width="1895" height="1025" alt="image" src="https://github.com/user-attachments/assets/222dc04f-d448-4a35-b70e-07be20ab283d" />
 *Student portal with attendance overview*
 
@@ -1038,6 +1102,7 @@ We love contributions! Smart Attendance is an open-source project and we welcome
 ### How to Contribute
 
 Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines on:
+
 - Code of Conduct
 - Setting up your development environment
 - Making changes and creating pull requests
@@ -1046,17 +1111,20 @@ Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines on:
 ### Quick Start for Contributors
 
 1. **Fork the repository**
+
    ```bash
    # Click the 'Fork' button on GitHub
    ```
 
 2. **Clone your fork**
+
    ```bash
    git clone https://github.com/YOUR-USERNAME/smart-attendance.git
    cd smart-attendance
    ```
 
 3. **Create a branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    # or
@@ -1070,6 +1138,7 @@ Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines on:
    - Update documentation
 
 5. **Commit your changes**
+
    ```bash
    git add .
    git commit -m "feat: add amazing feature"
@@ -1078,6 +1147,7 @@ Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines on:
    ```
 
 6. **Push to your fork**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -1126,6 +1196,7 @@ Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines on:
 Smart Attendance implements several security measures:
 
 ✅ **Implemented:**
+
 - JWT-based authentication
 - OAuth 2.0 integration with Google
 - Password hashing with bcrypt
@@ -1179,14 +1250,15 @@ We take security seriously and will respond promptly to all reports.
 ## 🗺️ Roadmap
 
 ### Version 1.0 (Current)
+
 - [x] Basic facial recognition attendance
 - [x] Teacher and student dashboards
 - [x] MongoDB integration
 - [x] Google OAuth login
 - [x] Subject management
 
-
 ### Version 1.1 (In Progress)
+
 - [ ] Attendance analytics
 - [ ] Email notifications
 - [ ] Reports generation
@@ -1195,6 +1267,7 @@ We take security seriously and will respond promptly to all reports.
 - [ ] Multi-language support
 
 ### Version 2.0 (Planned)
+
 - [ ] Video-based attendance (process video feed)
 - [ ] Biometric integration
 - [ ] Parent portal
@@ -1202,6 +1275,7 @@ We take security seriously and will respond promptly to all reports.
 - [ ] Offline mode support
 
 ### Version 3.0 (Future)
+
 - [ ] Multi-institution support
 - [ ] API marketplace for third-party integrations
 - [ ] Blockchain-based attendance records
@@ -1209,6 +1283,7 @@ We take security seriously and will respond promptly to all reports.
 - [ ] Virtual/Remote class support with Zoom/Meet integration
 
 ### Community Requested Features
+
 - Custom attendance policies per subject
 - Proxy detection using advanced AI
 - Attendance appeals/corrections workflow
@@ -1289,9 +1364,9 @@ A: Yes, we use industry-standard security practices. See the [Security](#-securi
 
 ### Main Contributors
 
-- **Nemchand** - *Project Creator & Lead Developer* - [GitHub](https://github.com/nem-web)
-- **Suvam Paul** - *Project Maintainer & Mentor* - [GitHub](https://github.com/Suvam-paul145)
-- **Aditya Dattatreya** - *Project Maintainer & Mentor* - [GitHub](https://github.com/adi271001)
+- **Nemchand** - _Project Creator & Lead Developer_ - [GitHub](https://github.com/nem-web)
+- **Suvam Paul** - _Project Maintainer & Mentor_ - [GitHub](https://github.com/Suvam-paul145)
+- **Aditya Dattatreya** - _Project Maintainer & Mentor_ - [GitHub](https://github.com/adi271001)
 
 ### Contributors
 

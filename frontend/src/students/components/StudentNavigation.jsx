@@ -1,16 +1,7 @@
-// StudentNavigation.jsx
-import {CircleUser, LogOut} from "lucide-react";
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Home, BookOpen, TrendingUp, User } from "lucide-react";
-
-const navItems = [
-  { id: "home", label: "Home", icon: Home, path: "/student-dashboard" },
-  { id: "subjects", label: "Subjects", icon: BookOpen, path: "/student-subjects" },
-  { id: "forecast", label: "Forecast", icon: TrendingUp, path: "/student-forecast" },
-  { id: "profile", label: "Profile", icon: User, path: "/student-profile" },
-];
+import { Home, BookOpen, TrendingUp, User, CircleUser, LogOut } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /* ---------------------- DESKTOP NAV ITEM ---------------------- */
 // eslint-disable-next-line no-unused-vars
@@ -50,6 +41,7 @@ function MobileItem({ icon: IconComponent, label, active, path }) {
 
 /* ---------------------- MAIN NAVIGATION ---------------------- */
 export default function StudentNavigation({ activePage = "home" }) {
+  const { t } = useTranslation();
   const [username] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
@@ -61,13 +53,20 @@ export default function StudentNavigation({ activePage = "home" }) {
 
   const navigate = useNavigate();
 
+  const navItems = [
+    { id: "home", label: t('student_dashboard.nav.home'), icon: Home, path: "/student-dashboard" },
+    { id: "subjects", label: t('student_dashboard.nav.subjects'), icon: BookOpen, path: "/student-subjects" },
+    { id: "forecast", label: t('student_dashboard.nav.forecast'), icon: TrendingUp, path: "/student-forecast" },
+    { id: "profile", label: t('student_dashboard.nav.profile'), icon: User, path: "/student-profile" },
+  ];
+
   return (
     <>
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col fixed h-full z-10">
         <div className="p-6 flex items-center gap-3">
           <img className="w-14 h-14 rounded-full" src="logo.png" alt="" />
-          <span className="font-bold text-lg tracking-tight">Smart Attend</span>
+          <span className="font-bold text-lg tracking-tight">{t('student_dashboard.nav.app_name')}</span>
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
@@ -89,7 +88,7 @@ export default function StudentNavigation({ activePage = "home" }) {
             </div>
             <div>
               <p className="text-sm font-bold">{username}</p>
-              <p className="text-xs text-gray-500">Student</p>
+              <p className="text-xs text-gray-500">{t('student_dashboard.nav.student_role')}</p>
             </div>
           </div>
           <div className="logout">

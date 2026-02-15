@@ -1,0 +1,109 @@
+name: Issue Auto Assignment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue Assignment Guard
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commentBody = context.payload.comment.body.toLowerCase();
+            const author = context.payload.comment.user.login;
+            const issue = context.payload.issue;
+
+            // 1. Ignore Bots and PR comments
+            if (context.payload.comment.user.type === "Bot" || issue.pull_request) {
+              return;
+            }
+
+            // 2. Define Keywords
+            const intentWords = ["assign", "take", "work", "handle", "pick", "do", "fix", "solve"];
+            const selfWords = ["me", "i", "myself"];
+
+            // 3. Check if comment contains keywords
+            const hasIntent = intentWords.some(w => commentBody.includes(w));
+            const hasSelf = selfWords.some(w => commentBody.includes(w));
+
+            if (!hasIntent || !hasSelf) {
+              console.log("No assignment request detected.");
+              return;
+            }
+
+            // 4. Check if issue is ALREADY assigned to ANYONE
+            if (issue.assignees.length > 0) {
+              return;
+            }
+
+            // 5. NEW: Check if the issue is "On Hold"
+            const onHoldLabel = "on-hold"; // Make sure this matches your label name exactly or lowercase
+            const isHold = issue.labels.some(label => label.name.toLowerCase() === onHoldLabel);
+
+            if (isHold) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `⏳ **Assignment Paused**
+            
+            @${author}, thanks for your interest!
+            
+            However, this issue is currently marked as **on-hold**.
+            👉 This usually means it depends on another task or requires further discussion.
+            
+            Please wait until the label is removed or check out other open issues.`
+              });
+              return;
+            }
+
+            // 6. STRICT CHECK: Does the user ALREADY have an open issue?
+            const { data: assignedIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              assignee: author,
+            });
+
+            if (assignedIssues.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `👋 @${author}
+            
+            You already have an **assigned open issue** (#${assignedIssues[0].number}).
+            
+            **Rule:** You can only work on **one issue at a time**.
+            👉 Please complete or close your current issue before taking a new one.
+            
+            Thanks for contributing 🚀`
+              });
+              return;
+            }
+
+            // 7. Assign the issue
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              assignees: [author],
+            });
+
+            // 8. Post success comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `✅ **Assigned to @${author}**
+            
+            All the best! 🚀  
+            Feel free to ask questions or share progress updates here.`
+            });

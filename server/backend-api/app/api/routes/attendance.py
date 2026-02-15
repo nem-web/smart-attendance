@@ -6,6 +6,7 @@ from typing import Dict, List
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
 
+from geopy.distance import geodesic
 from app.core.config import ML_CONFIDENT_THRESHOLD, ML_UNCERTAIN_THRESHOLD
 from app.db.mongo import db
 from app.services.attendance_daily import save_daily_summary
@@ -34,13 +35,53 @@ async def mark_attendance(payload: Dict):
         raise HTTPException(status_code=400, detail="image and subject_id required")
 
     # Load subject
-    subject = await db.subjects.find_one({"_id": ObjectId(subject_id)}, {"students": 1})
+    try:
+        subject = await db.subjects.find_one(
+            {"_id": ObjectId(subject_id)}, {"students": 1, "location": 1}
+        )
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid subject ID format")
 
     if not subject:
         raise HTTPException(404, "Subject not found")
 
+    # Geofencing Check
+    location_cfg = subject.get("location")
+    if (
+        location_cfg
+        and location_cfg.get("lat") is not None
+        and location_cfg.get("long") is not None
+    ):
+        req_lat = payload.get("latitude")
+        req_long = payload.get("longitude")
+
+        if req_lat is None or req_long is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Location coordinates (latitude, longitude) required",
+            )
+
+        try:
+            student_pos = (float(req_lat), float(req_long))
+            class_pos = (float(location_cfg["lat"]), float(location_cfg["long"]))
+            # Default radius 50m if not set
+            allowed_radius = float(location_cfg.get("radius", 50))
+            
+            if allowed_radius <= 0:
+                raise ValueError("Radius must be positive")
+
+            dist = geodesic(class_pos, student_pos).meters
+
+            if dist > allowed_radius:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You are too far from the classroom.",
+                )
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid coordinates format")
+
     student_user_ids = [
-        s["student_id"] for s in subject["students"] if s.get("verified", False)
+        s["student_id"] for s in subject.get("students", []) if s.get("verified", False)
     ]
 
     # Strip base64 header

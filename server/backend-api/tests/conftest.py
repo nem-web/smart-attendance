@@ -1,6 +1,11 @@
 import os
+import sys
+import asyncio
+from unittest.mock import AsyncMock, patch
+
 import pytest
 import pytest_asyncio
+from datetime import datetime, timedelta, timezone
 from httpx import AsyncClient, ASGITransport
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -8,25 +13,34 @@ from motor.motor_asyncio import AsyncIOMotorClient
 os.environ["MONGO_DB_NAME"] = "test_smart_attendance"
 os.environ["JWT_SECRET"] = "test-secret-key-123"
 
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+
 @pytest.fixture(scope="session")
 def event_loop():
-    import asyncio
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    """Provide a fresh event loop per test session (avoids closed-loop errors)."""
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 
-@pytest_asyncio.fixture(scope="session")
+
+@pytest_asyncio.fixture(scope="function")
 async def db_client():
-    # Attempt connection
+    """Get the MongoDB client for tests"""
     mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
     client = AsyncIOMotorClient(mongo_uri, serverSelectionTimeoutMS=2000)
     try:
-        await client.admin.command('ping')
+        await client.admin.command("ping")
     except Exception:
+        client.close()
         pytest.skip("MongoDB not available - skipping integration tests")
 
     yield client
+
+    # Close client after test
     client.close()
+
 
 @pytest_asyncio.fixture(scope="function")
 async def db(db_client):
@@ -49,6 +63,7 @@ async def db(db_client):
     except Exception:
         pass
 
+
 @pytest_asyncio.fixture(scope="function")
 async def client(db):
     """
@@ -56,13 +71,24 @@ async def client(db):
     """
     from app.main import app
 
-    # Ensure app uses the correct DB?
+    # Ensure app uses the correct DB.
     # app.db.mongo.db should point to 'test_smart_attendance' because of env var.
-    # However, if 'app' was imported before env var was set (unlikely in this setup),
-    # it might be wrong.
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         yield ac
+
+
+@pytest.fixture(autouse=True)
+def mock_ml_client():
+    """Mock ML client to avoid closing the event loop during tests."""
+    with patch("app.services.ml_client.ml_client") as mock:
+        mock.close = AsyncMock()
+        mock.detect_faces = AsyncMock(return_value={"success": True, "faces": []})
+        mock.get_embeddings = AsyncMock(return_value={"success": True, "embeddings": []})
+        yield mock
+
 
 @pytest.fixture
 def test_user_data():
@@ -74,8 +100,9 @@ def test_user_data():
         "college_name": "Test College",
         "employee_id": "EMP001",
         "phone": "1234567890",
-        "branch": "CSE"
+        "branch": "CSE",
     }
+
 
 @pytest_asyncio.fixture(scope="function")
 async def auth_token(client, db, test_user_data):
@@ -91,14 +118,48 @@ async def auth_token(client, db, test_user_data):
 
     # Verify manually
     await db.users.update_one(
-        {"email": test_user_data["email"]},
-        {"$set": {"is_verified": True}}
+        {"email": test_user_data["email"]}, {"$set": {"is_verified": True}}
     )
 
     # Login
     login_data = {
         "email": test_user_data["email"],
-        "password": test_user_data["password"]
+        "password": test_user_data["password"],
     }
     response = await client.post("/auth/login", json=login_data)
     return response.json()["token"]
+
+
+@pytest.fixture
+def make_token_header():
+    """
+    Factory fixture to create JWT token headers for any role, with exp claim.
+    """
+    from jose import jwt
+    from app.core.config import settings
+
+    def _create_header(user_id: str, role: str, email: str = None):
+        email = email or f"{role}@test.com"
+        exp = datetime.now(timezone.utc) + timedelta(days=30)
+        token_payload = {
+            "sub": user_id,
+            "role": role,
+            "email": email,
+            "exp": int(exp.timestamp()),
+        }
+        token = jwt.encode(
+            token_payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
+        )
+        return {"Authorization": f"Bearer {token}"}
+
+    return _create_header
+
+
+@pytest.fixture
+def teacher_token_header(make_token_header):
+    return lambda tid: make_token_header(tid, "teacher")
+
+
+@pytest.fixture
+def student_token_header(make_token_header):
+    return lambda sid: make_token_header(sid, "student")

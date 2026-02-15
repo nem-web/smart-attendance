@@ -1,0 +1,11 @@
+line-length = 88
+target-version = "py312"
+
+[lint]
+select = ["E", "F"]
+ignore = []
+
+# Ignore import order in main.py (dotenv must be loaded first)
+[lint.per-file-ignores]
+"app/main.py" = ["E402"]
+"tests/**/*.py" = ["E501"]

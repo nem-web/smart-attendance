@@ -1,23 +1,20 @@
-import pytest
 import numpy as np
 from app.ml.face_encoder import get_face_embedding
+
 
 def test_get_face_embedding_length():
     # 96x96 = 9216
     img = np.zeros((200, 200, 3), dtype=np.uint8)
-    img[:] = 100 # Make it non-zero
+    img[:] = 100  # Make it non-zero
     emb = get_face_embedding(img)
     assert isinstance(emb, list)
     assert len(emb) == 96 * 96
 
-    # Check normalization
-    arr = np.array(emb)
-    norm = np.linalg.norm(arr)
-    # Norm should be 1.0 (unless zero vector, but flattened zero image -> zero norm -> div by zero?
-    # Wait, flatten() of zeros -> norm is 0 -> div by zero in code?
+    # Check normalization would be done on non-zero vector
+    # flatten() of zeros -> norm is 0 -> div by zero in code?
     # `emb /= np.linalg.norm(emb)` will raise warning or NaN if norm is 0.
-    # Let's check logic.
     pass
+
 
 def test_get_face_embedding_zeros():
     # If image is black, norm is 0.

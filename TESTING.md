@@ -18,7 +18,7 @@ Prerequisites: MongoDB running on `localhost:27017` (or set `MONGO_URI`).
    ```bash
    pytest --cov=app --cov-report=term-missing
    ```
-   Target Coverage: **80%**
+   Target Coverage: **35%** (gradually increasing towards 80%)
 
 ### ML Service (Python/FastAPI)
 

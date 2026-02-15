@@ -14,12 +14,15 @@ async def get_subject_by_code(code: str):
     return await db[COLLECTION].find_one({"code": code})
 
 
-async def create_subject(name: str, code: str, professor_id: ObjectId):
+async def create_subject(
+    name: str, code: str, professor_id: ObjectId, location: dict = None
+):
     doc = {
         "name": name,
         "code": code,
         "professor_ids": [professor_id],
         "created_at": datetime.now(UTC),
+        "location": location,  # { lat, long, radius }
     }
 
     res = await db[COLLECTION].insert_one(doc)

@@ -1,0 +1,66 @@
+name: Dual Assignment Protector
+
+# Trigger when an issue is manually assigned
+on:
+  issues:
+    types: [assigned]
+
+permissions:
+  issues: write
+
+jobs:
+  enforce-one-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for existing assignments
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const assignee = context.payload.assignee.login;
+            const currentIssueNumber = context.payload.issue.number;
+            const repo = context.repo;
+
+            console.log(`Checking workload for @${assignee}...`);
+
+            // 1. Fetch all OPEN issues assigned to this user
+            const assignedIssues = await github.paginate(github.rest.issues.listForRepo, {
+              ...repo,
+              state: 'open',
+              assignee: assignee
+            });
+
+            // 2. Filter out the current issue (since it was just assigned, it might be in the list)
+            // We want to find *previous* or *other* issues.
+            const otherIssues = assignedIssues.filter(i => i.number !== currentIssueNumber && !i.pull_request);
+
+            // 3. If they have other issues, triggered the PROTECTION
+            if (otherIssues.length > 0) {
+              
+              const issueLinks = otherIssues.map(i => `#${i.number}`).join(', ');
+
+              console.log(`⚠️ Violation detected. User has ${otherIssues.length} other issues.`);
+
+              // A. Post a Warning Comment
+              await github.rest.issues.createComment({
+                ...repo,
+                issue_number: currentIssueNumber,
+                body: `🚫 **Assignment Blocked**
+                
+                @${assignee} is already assigned to **${otherIssues.length} other open issue(s)**: ${issueLinks}.
+                
+                According to project policy, a contributor can only hold **one issue at a time**.
+                
+                ⚠️ **Action Taken:** The user has been automatically unassigned from this issue.`
+              });
+
+              // B. Revert the Assignment (Unassign the user)
+              await github.rest.issues.removeAssignees({
+                ...repo,
+                issue_number: currentIssueNumber,
+                assignees: [assignee]
+              });
+              
+              console.log(`✅ User unassigned from #${currentIssueNumber}`);
+            } else {
+              console.log("✅ User is clear. Assignment allowed.");
+            }

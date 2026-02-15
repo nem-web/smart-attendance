@@ -52,6 +52,30 @@ services:
           cpus: '1.0'
           memory: 1G
 
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - backend
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - backend
+
   # Backend API
   backend-api:
     build:

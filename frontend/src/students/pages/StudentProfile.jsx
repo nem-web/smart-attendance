@@ -22,10 +22,16 @@ import StudentNavigation from "../components/StudentNavigation"
 import { Link } from "react-router-dom";
 import { uploadFaceImage } from "../../api/students"
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function StudentProfile() {
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
 
   const {data, isLoading, isError, error} = useQuery({
     queryKey: ["myStudentProfile"],
@@ -67,11 +73,11 @@ export default function StudentProfile() {
 
   
   
-  if (isLoading) return <div>Loading Profile...</div>;
+  if (isLoading) return <div>{t('profile.loading')}</div>;
   if (isError){
-    return <div>Error loading profile: {error?.message || "Please login"}</div>;
+    return <div>{t('profile.error', { message: error?.message || t('profile.not_found') })}</div>;
   }
-  if(!data) return <div>No Profile found..</div>;
+  if(!data) return <div>{t('profile.not_found')}</div>;
   
 
   const img = data.image_url;
@@ -86,7 +92,27 @@ export default function StudentProfile() {
 
 
       {/* 2. Main Content */}
-      <main className="flex-1 md:ml-64 p-6 md:p-8 pb-24 md:pb-8 animate-in fade-in duration-500">
+      <main className="flex-1 md:ml-64 p-6 md:p-8 pb-24 md:pb-8 animate-in fade-in duration-500 relative">
+        
+        {/* Language Switcher */}
+        <div className="absolute top-6 right-6 z-10">
+            <div className="flex gap-2 items-center bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+              <button 
+                onClick={() => changeLanguage('en')} 
+                className={`text-xs ${i18n.language === 'en' ? 'font-bold text-blue-900 border-b-2 border-blue-900' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                English
+              </button>
+              <span className="text-gray-300 text-xs">|</span>
+              <button 
+                onClick={() => changeLanguage('hi')} 
+                className={`text-xs ${i18n.language === 'hi' ? 'font-bold text-blue-900 border-b-2 border-blue-900' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                हिंदी
+              </button>
+            </div>
+        </div>
+
         <div className="max-w-3xl mx-auto space-y-6">
           
           {/* Header */}
@@ -95,8 +121,8 @@ export default function StudentProfile() {
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">Profile</h2>
-              <p className="text-slate-500 text-sm">Upload your face image and review your details</p>
+              <h2 className="text-2xl font-bold text-slate-800">{t('profile.title')}</h2>
+              <p className="text-slate-500 text-sm">{t('profile.subtitle')}</p>
             </div>
           </div>
 
@@ -123,26 +149,26 @@ export default function StudentProfile() {
                   <div>
                     <h3 className="text-xl font-bold text-slate-900">{data.name || "John"}</h3>
                     <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
-                      <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">Roll no: {data.roll || "21CS045"}</span>
+                      <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">{t('profile.roll_no')}: {data.roll || "21CS045"}</span>
                     </div>
                   </div>
                   <button className="text-xs font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition mt-3 sm:mt-0 border border-gray-200 flex items-center gap-2 cursor-not-allowed">
                     <Edit2 size={12} />
-                    Edit details
+                    {t('profile.edit_details')}
                   </button>
                 </div>
                 
                 <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-slate-600 pt-2">
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Year:</span>
+                    <span className="text-slate-400">{t('profile.year')}:</span>
                     <span className="font-medium text-slate-800">{data.year || "1st"}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Branch:</span>
+                    <span className="text-slate-400">{t('profile.branch')}:</span>
                     <span className="font-medium text-slate-800">{(data.branch).toUpperCase()}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Email:</span>
+                    <span className="text-slate-400">{t('profile.email')}:</span>
                     <span className="font-medium text-slate-800">{data.email || "ananya@example.edu"}</span>
                   </div>
                 </div>
@@ -167,9 +193,9 @@ export default function StudentProfile() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <div className="flex justify-between items-start">
               <div>
-                <h4 className="text-base font-bold text-slate-800">Face image for attendance</h4>
+                <h4 className="text-base font-bold text-slate-800">{t('profile.face_image.title')}</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-md leading-relaxed">
-                  Upload a clear, high-quality photo. This will be used for face recognition during attendance.
+                  {t('profile.face_image.desc')}
                 </p>
               </div>
               {img ? (
@@ -184,7 +210,7 @@ export default function StudentProfile() {
                     onClick={() => fileRef.current.click()}
                     className="mt-2 text-xs font-medium text-blue-600 underline hover:text-blue-700 cursor-pointer"
                   >
-                    Replace photo
+                   {t('profile.face_image.replace')}
                   </button>
                 </div>
               ) : (
@@ -193,26 +219,26 @@ export default function StudentProfile() {
                   className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-gray-50 transition shadow-sm active:scale-95 text-slate-600 cursor-pointer"
                 >
                   <Upload size={14} />
-                  Upload photo
+                  {t('profile.face_image.upload')}
                 </button>
               )}
 
             </div>
             <div className="bg-gray-50 text-slate-500 text-[10px] px-3 py-2 rounded-lg inline-block font-medium border border-gray-100">
-              Tips: Use good lighting, look straight at the camera, avoid masks, caps, or filters.
+              {t('profile.face_image.tips')}
             </div>
           </div>
 
           {/* Card 3: Attendance Summary */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h4 className="text-base font-bold text-slate-800">Attendance summary</h4>
-              <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">This semester</span>
+              <h4 className="text-base font-bold text-slate-800">{t('profile.summary.title')}</h4>
+              <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">{t('profile.summary.this_semester')}</span>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-end text-sm mb-1">
-                <span className="text-slate-500 font-medium">Overall percentage</span>
+                <span className="text-slate-500 font-medium">{t('profile.summary.overall')}</span>
                 <span className="font-bold text-slate-900 text-lg">{data.attendance.percentage}</span>
               </div>
               <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -226,18 +252,18 @@ export default function StudentProfile() {
 
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div>
-                <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">Classes attended</p>
+                <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">{t('profile.summary.attended')}</p>
                 <p className="text-xl font-bold text-slate-800 mt-1">{data.attendance.present}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">Total conducted</p>
+                <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">{t('profile.summary.total')}</p>
                 <p className="text-xl font-bold text-slate-800 mt-1">{data.attendance.present + data.attendance.absent}</p>
               </div>
             </div>
 
             <div className="bg-[#10B981] text-white px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-bold shadow-sm">
               <CheckCircle size={18} className="text-white" />
-              On track for finals
+              {t('profile.summary.on_track')}
             </div>
           </div>
 
@@ -245,7 +271,7 @@ export default function StudentProfile() {
           {open && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
               <div className="bg-white rounded-xl p-6 w-80 space-y-4">
-                <h3 className="font-bold text-lg">Add Subject</h3>
+                <h3 className="font-bold text-lg">{t('profile.subjects_card.modal_title')}</h3>
 
                 {availableSubjects?.map(sub => (
                   <button
@@ -261,7 +287,7 @@ export default function StudentProfile() {
                   onClick={() => setOpen(false)}
                   className="text-sm text-gray-500"
                 >
-                  Cancel
+                  {t('profile.subjects_card.cancel')}
                 </button>
               </div>
             </div>
@@ -270,9 +296,9 @@ export default function StudentProfile() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <div className="flex justify-between items-start">
               <div>
-                <h4 className="text-base font-bold text-slate-800">Subjects</h4>
+                <h4 className="text-base font-bold text-slate-800">{t('profile.subjects_card.title')}</h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
-                  Keep your current subjects up to date for accurate attendance reports.
+                  {t('profile.subjects_card.desc')}
                 </p>
               </div>
 
@@ -281,7 +307,7 @@ export default function StudentProfile() {
                 className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold hover:bg-gray-50 transition uppercase tracking-wide text-slate-600"
               >
                 <Plus size={14} />
-                Add subject
+                {t('profile.subjects_card.add_btn')}
               </button>
             </div>
 

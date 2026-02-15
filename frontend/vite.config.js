@@ -8,6 +8,9 @@ export default defineConfig({
       jsxRuntime: 'automatic',
     }),
   ],
+  optimizeDeps: {
+    include: ['html5-qrcode']
+  },
   test: {
     globals: true,
     environment: 'jsdom',

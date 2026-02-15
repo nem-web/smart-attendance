@@ -1,4 +1,5 @@
 import React, { useState, useEffect ,useRef} from "react";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Calendar as CalendarIcon,
@@ -20,6 +21,7 @@ import { getSettings, updateSettings } from "../api/schedule";
 import Spinner from "../components/Spinner";
 
 export default function ManageSchedule() {
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [activeDay, setActiveDay] = useState("Mon");
@@ -108,13 +110,13 @@ export default function ManageSchedule() {
         setScheduleEnvelope(scheduleData);
       } catch (err) {
         console.error(err);
-        alert("Error loading schedule");
+        alert(t('manage_schedule.error_loading', "Error loading schedule"));
       } finally {
         setIsLoading(false);
       }
     };
     fetchSchedule();
-  }, []);
+  }, [t]);
   useEffect(() => {
     const savedTemplates = localStorage.getItem("schedule_templates");
 
@@ -183,7 +185,7 @@ export default function ManageSchedule() {
         schedule: schedulePayload,
       });
 
-      alert("Schedule saved successfully");
+      alert(t('manage_schedule.save_success', "Schedule saved successfully"));
     } catch (err) {
       console.error(err);
       alert(err.message);
@@ -193,18 +195,18 @@ export default function ManageSchedule() {
   const handleAddClass = () => {
     const newClass = {
       id: Date.now(),
-      title: "New Subject",
+      title: t('manage_schedule.new_subject', "New Subject"),
       startTime: "12:00",
       endTime: "13:00",
       room: "TBD",
-      teacher: "Assign Teacher",
+      teacher: t('manage_schedule.assign_teacher', "Assign Teacher"),
       day: activeDay,
       status: "Pending",
     };
     setScheduleData([...scheduleData, newClass]);
   };
   const handleDeleteClass = (id) => {
-    if (window.confirm("Are you sure you want to delete this class?")) {
+    if (window.confirm(t('manage_schedule.confirm_delete_class', "Are you sure you want to delete this class?"))) {
       setScheduleData((prev) => prev.filter((item) => item.id !== id));
     }
   };
@@ -231,7 +233,7 @@ export default function ManageSchedule() {
 
     const newTemplate = {
       id: Date.now(),
-      name: `Template ${templates.length + 1}`,
+      name: `${t('manage_schedule.template', 'Template')} ${templates.length + 1}`,
       data: templateData,
       createdAt: new Date().toISOString(),
       totalClasses: scheduleData.length,
@@ -251,13 +253,13 @@ export default function ManageSchedule() {
 
   const applyTemplate = (template) => {
     if (!template.data) {
-      alert("Template has no data");
+      alert(t('manage_schedule.template_no_data', "Template has no data"));
       return;
     }
 
     if (
       !window.confirm(
-        `Apply "${template.name}"? This will replace classes for all days included in the template.`,
+        t('manage_schedule.confirm_apply_template', { name: template.name, defaultValue: `Apply "${template.name}"? This will replace classes for all days included in the template.` })
       )
     ) {
       return;
@@ -280,12 +282,12 @@ export default function ManageSchedule() {
 
     setScheduleData([...filteredSchedule, ...newClasses]);
     setShowTemplates(false);
-    alert("Template applied! Don't forget to click 'Save schedule' to persist changes.");
+    alert(t('manage_schedule.template_applied', "Template applied! Don't forget to click 'Save schedule' to persist changes."));
   };
 
 
   const deleteTemplate = (templateId) => {
-    if (!window.confirm("Delete this template?")) return;
+    if (!window.confirm(t('manage_schedule.confirm_delete_template', "Delete this template?"))) return;
 
     const updatedTemplates = templates.filter((t) => t.id !== templateId);
     setTemplates(updatedTemplates);
@@ -298,16 +300,16 @@ export default function ManageSchedule() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] font-sans text-[var(--text-main)] transition-colors duration-200">
       {saveTemplateNotification && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top duration-300">
+        <div className="fixed top-4 right-4 z-50 bg-[var(--success)] text-[var(--text-on-primary)] px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-top duration-300">
           <CheckCircle size={20} />
-          <span>Saved as {saveTemplateNotification}!</span>
+          <span>{t('manage_schedule.saved_as', { name: saveTemplateNotification, defaultValue: `Saved as ${saveTemplateNotification}!` })}</span>
         </div>
       )}
       {isEditModalOpen && currentClass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-md p-6 rounded-2xl shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3">
-              <h3 className="text-xl font-bold">Edit Class</h3>
+              <h3 className="text-xl font-bold">{t('manage_schedule.edit_class', 'Edit Class')}</h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="text-[var(--text-body)] hover:text-[var(--text-main)]"
@@ -319,7 +321,7 @@ export default function ManageSchedule() {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Subject Name
+                  {t('manage_schedule.subject_name', "Subject Name")}
                 </label>
                 <input
                   type="text"
@@ -333,7 +335,7 @@ export default function ManageSchedule() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Start Time
+                    {t('manage_schedule.start_time', "Start Time")}
                   </label>
                   <input
                     type="time"
@@ -349,7 +351,7 @@ export default function ManageSchedule() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    End Time
+                    {t('manage_schedule.end_time', "End Time")}
                   </label>
                   <input
                     type="time"
@@ -366,7 +368,7 @@ export default function ManageSchedule() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Room</label>
+                  <label className="block text-sm font-medium mb-1">{t('manage_schedule.room', "Room")}</label>
                   <input
                     type="text"
                     value={currentClass.room}
@@ -378,7 +380,7 @@ export default function ManageSchedule() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Teacher
+                    {t('manage_schedule.teacher', "Teacher")}
                   </label>
                   <input
                     type="text"
@@ -400,13 +402,13 @@ export default function ManageSchedule() {
                 onClick={() => setIsEditModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-[var(--text-body)] hover:bg-[var(--bg-secondary)] rounded-lg transition"
               >
-                Cancel
+                {t('common.cancel', "Cancel")}
               </button>
               <button
                 onClick={saveEditedClass}
-                className="px-4 py-2 text-sm font-medium bg-[var(--primary)] text-white rounded-lg shadow-sm hover:opacity-90 transition flex items-center gap-2"
+                className="px-4 py-2 text-sm font-medium bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg shadow-sm hover:opacity-90 transition flex items-center gap-2"
               >
-                <Save size={16} /> Save Changes
+                <Save size={16} /> {t('common.save_changes', "Save Changes")}
               </button>
             </div>
           </div>
@@ -414,7 +416,7 @@ export default function ManageSchedule() {
       )}
 
       {previewTemplate && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm">
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-2xl p-6 rounded-2xl shadow-2xl">
             <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3 mb-4">
               <h3 className="text-xl font-bold">{previewTemplate.name}</h3>
@@ -456,16 +458,16 @@ export default function ManageSchedule() {
                 onClick={() => setPreviewTemplate(null)}
                 className="px-4 py-2 border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-secondary)] transition"
               >
-                Close
+                {t('common.close', "Close")}
               </button>
               <button
                 onClick={() => {
                   applyTemplate(previewTemplate);
                   setPreviewTemplate(null);
                 }}
-                className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition"
+                className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:opacity-90 transition"
               >
-                Apply Template
+                {t('manage_schedule.apply_template', "Apply Template")}
               </button>
             </div>
           </div>
@@ -476,17 +478,17 @@ export default function ManageSchedule() {
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Manage schedule</h1>
+            <h1 className="text-3xl font-bold">{t('manage_schedule.title', "Manage schedule")}</h1>
             <p className="text-[var(--text-body)] mt-1">
-              Editing schedule for {activeDay}
+              {t('manage_schedule.editing_schedule_for', { day: activeDay, defaultValue: `Editing schedule for ${activeDay}` })}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleSave}
-              className="px-6 py-2.5 bg-[var(--primary)] text-white rounded-xl font-semibold shadow-sm transition active:scale-95"
+              className="px-6 py-2.5 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold shadow-sm transition active:scale-95"
             >
-              Save schedule
+              {t('manage_schedule.save_schedule', "Save schedule")}
             </button>
           </div>
         </div>
@@ -502,7 +504,7 @@ export default function ManageSchedule() {
                     onClick={() => setActiveDay(day)}
                     className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all ${
                       activeDay === day
-                        ? "bg-[var(--primary)] text-white"
+                        ? "bg-[var(--primary)] text-[var(--text-on-primary)]"
                         : "text-[var(--text-body)]"
                     }`}
                   >
@@ -512,9 +514,9 @@ export default function ManageSchedule() {
               </div>
               <button
                 onClick={handleAddClass}
-                className="flex items-center gap-2 bg-[var(--primary)] text-white px-4 py-2 rounded-lg text-sm font-medium"
+                className="flex items-center gap-2 bg-[var(--primary)] text-[var(--text-on-primary)] px-4 py-2 rounded-lg text-sm font-medium"
               >
-                <Plus size={16} /> Add class
+                <Plus size={16} /> {t('manage_schedule.add_class', "Add class")}
               </button>
             </div>
 
@@ -531,14 +533,14 @@ export default function ManageSchedule() {
                       <button
                         onClick={() => openEditModal(cls)}
                         className="p-1.5 text-[var(--text-body)] hover:text-[var(--primary)] hover:bg-[var(--bg-secondary)] rounded-md transition"
-                        title="Edit Class"
+                        title={t('manage_schedule.edit_class', "Edit Class")}
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteClass(cls.id)}
-                        className="p-1.5 text-[var(--text-body)] hover:text-red-500 hover:bg-red-50/10 rounded-md transition"
-                        title="Delete Class"
+                        className="p-1.5 text-[var(--text-body)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded-md transition"
+                        title={t('manage_schedule.delete_class', "Delete Class")}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -550,14 +552,14 @@ export default function ManageSchedule() {
 
                   <div className="flex justify-between items-end border-t border-[var(--border-color)] pt-3">
                     <p className="text-sm text-[var(--text-body)]">
-                      Room{" "}
+                      {t('manage_schedule.subject_room', "Room")}{" "}
                       <span className="text-[var(--text-main)] font-semibold">
                         {cls.room}
                       </span>{" "}
                       · {cls.teacher}
                     </p>
                     <span
-                      className={`text-white text-[10px] font-bold px-2 py-0.5 rounded ${cls.status === "Active" ? "bg-emerald-500" : "bg-amber-500"}`}
+                      className={`text-[var(--text-on-primary)] text-[10px] font-bold px-2 py-0.5 rounded ${cls.status === "Active" ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
                     >
                       {cls.status}
                     </span>
@@ -569,7 +571,7 @@ export default function ManageSchedule() {
               {filteredClasses.length === 0 && (
                 <div className="col-span-full py-12 text-center border-2 border-dashed border-[var(--border-color)] rounded-xl">
                   <p className="text-[var(--text-body)]">
-                    No classes scheduled for {activeDay}.
+                    {t('manage_schedule.no_classes', { day: activeDay, defaultValue: `No classes scheduled for ${activeDay}.` })}
                   </p>
                 </div>
               )}
@@ -581,9 +583,9 @@ export default function ManageSchedule() {
             <div className="bg-[var(--bg-card)] p-6 rounded-2xl border border-[var(--border-color)] shadow-sm">
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-[var(--text-main)]">
-                  Calendar overview
+                  {t('manage_schedule.calendar_overview', "Calendar overview")}
                 </h3>
-                <p className="text-sm text-[var(--text-body)]">Manage holidays and events</p>
+                <p className="text-sm text-[var(--text-body)]">{t('manage_schedule.manage_holidays', "Manage holidays and events")}</p>
               </div>
               <div className="flex items-center justify-between mb-4 bg-[var(--bg-secondary)] p-1 rounded-xl">
                  <button onClick={handlePrevMonth} className="p-2 hover:bg-[var(--bg-card)] hover:text-[var(--primary)] rounded-lg transition text-[var(--text-body)]">
@@ -603,7 +605,7 @@ export default function ManageSchedule() {
                         <div className="flex gap-4 h-[280px]">
                            {/* Left: Months */}
                            <div className="flex-1 overflow-y-auto">
-                              <h4 className="text-xs font-bold text-[var(--text-body)] uppercase mb-2 sticky top-0 bg-[var(--bg-card)]">Month</h4>
+                              <h4 className="text-xs font-bold text-[var(--text-body)] uppercase mb-2 sticky top-0 bg-[var(--bg-card)]">{t('manage_schedule.month', "Month")}</h4>
                               <div className="grid grid-cols-1 gap-1">
                                 {months.map((m, idx) => (
                                   <button 
@@ -611,7 +613,7 @@ export default function ManageSchedule() {
                                     type="button"
                                     onClick={() =>
                                        handleMonthSelect(idx)}
-                                    className={`text-sm px-3 py-1.5 rounded-lg text-left transition ${currentDate.getMonth() === idx ? "bg-[var(--primary)] text-white" : "hover:bg-[var(--bg-secondary)]"}`}
+                                    className={`text-sm px-3 py-1.5 rounded-lg text-left transition ${currentDate.getMonth() === idx ? "bg-[var(--primary)] text-[var(--text-on-primary)]" : "hover:bg-[var(--bg-secondary)]"}`}
                                   >
                                     {m}
                                   </button>
@@ -622,7 +624,7 @@ export default function ManageSchedule() {
                            {/* Divider */}
                            <div className="w-[1px] bg-[var(--border-color)] h-full"></div>
                            <div className="w-24 overflow-y-auto custom-scrollbar" ref={yearScrollRef}>
-                              <h4 className="text-xs font-bold text-[var(--text-body)] uppercase mb-2 sticky top-0 bg-[var(--bg-card)]">Year</h4>
+                              <h4 className="text-xs font-bold text-[var(--text-body)] uppercase mb-2 sticky top-0 bg-[var(--bg-card)]">{t('manage_schedule.year', "Year")}</h4>
                               <div className="space-y-1">
                                 {years.map((year) => (
                                   <button 
@@ -630,7 +632,7 @@ export default function ManageSchedule() {
                                     type="button"
                                     data-selected={currentDate.getFullYear() === year}
                                     onClick={() => handleYearSelect(year)}
-                                    className={`block w-full text-sm px-2 py-1.5 rounded-lg text-center transition ${currentDate.getFullYear() === year ? "bg-[var(--primary)] text-white" : "hover:bg-[var(--bg-secondary)]"}`}
+                                    className={`block w-full text-sm px-2 py-1.5 rounded-lg text-center transition ${currentDate.getFullYear() === year ? "bg-[var(--primary)] text-[var(--text-on-primary)]" : "hover:bg-[var(--bg-secondary)]"}`}
                                   >
                                     {year}
                                   </button>
@@ -645,7 +647,7 @@ export default function ManageSchedule() {
                              onClick={() => setIsPickerOpen(false)}
                              className="w-full py-1.5 text-xs font-bold text-[var(--primary)] hover:bg-[var(--bg-secondary)] rounded-lg"
                            >
-                             Close
+                             {t('common.close', "Close")}
                            </button>
                         </div>
                       </div>
@@ -659,7 +661,15 @@ export default function ManageSchedule() {
 
               {/* CALENDAR GRID */}
               <div className="grid grid-cols-7 gap-y-4 gap-x-2 text-center text-sm mb-2">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                {[
+                  t('days.short.sun', "Sun"), 
+                  t('days.short.mon', "Mon"), 
+                  t('days.short.tue', "Tue"), 
+                  t('days.short.wed', "Wed"), 
+                  t('days.short.thu', "Thu"), 
+                  t('days.short.fri', "Fri"), 
+                  t('days.short.sat', "Sat")
+                ].map((d) => (
                   <span key={d} className="text-xs font-medium text-[var(--text-body)]">{d}</span>
                 ))}
               </div>
@@ -670,7 +680,7 @@ export default function ManageSchedule() {
                   const isToday = day === today.getDate() && currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
                   return (
                     <div key={idx} className="flex justify-center">
-                      <span className={`h-8 w-8 flex items-center justify-center rounded-lg transition cursor-pointer ${isToday ? "bg-[var(--primary)] text-white font-bold shadow-md" : "text-[var(--text-main)] hover:bg-[var(--bg-secondary)]"}`}>
+                      <span className={`h-8 w-8 flex items-center justify-center rounded-lg transition cursor-pointer ${isToday ? "bg-[var(--primary)] text-[var(--text-on-primary)] font-bold shadow-md" : "text-[var(--text-main)] hover:bg-[var(--bg-secondary)]"}`}>
                         {day}
                       </span>
                     </div>
@@ -679,16 +689,14 @@ export default function ManageSchedule() {
               </div>
             </div>
 
-            {/* Helper Cards */}
-            <div className="space-y-4">
-              {/* Recurring Timetable */}
-              <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition">
-                <div>
-                  <h4 className="font-bold text-[var(--text-main)] text-sm">
-                    Recurring timetable
-                  </h4>
+            {/* Recurring Timetable */}
+            <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition">
+              <div>
+                <h4 className="font-bold text-[var(--text-main)] text-sm">
+                  {t('manage_schedule.recurring_timetable', "Recurring timetable")}
+                </h4>
                   <p className="text-xs text-[var(--text-body)] mt-0.5">
-                    Mon-Fri use default weekly pattern
+                    {t('manage_schedule.recurring_desc', "Mon-Fri use default weekly pattern")}
                   </p>
                 </div>
                 <RefreshCw size={18} className="text-[var(--text-body)]" />
@@ -698,10 +706,10 @@ export default function ManageSchedule() {
               <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition">
                 <div>
                   <h4 className="font-bold text-[var(--text-main)] text-sm">
-                    Exam days
+                    {t('manage_schedule.exam_days', "Exam days")}
                   </h4>
                   <p className="text-xs text-[var(--text-body)] mt-0.5">
-                    Override schedule for exams
+                    {t('manage_schedule.exam_desc', "Override schedule for exams")}
                   </p>
                 </div>
                 <CalendarIcon size={18} className="text-[var(--text-body)]" />
@@ -714,22 +722,25 @@ export default function ManageSchedule() {
               >
                 <div>
                   <h4 className="font-bold text-[var(--text-main)] text-sm">
-                    Custom templates
+                    {t('manage_schedule.custom_templates', "Custom templates")}
                   </h4>
                   <p className="text-xs text-[var(--text-body)] mt-0.5">
-                    Save and reuse schedule presets
+                    {t('manage_schedule.templates_desc', "Save and reuse schedule presets")}
                   </p>
                 </div>
                 <Folder size={18} className="text-[var(--text-body)]" />
               </div>
             </div>
           </div>
-        </div>
-        {showTemplates && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-            <div className="bg-[var(--bg-card)] w-full max-w-2xl p-6 rounded-2xl border border-[var(--border-color)] shadow-xl">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Custom Templates</h3>
+
+          {/* Templates Modal */}
+          {showTemplates && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-[var(--bg-card)] w-full max-w-lg rounded-2xl p-6 shadow-xl border border-[var(--border-color)]">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-lg text-[var(--text-main)]">
+                    {t('manage_schedule.custom_templates', "Custom Templates")}
+                  </h3>
                 <button
                   onClick={() => setShowTemplates(false)}
                   className="text-[var(--text-body)] hover:text-[var(--text-main)]"
@@ -741,8 +752,7 @@ export default function ManageSchedule() {
               <div className="space-y-3">
                 {templates.length === 0 ? (
                   <p className="text-sm text-[var(--text-body)] bg-[var(--bg-secondary)] p-4 rounded-lg">
-                    No templates saved yet. Create your schedule for the week,
-                    then save it as a template to reuse later.
+                    {t('manage_schedule.no_templates_saved', "No templates saved yet. Create your schedule for the week, then save it as a template to reuse later.")}
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -755,7 +765,7 @@ export default function ManageSchedule() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold">{t.name}</span>
                             <span className="text-xs bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded">
-                              {t.totalClasses} classes
+                              {t.totalClasses} {t('manage_schedule.classes_lowercase', "classes")}
                             </span>
                           </div>
                           <div className="text-xs text-[var(--text-body)] mt-1">
@@ -766,21 +776,21 @@ export default function ManageSchedule() {
                           <button
                             className="text-xs bg-[var(--bg-secondary)] text-[var(--text-main)] px-3 py-1.5 rounded hover:bg-[var(--primary)]/10 transition flex items-center gap-1"
                             onClick={() => setPreviewTemplate(t)}
-                            title="Preview template"
+                            title={t('manage_schedule.preview_template', "Preview template")}
                           >
                             <Eye size={14} />
-                            Preview
+                            {t('manage_schedule.preview', "Preview")}
                           </button>
                           <button
-                            className="text-xs bg-[var(--primary)] text-white px-3 py-1.5 rounded hover:opacity-90 transition"
+                            className="text-xs bg-[var(--primary)] text-[var(--text-on-primary)] px-3 py-1.5 rounded hover:opacity-90 transition"
                             onClick={() => applyTemplate(t)}
                           >
-                            Apply
+                            {t('manage_schedule.apply', "Apply")}
                           </button>
                           <button
-                            className="text-xs text-red-500 hover:bg-red-50/10 px-2 py-1.5 rounded transition"
+                            className="text-xs text-[var(--danger)] hover:bg-[var(--danger)]/10 px-2 py-1.5 rounded transition"
                             onClick={() => deleteTemplate(t.id)}
-                            title="Delete template"
+                            title={t('manage_schedule.delete_template', "Delete template")}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -790,12 +800,13 @@ export default function ManageSchedule() {
                   </div>
                 )}
 
+
                 <button
-                  className="w-full bg-[var(--primary)] text-white py-3 rounded-lg font-medium hover:opacity-90 transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full bg-[var(--primary)] text-[var(--text-on-primary)] py-3 rounded-lg font-medium hover:opacity-90 transition shadow-md flex items-center justify-center gap-2"
                   onClick={saveTemplate}
                 >
                   <Save size={18} />
-                  Save current week as template
+                  {t('manage_schedule.save_week_as_template', "Save current week as template")}
                 </button>
               </div>
             </div>
