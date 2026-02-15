@@ -86,7 +86,9 @@ def mock_ml_client():
     with patch("app.services.ml_client.ml_client") as mock:
         mock.close = AsyncMock()
         mock.detect_faces = AsyncMock(return_value={"success": True, "faces": []})
-        mock.get_embeddings = AsyncMock(return_value={"success": True, "embeddings": []})
+        mock.get_embeddings = AsyncMock(
+            return_value={"success": True, "embeddings": []}
+        )
         yield mock
 
 

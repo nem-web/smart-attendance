@@ -37,6 +37,7 @@ qr_attendance_router = APIRouter(prefix="/api/attendance", tags=["QR Attendance"
 
 # ── Teacher: Generate QR ───────────────────────────────────────
 
+
 @qr_router.get(
     "/generate",
     response_model=QRGenerateResponse,
@@ -70,6 +71,7 @@ async def generate_qr(
 
 
 # ── Student: Mark attendance via QR ────────────────────────────
+
 
 @qr_attendance_router.post(
     "/qr-mark",

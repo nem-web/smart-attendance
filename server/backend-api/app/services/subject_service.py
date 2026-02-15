@@ -16,12 +16,11 @@ async def add_subject_for_teacher(
     if subject:
         if teacher_id not in subject.get("professor_ids", []):
             await add_professor_to_subject(subject["_id"], teacher_id)
-        
+
         # Update location if provided (even if subject exists)
         if location:
             await db.subjects.update_one(
-                {"_id": subject["_id"]},
-                {"$set": {"location": location}}
+                {"_id": subject["_id"]}, {"$set": {"location": location}}
             )
     else:
         subject = await create_subject(name, code, teacher_id, location=location)

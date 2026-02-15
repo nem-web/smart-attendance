@@ -22,7 +22,6 @@ export default function Dashboard() {
   const [mlStatus, setMlStatus] = useState("checking"); // checking, ready, waking-up
   const [todayClasses, setTodayClasses] = useState([]);
   const [loadingSchedule, setLoadingSchedule] = useState(true);
-  const [tick, setTick] = useState(0); // Periodic tick for real-time status updates
 
   useEffect(() => {
     const checkMlService = async () => {
@@ -72,15 +71,6 @@ export default function Dashboard() {
       }
     };
     fetchSchedule();
-  }, []);
-
-  // Periodic tick for real-time status updates (every 60 seconds)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTick(t => t + 1);
-    }, 60000); // Update every 60 seconds
-
-    return () => clearInterval(interval);
   }, []);
 
   // Helper function to safely parse a "HH:MM" or "H:MM" time string into minutes since midnight
@@ -154,7 +144,7 @@ export default function Dashboard() {
       }
     }
     return null;
-  }, [todayClasses, tick]); // Re-compute when classes or tick changes
+  }, [todayClasses]);
 
   const getStatusBadge = () => {
     switch (mlStatus) {

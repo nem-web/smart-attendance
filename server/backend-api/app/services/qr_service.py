@@ -34,6 +34,7 @@ qr_attendance_col = db["qr_attendance"]  # dedicated collection for QR-based rec
 
 # ── Generation ──────────────────────────────────────────────────
 
+
 async def generate_qr_for_course(course_id: str, teacher_id: str) -> str:
     """
     Create a signed QR JWT for *course_id*.
@@ -63,9 +64,7 @@ async def generate_qr_for_course(course_id: str, teacher_id: str) -> str:
     # The subject document stores the teacher via `teacher_id` or
     # `teacherId`.  If neither field is set, reject — an unowned
     # course must not allow QR generation.
-    owner = (
-        course.get("teacher_id") or course.get("teacherId")
-    )
+    owner = course.get("teacher_id") or course.get("teacherId")
     if not owner or str(owner) != str(teacher_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -78,6 +77,7 @@ async def generate_qr_for_course(course_id: str, teacher_id: str) -> str:
 
 
 # ── Validation & Attendance Marking ────────────────────────────
+
 
 async def validate_qr_and_mark(
     qr_token: str,
@@ -98,6 +98,7 @@ async def validate_qr_and_mark(
     # If the token was tampered with or is structurally invalid this raises
     # immediately — no further processing is needed.
     import jwt as pyjwt
+
     try:
         payload = decode_qr_token(qr_token)
     except pyjwt.ExpiredSignatureError:
@@ -132,8 +133,7 @@ async def validate_qr_and_mark(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=(
-                f"QR code expired ({age_seconds:.1f}s old, "
-                f"max {QR_TOKEN_TTL_SECONDS}s)"
+                f"QR code expired ({age_seconds:.1f}s old, max {QR_TOKEN_TTL_SECONDS}s)"
             ),
         )
 
@@ -149,11 +149,13 @@ async def validate_qr_and_mark(
     # Check this BEFORE consuming the nonce so that a valid QR token
     # is not burned when the student already has attendance today.
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    existing = await qr_attendance_col.find_one({
-        "student_id": student_id,
-        "course_id": course_id,
-        "date": today_str,
-    })
+    existing = await qr_attendance_col.find_one(
+        {
+            "student_id": student_id,
+            "course_id": course_id,
+            "date": today_str,
+        }
+    )
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -192,8 +194,8 @@ async def validate_qr_and_mark(
         "course_id": course_id,
         "date": today_str,
         "marked_at": datetime.now(timezone.utc).isoformat(),
-        "method": "qr",         # distinguish from face-recognition attendance
-        "nonce": nonce,          # audit trail — ties record to specific QR
+        "method": "qr",  # distinguish from face-recognition attendance
+        "nonce": nonce,  # audit trail — ties record to specific QR
         "qr_issued_at_ms": token_timestamp_ms,
     }
 
@@ -205,6 +207,8 @@ async def validate_qr_and_mark(
 
     logger.info(
         "QR attendance marked — student=%s course=%s date=%s",
-        student_id, course_id, today_str,
+        student_id,
+        course_id,
+        today_str,
     )
     return record

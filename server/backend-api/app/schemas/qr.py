@@ -11,8 +11,10 @@ from typing import Optional
 
 # ── Request Bodies ──────────────────────────────────────────────
 
+
 class QRGenerateRequest(BaseModel):
     """Teacher requests a fresh QR token for a specific course."""
+
     course_id: str = Field(
         ...,
         description="The course / subject ObjectId the QR grants access to",
@@ -21,12 +23,14 @@ class QRGenerateRequest(BaseModel):
 
 class LocationPayload(BaseModel):
     """Optional geo-location sent by the student's device."""
+
     lat: float = Field(..., ge=-90, le=90)
     lng: float = Field(..., ge=-180, le=180)
 
 
 class QRMarkAttendanceRequest(BaseModel):
     """Student scans a QR and submits this body to mark attendance."""
+
     qr_token: str = Field(
         ...,
         description="The JWT token embedded in the QR code",
@@ -43,8 +47,10 @@ class QRMarkAttendanceRequest(BaseModel):
 
 # ── Response Bodies ─────────────────────────────────────────────
 
+
 class QRGenerateResponse(BaseModel):
     """Returned to the teacher after QR generation."""
+
     qr_token: str = Field(
         ...,
         description="Signed JWT to be encoded into a QR image",
@@ -57,6 +63,7 @@ class QRGenerateResponse(BaseModel):
 
 class QRMarkAttendanceResponse(BaseModel):
     """Returned on successful attendance marking."""
+
     success: bool = True
     message: str = "Attendance marked successfully"
     attendance_id: str = Field(
@@ -69,4 +76,5 @@ class QRMarkAttendanceResponse(BaseModel):
 
 class QRErrorResponse(BaseModel):
     """Generic error envelope (used in OpenAPI examples only)."""
+
     detail: str

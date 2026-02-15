@@ -66,7 +66,7 @@ async def mark_attendance(payload: Dict):
             class_pos = (float(location_cfg["lat"]), float(location_cfg["long"]))
             # Default radius 50m if not set
             allowed_radius = float(location_cfg.get("radius", 50))
-            
+
             if allowed_radius <= 0:
                 raise ValueError("Radius must be positive")
 

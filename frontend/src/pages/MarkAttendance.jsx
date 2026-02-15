@@ -39,7 +39,6 @@ export default function MarkAttendance() {
   const [attendanceMap, setAttendanceMap] = useState({});
   const [attendanceSubmitted, setAttendanceSubmitted] = useState(false);
   
-  const [currentCoords, setCurrentCoords] = useState(null);
   const [locationError, setLocationError] = useState(
     !navigator.geolocation ? "Geolocation is not supported by your browser" : null
   );
@@ -54,7 +53,6 @@ export default function MarkAttendance() {
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
         };
-        setCurrentCoords(coords);
         currentCoordsRef.current = coords;
         setLocationError(null);
       },
