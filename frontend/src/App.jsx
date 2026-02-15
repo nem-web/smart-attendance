@@ -8,7 +8,6 @@ import Header from "./components/Header";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import ManageSchedule from "./pages/ManageSchedule"; // ← Added
-import BroadcastPage from "./pages/Broadcast/BroadcastPage";
 import Settings from "./pages/Settings";
 import AddStudents from "./pages/AddStudents";
 import Login from "./pages/Login";
