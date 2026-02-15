@@ -7,7 +7,7 @@
  * Sends a non-blocking ping to the Render backend service
  * Silently handles failures without affecting the main application
  */
-export const pingBackend = async () => {
+export const pingBackend = () => {
   const backendUrl = import.meta.env.VITE_API_URL;
 
   // Skip if no backend URL is configured
@@ -17,12 +17,15 @@ export const pingBackend = async () => {
   }
 
   try {
+    // Normalize backend URL to avoid double slashes
+    const baseUrl = backendUrl.replace(/\/+$/, '');
+    
     // Use a lightweight health check endpoint
     // Fire-and-forget request with minimal timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-    fetch(`${backendUrl}/health`, {
+    fetch(`${baseUrl}/health`, {
       method: 'GET',
       signal: controller.signal,
       // Don't send credentials for health check

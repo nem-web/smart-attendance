@@ -772,7 +772,7 @@ smart-attendance/
 
 ### Base URL
 
-```
+```text
 http://localhost:8000
 ```
 

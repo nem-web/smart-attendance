@@ -477,7 +477,7 @@ Check the browser console for keep-alive status:
 - `[KeepAlive] Backend ping failed` - Connection error (check backend URL)
 
 **Optional Enhancement:**
-To enable periodic pings (e.g., every 5 minutes), uncomment the code in [src/utils/keepAlive.js](src/utils/keepAlive.js#L65-L67).
+To enable periodic pings (e.g., every 5 minutes), uncomment the interval code in [src/utils/keepAlive.js](src/utils/keepAlive.js) (look for the `setInterval` section near the end of the `initializeKeepAlive` function).
 
 ## 🏗️ Build & Deployment
 
