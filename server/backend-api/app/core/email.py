@@ -64,7 +64,7 @@ class BrevoEmailService:
             to_email: Recipient email address.
             user_name: Display name used in the email body.
             otp: The 6-digit OTP to include in the email.
-            
+
         Raises:
             Exception: If email sending fails.
         """
@@ -79,7 +79,9 @@ class BrevoEmailService:
             raise
 
     @staticmethod
-    async def send_verification_email(to_email: str, user: str, verification_link: str) -> None:
+    async def send_verification_email(
+        to_email: str, user: str, verification_link: str
+    ) -> None:
         """
         Send the email verification link to the user after registration.
 
@@ -87,7 +89,7 @@ class BrevoEmailService:
             to_email: Recipient email address.
             user: Display name used in the email body.
             verification_link: Full URL the user must visit to verify.
-            
+
         Raises:
             Exception: If email sending fails.
         """
@@ -103,11 +105,7 @@ class BrevoEmailService:
 
     @staticmethod
     async def send_absence_notification(
-        to_email: str,
-        student_name: str,
-        subject: str,
-        date: str,
-        teacher_name: str
+        to_email: str, student_name: str, subject: str, date: str, teacher_name: str
     ) -> dict:
         """Send absence notification to student."""
         try:
@@ -129,7 +127,7 @@ class BrevoEmailService:
         student_name: str,
         subject: str,
         attendance_percentage: float,
-        threshold: int
+        threshold: int,
     ) -> dict:
         """Send low attendance warning to student."""
         try:
@@ -152,7 +150,7 @@ class BrevoEmailService:
         assignment_title: str,
         subject: str,
         due_date: str,
-        teacher_name: str
+        teacher_name: str,
     ) -> dict:
         """Send assignment reminder to student."""
         try:
@@ -176,7 +174,7 @@ class BrevoEmailService:
         subject: str,
         exam_date: str,
         time: str,
-        venue: str
+        venue: str,
     ) -> dict:
         """Send exam alert to student."""
         try:
@@ -198,7 +196,7 @@ class BrevoEmailService:
         student_name: str,
         message_title: str,
         message_body: str,
-        teacher_name: str
+        teacher_name: str,
     ) -> dict:
         """Send custom message from teacher to student."""
         try:

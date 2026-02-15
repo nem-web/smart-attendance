@@ -18,10 +18,11 @@ const createWrapper = () => {
             },
         },
     });
-    // eslint-disable-next-line react/display-name
-    return ({ children }) => (
+    const Wrapper = ({ children }) => (
         <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
+    Wrapper.displayName = 'TestWrapper';
+    return Wrapper;
 };
 
 describe('useCurrentUser hook', () => {

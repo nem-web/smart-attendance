@@ -38,13 +38,33 @@ jobs:
               return;
             }
 
-            // 4. Check if issue is ALREADY assigned
+            // 4. Check if issue is ALREADY assigned to ANYONE
             if (issue.assignees.length > 0) {
               return;
             }
 
-            // 5. Check if user already has an OPEN issue (without an open PR)
-            // Fetch open issues assigned to this user
+            // 5. NEW: Check if the issue is "On Hold"
+            const onHoldLabel = "on-hold"; // Make sure this matches your label name exactly or lowercase
+            const isHold = issue.labels.some(label => label.name.toLowerCase() === onHoldLabel);
+
+            if (isHold) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `⏳ **Assignment Paused**
+            
+            @${author}, thanks for your interest!
+            
+            However, this issue is currently marked as **on-hold**.
+            👉 This usually means it depends on another task or requires further discussion.
+            
+            Please wait until the label is removed or check out other open issues.`
+              });
+              return;
+            }
+
+            // 6. STRICT CHECK: Does the user ALREADY have an open issue?
             const { data: assignedIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -52,34 +72,24 @@ jobs:
               assignee: author,
             });
 
-            // Fetch open PRs by this user to see if they are actively working
-            const { data: prs } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "open",
-            });
-            
-            const hasOpenPR = prs.some(pr => pr.user.login === author);
-
-            // If user has assigned issues AND no open PRs, block them.
-            if (assignedIssues.length > 0 && !hasOpenPR) {
+            if (assignedIssues.length > 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
                 body: `👋 @${author}
             
-            You already have an **assigned open issue**.
+            You already have an **assigned open issue** (#${assignedIssues[0].number}).
             
-            👉 Please complete it first before taking a new one.  
-            👉 If you have already raised a PR, please ensure it is linked or open, then try again.
+            **Rule:** You can only work on **one issue at a time**.
+            👉 Please complete or close your current issue before taking a new one.
             
             Thanks for contributing 🚀`
               });
               return;
             }
 
-            // 6. Assign the issue
+            // 7. Assign the issue
             await github.rest.issues.addAssignees({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -87,7 +97,7 @@ jobs:
               assignees: [author],
             });
 
-            // 7. Post success comment
+            // 8. Post success comment
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,

@@ -3,7 +3,6 @@ API routes for email notifications.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import Dict
 import logging
 
 from ...schemas.notifications import (
@@ -30,11 +29,13 @@ async def send_absence_notifications(
 ):
     """
     Send absence notifications to students.
-    
+
     Only teachers can send notifications.
     """
     if current_user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Only teachers can send notifications")
+        raise HTTPException(
+            status_code=403, detail="Only teachers can send notifications"
+        )
 
     teacher_id = str(current_user["id"])
     teacher_name = payload.teacher_name or current_user.get("name", "Your Teacher")
@@ -45,7 +46,7 @@ async def send_absence_notifications(
         subject=payload.subject,
         date=payload.date,
         teacher_name=teacher_name,
-        teacher_id=teacher_id
+        teacher_id=teacher_id,
     )
 
     return BulkEmailResponse(**result)
@@ -58,17 +59,18 @@ async def send_low_attendance_warnings(
 ):
     """
     Send low attendance warnings to students.
-    
+
     Only teachers can send notifications.
     """
     if current_user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Only teachers can send notifications")
+        raise HTTPException(
+            status_code=403, detail="Only teachers can send notifications"
+        )
 
     # Validate warnings list size to prevent DoS
     if len(warnings) > 200:
         raise HTTPException(
-            status_code=400,
-            detail="Cannot send more than 200 warnings at once"
+            status_code=400, detail="Cannot send more than 200 warnings at once"
         )
 
     teacher_id = str(current_user["id"])
@@ -87,8 +89,7 @@ async def send_low_attendance_warnings(
 
     # Send warnings
     result = await NotificationService.send_low_attendance_warnings(
-        warnings=warnings_data,
-        teacher_id=teacher_id
+        warnings=warnings_data, teacher_id=teacher_id
     )
 
     return BulkEmailResponse(**result)
@@ -101,11 +102,13 @@ async def send_assignment_reminders(
 ):
     """
     Send assignment reminders to students.
-    
+
     Only teachers can send notifications.
     """
     if current_user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Only teachers can send notifications")
+        raise HTTPException(
+            status_code=403, detail="Only teachers can send notifications"
+        )
 
     teacher_id = str(current_user["id"])
     teacher_name = payload.teacher_name or current_user.get("name", "Your Teacher")
@@ -117,7 +120,7 @@ async def send_assignment_reminders(
         subject=payload.subject,
         due_date=payload.due_date,
         teacher_name=teacher_name,
-        teacher_id=teacher_id
+        teacher_id=teacher_id,
     )
 
     return BulkEmailResponse(**result)
@@ -130,11 +133,13 @@ async def send_exam_alerts(
 ):
     """
     Send exam alerts to students.
-    
+
     Only teachers can send notifications.
     """
     if current_user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Only teachers can send notifications")
+        raise HTTPException(
+            status_code=403, detail="Only teachers can send notifications"
+        )
 
     teacher_id = str(current_user["id"])
 
@@ -146,7 +151,7 @@ async def send_exam_alerts(
         exam_date=payload.exam_date,
         time=payload.time,
         venue=payload.venue,
-        teacher_id=teacher_id
+        teacher_id=teacher_id,
     )
 
     return BulkEmailResponse(**result)
@@ -159,11 +164,13 @@ async def send_custom_message(
 ):
     """
     Send custom message to students.
-    
+
     Only teachers can send notifications.
     """
     if current_user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Only teachers can send notifications")
+        raise HTTPException(
+            status_code=403, detail="Only teachers can send notifications"
+        )
 
     teacher_id = str(current_user["id"])
     teacher_name = payload.teacher_name or current_user.get("name", "Your Teacher")
@@ -174,7 +181,7 @@ async def send_custom_message(
         message_title=payload.message_title,
         message_body=payload.message_body,
         teacher_name=teacher_name,
-        teacher_id=teacher_id
+        teacher_id=teacher_id,
     )
 
     return BulkEmailResponse(**result)
@@ -187,16 +194,16 @@ async def get_email_statistics(
 ):
     """
     Get email statistics for the current teacher.
-    
+
     Returns statistics for the last `days` days (default: 30).
     """
     if current_user.get("role") != "teacher":
         raise HTTPException(status_code=403, detail="Only teachers can view statistics")
 
     teacher_id = str(current_user["id"])
-    
+
     stats = await NotificationService.get_email_stats(teacher_id, days)
-    
+
     return EmailStatsResponse(**stats)
 
 
@@ -211,15 +218,17 @@ async def check_duplicate_email(
     Check if a similar email was recently sent to prevent spam.
     """
     if current_user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Only teachers can check duplicates")
+        raise HTTPException(
+            status_code=403, detail="Only teachers can check duplicates"
+        )
 
     teacher_id = str(current_user["id"])
-    
+
     is_duplicate = await NotificationService.check_duplicate_send(
         teacher_id=teacher_id,
         notification_type=notification_type,
         recipient_email=recipient_email,
-        within_hours=within_hours
+        within_hours=within_hours,
     )
-    
+
     return {"is_duplicate": is_duplicate}

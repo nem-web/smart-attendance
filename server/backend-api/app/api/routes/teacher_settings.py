@@ -1,7 +1,7 @@
 # backend/app/api/routes/settings.py
 from app.db.mongo import db
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from datetime import datetime, UTC
+from datetime import datetime
 
 from app.core.cloudinary_config import cloudinary
 
@@ -403,29 +403,31 @@ async def get_all_students(current_user: dict = Depends(get_current_teacher)):
     """Get all students for messaging purposes"""
     # Get all students (with limit to avoid memory issues)
     students = await db.students.find({}).to_list(length=None)
-    
+
     if not students:
         return {"students": []}
-    
+
     # Batch fetch all user data
     user_ids = [s.get("userId") for s in students if s.get("userId")]
     users_cursor = db.users.find({"_id": {"$in": user_ids}})
     users_map = {str(u["_id"]): u async for u in users_cursor}
-    
+
     student_list = []
     for student in students:
         uid = str(student.get("userId"))
         user = users_map.get(uid)
         if user:
-            student_list.append({
-                "id": str(student["_id"]),
-                "user_id": uid,
-                "name": user.get("name", "Unknown"),
-                "email": user.get("email", ""),
-                "usn": user.get("usn", ""),
-                "branch": student.get("branch", ""),
-                "semester": student.get("semester", 0),
-                "verified": student.get("verified", False),
-            })
-    
+            student_list.append(
+                {
+                    "id": str(student["_id"]),
+                    "user_id": uid,
+                    "name": user.get("name", "Unknown"),
+                    "email": user.get("email", ""),
+                    "usn": user.get("usn", ""),
+                    "branch": student.get("branch", ""),
+                    "semester": student.get("semester", 0),
+                    "verified": student.get("verified", False),
+                }
+            )
+
     return {"students": student_list}
