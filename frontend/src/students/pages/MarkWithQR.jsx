@@ -60,7 +60,7 @@ export default function MarkWithQR() {
                         break;
                 }
             },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     };
 
