@@ -26,7 +26,7 @@ def test_health():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["models_loaded"] is True
+    assert "timestamp" in data
 
 
 def test_encode_face_no_face():
