@@ -38,12 +38,12 @@ jobs:
               return;
             }
 
-            // 4. Check if issue is ALREADY assigned
+            // 4. Check if issue is ALREADY assigned to ANYONE
             if (issue.assignees.length > 0) {
               return;
             }
 
-            // 5. Check if user already has an OPEN issue (without an open PR)
+            // 5. STRICT CHECK: Does the user ALREADY have an open issue?
             // Fetch open issues assigned to this user
             const { data: assignedIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -52,27 +52,18 @@ jobs:
               assignee: author,
             });
 
-            // Fetch open PRs by this user to see if they are actively working
-            const { data: prs } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "open",
-            });
-            
-            const hasOpenPR = prs.some(pr => pr.user.login === author);
-
-            // If user has assigned issues AND no open PRs, block them.
-            if (assignedIssues.length > 0 && !hasOpenPR) {
+            // If user has ANY assigned issues, block them (regardless of PR status).
+            if (assignedIssues.length > 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
                 body: `👋 @${author}
             
-            You already have an **assigned open issue**.
+            You already have an **assigned open issue** (#${assignedIssues[0].number}).
             
-            👉 Please complete it first before taking a new one.  
-            👉 If you have already raised a PR, please ensure it is linked or open, then try again.
+            **Rule:** You can only work on **one issue at a time**.
+            👉 Please complete or close your current issue before taking a new one.
             
             Thanks for contributing 🚀`
               });
