@@ -103,8 +103,8 @@ async def get_today_schedule(current: dict = Depends(get_current_teacher)):
             
             break  # Found today's schedule, no need to continue
     
-    # Sort by start time
-    today_classes.sort(key=lambda x: x.start_time)
+    # Sort by start time using proper time parsing to avoid lexicographical issues
+    today_classes.sort(key=lambda x: datetime.strptime(x.start_time, "%H:%M").time())
     
     return TodayScheduleResponse(
         classes=today_classes,
