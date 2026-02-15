@@ -7,18 +7,12 @@
     "myAttendance": "मेरी उपस्थिति"
   },
   "student_dashboard": {
-    "nav": {
-      "home": "होम",
-      "subjects": "विषय",
-      "forecast": "पूर्वानुमान",
-      "profile": "प्रोफ़ाइल",
-      "app_name": "स्मार्ट उपस्थिति",
-      "student_role": "छात्र"
-    },
-    "portal_name": "छात्र पोर्टल",
     "welcome": "वापसी पर स्वागत है, {{name}}",
+    "portal_name": "छात्र पोर्टल",
     "stats": {
+      "overall_attendance": "Overall attendance",
       "on_track": "सही रास्ते पर",
+      "at_risk": "At risk",
       "keep_attending": "सुरक्षित क्षेत्र में बने रहने के लिए कक्षाओं में भाग लेते रहें।",
       "current": "वर्तमान",
       "safe_zone_label": "सुरक्षित क्षेत्र (>{{percent}}%)",
@@ -27,10 +21,21 @@
     },
     "schedule": {
       "today": "आज की अनुसूची",
+      "present": "Present",
+      "absent": "Absent",
+      "upcoming": "Upcoming",
+      "all_caught_up": "आज की सभी कक्षाएं हो गयीं!",
       "status_present": "उपस्थित",
       "status_absent": "अनुपस्थित",
-      "status_upcoming": "आगामी",
-      "all_caught_up": "आज की सभी कक्षाएं हो गयीं!"
+      "status_upcoming": "आगामी"
+    },
+    "nav": {
+      "home": "होम",
+      "subjects": "विषय",
+      "forecast": "पूर्वानुमान",
+      "profile": "प्रोफ़ाइल",
+      "app_name": "स्मार्ट उपस्थिति",
+      "student_role": "छात्र"
     }
   },
   "subjects": {
@@ -139,31 +144,10 @@
     "no_account": "अभी तक कोई खाता नहीं है?",
     "register_link": "मुफ्त पंजीकरण करें",
     "hero_title": "स्मार्ट उपस्थिति प्रणाली",
-    "hero_subtitle": "चेहरे की पहचान के साथ अपनी कक्षा की उपस्थिति को स्वचालित करें। सुरक्षित, तेज और विश्वसनीय।"
-  },
-  "register": {
-    "title": "खाता बनाएं",
-    "subtitle_start": "शुरू करने के लिए अपनी भूमिका पहचानें",
-    "subtitle_role": "एक {{role}} के रूप में अपना पंजीकरण पूरा करें",
-    "role_student": "मैं एक छात्र हूँ",
-    "role_student_desc": "कक्षाओं में भाग लेने और प्रगति पर नज़र रखने के लिए",
-    "role_teacher": "मैं एक शिक्षक हूँ",
-    "role_teacher_desc": "कक्षाओं के प्रबंधन और उपस्थिति लेने के लिए",
-    "back": "वापस",
-    "full_name": "पूरा नाम",
-    "email": "ईमेल पता",
-    "college_name": "कॉलेज का नाम",
-    "branch": "शाखा",
-    "year": "वर्ष",
-    "roll_no": "रोल नंबर",
-    "employee_id": "कर्मचारी आईडी",
-    "phone": "फ़ोन नंबर",
-    "password": "पासवर्ड",
-    "confirm_password": "पासवर्ड की पुष्टि करें",
-    "password_placeholder": "न्यूनतम 6 वर्ण",
-    "confirm_placeholder": "पासवर्ड पुनः दर्ज करें",
-    "submit": "खाता बनाएं",
-    "sign_in": "इसके बजाय साइन इन करें"
+    "hero_subtitle": "चेहरे की पहचान के साथ अपनी कक्षा की उपस्थिति को स्वचालित करें। सुरक्षित, तेज और विश्वसनीय।",
+    "alerts": {
+      "login_failed": "Login failed. Please check your credentials."
+    }
   },
   "forgot_password": {
     "title_step1": "अपना पासवर्ड रीसेट करें",
@@ -222,7 +206,11 @@
     "submit": "खाता बनाएं",
     "submitting": "बना रहा है...",
     "already_have_account": "क्या आपके पास पहले से एक खाता है?",
-    "sign_in": "साइन इन करें"
+    "sign_in": "साइन इन करें",
+    "alerts": {
+      "account_created": "Account created! Please check your email to verify before logging in.",
+      "failed": "Registration Failed"
+    }
   },
   "nav": {
     "overview": "अवलोकन",
@@ -278,95 +266,97 @@
       "pending": "लंबित",
       "starts_in": "30 मिनट में शुरू",
       "not_started": "उपस्थिति शुरू नहीं हुई"
-    }
+    },
+    "next_class": "Next class: {{class}} • {{time}}",
+    "room": "Room {{room}}"
   },
   "mark_attendance": {
-    "title": "उपस्थिति सत्र शुरू करें",
-    "subtitle": "वास्तविक समय में छात्रों की उपस्थिति दर्ज करने के लिए चेहरा पहचान का उपयोग करें",
-    "session_settings": "सत्र सेटिंग्स",
-    "class_label": "कक्षा",
-    "select_subject": "विषय चुनें",
-    "date_label": "तारीख",
-    "camera_feed": "कैमरा फ़ीड",
+    "title": "उपस्थिति दर्ज करें",
+    "subtitle": "वास्तविक समय चेहरे की पहचान",
+    "session_settings": "Session settings",
+    "class_label": "Class",
+    "select_subject": "Select subject",
+    "date_label": "Date",
+    "camera_feed": "Camera feed",
     "status": {
-      "live": "लाइव • सक्रिय",
-      "waking_up": "जाग रहा है...",
+      "live": "लाइव",
+      "waking_up": "एमएल सेवा शुरू हो रही है...",
       "connecting": "कनेक्ट हो रहा है..."
     },
     "camera_overlay": {
-      "recognition_running": "पहचान चल रही है • ऑटो-मार्किंग उपस्थित",
-      "tip": "टिप: छात्रों से सीधे कैमरे की ओर देखने के लिए कहें।"
+      "recognition_running": "Recognition running • Auto-marking present",
+      "tip": "Tip: Ask students to face the camera directly."
     },
     "detected_students": {
-      "title": "पहचाने गए छात्र",
-      "subtitle": "चेहरा पहचान पर आधारित ऑटो-मार्किंग"
+      "title": "Detected students",
+      "subtitle": "Auto-marking based on face recognition"
     },
     "tabs": {
-      "present": "उपस्थित",
-      "all": "सभी छात्र"
+      "present": "Present",
+      "all": "All students"
     },
-    "search_placeholder": "नाम या रोल नंबर से खोजें",
-    "confirm_button": "उपस्थिति की पुष्टि करें",
-    "submitted_button": "उपस्थिति जमा की गई",
+    "search_placeholder": "Search by name or roll no.",
+    "confirm_button": "Confirm Attendance",
+    "submitted_button": "Attendance Submitted",
     "summary": {
-      "present": "उपस्थित",
-      "absent": "अनुपस्थित"
+      "present": "present",
+      "absent": "absent"
     },
     "alerts": {
-      "already_marked": "इस सत्र के लिए उपस्थिति पहले ही दर्ज की जा चुकी है",
-      "success": "उपस्थिति सफलतापूर्वक सहेजी गई",
-      "failed": "उपस्थिति सहेजने में विफल"
+      "already_marked": "छात्र पहले से उपस्थित है!",
+      "success": "उपस्थिति सबमिट की गई!",
+      "failed": "सबमिशन विफल रहा।"
     }
   },
   "students": {
     "title": "छात्र",
-    "subtitle": "सभी छात्रों को ब्राउज़ करें और उपस्थिति प्रदर्शन की तुलना करें",
+    "subtitle": "छात्र नामांकन का प्रबंधन और ट्रैक करें",
     "export_list": "सूची निर्यात करें",
     "add_student": "छात्र जोड़ें",
-    "search_placeholder": "नाम या आईडी द्वारा खोजें",
+    "search_placeholder": "नाम या रोल नंबर से खोजें",
     "select_subject": "विषय चुनें",
-    "sort_by_attendance": "उपस्थिति के अनुसार क्रमबद्ध करें",
+    "sort_by_attendance": "उपस्थिति के अनुसार छाँटें",
     "filters": {
       "all": "सभी",
-      "high": "उच्च (> 90%)",
-      "medium": "मध्यम (75-90%)",
-      "low": "निम्न (< 75%)"
+      "high": "उच्च (>75%)",
+      "medium": "मध्यम (50-75%)",
+      "low": "कम (<50%)"
     },
     "table": {
       "roll_number": "रोल नंबर",
       "student": "छात्र",
-      "visual_grade": "दृश्य ग्रेड",
-      "trend": "रुझान",
+      "visual_grade": "ग्रेड",
+      "trend": "Trend",
       "actions": "कार्रवाई"
     },
     "status": {
-      "excellent": "उत्कृष्ट",
-      "moderate": "मध्यम",
-      "at_risk": "जोखिम में"
+      "excellent": "Excellent",
+      "moderate": "Moderate",
+      "at_risk": "At risk"
     },
     "trend": {
-      "no_change": "कोई बदलाव नहीं",
-      "vs_last_month": "बनाम पिछले महीने"
+      "no_change": "No change",
+      "vs_last_month": "vs last month"
     },
-    "no_students_found": "कोई छात्र नहीं मिला",
-    "no_match": "कोई छात्र \"{{query}}\" से मेल नहीं खाता",
-    "no_match_filter": "कोई छात्र \"{{filter}}\" फ़िल्टर के साथ \"{{query}}\" से मेल नहीं खाता",
-    "no_match_selected_filter": "चयनित फ़िल्टर \"{{filter}}\" के साथ कोई छात्र मेल नहीं खाता",
+    "no_students_found": "No students found",
+    "no_match": "No students match \"{{query}}\"",
+    "no_match_filter": "No students match \"{{query}}\" with filter \"{{filter}}\"",
+    "no_match_selected_filter": "No students match the selected filter \"{{filter}}\"",
     "pagination": {
-      "showing": "{{total}} में से {{current}} छात्र दिखा रहा है",
-      "previous": "पिछला",
-      "next": "अगला"
+      "showing": "Showing {{current}} of {{total}} students",
+      "previous": "Previous",
+      "next": "Next"
     },
     "stats": {
-      "attendance_bands": "उपस्थिति बैंड",
-      "bands_desc": "सर्वोत्तम से सबसे खराब रंग ग्रेडिंग",
-      "high_attendance": "उच्च उपस्थिति",
-      "medium_attendance": "मध्यम उपस्थिति",
-      "low_attendance": "कम उपस्थिति",
-      "top_performers": "शीर्ष प्रदर्शन करने वाले",
-      "top_performers_desc": "इस सत्र में सर्वश्रेष्ठ उपस्थिति वाले छात्र",
-      "needs_support": "समर्थन की आवश्यकता है",
-      "needs_support_desc": "सबसे कम उपस्थिति वाले छात्र"
+      "attendance_bands": "Attendance bands",
+      "bands_desc": "Color grading from best to worst",
+      "high_attendance": "High attendance",
+      "medium_attendance": "Medium attendance",
+      "low_attendance": "Low attendance",
+      "top_performers": "Top performers",
+      "top_performers_desc": "Students with best attendance this term",
+      "needs_support": "Needs support",
+      "needs_support_desc": "Students with the lowest attendance"
     }
   },
   "manage_schedule": {
@@ -460,58 +450,44 @@
     "footer_note": "पुराने अनुरोध छिपे हुए हैं। पहले से सत्यापित या हटाए गए सभी छात्रों को देखने के लिए ऊपर फ़िल्टर समायोजित करें।",
     "bottom_note": "नोट: सत्यापित छात्र अपने चयनित विषयों और कक्षाओं के लिए उपस्थिति अंकन सूची में दिखाई देने लगेंगे। आप मुख्य छात्र पृष्ठ से उनकी प्रविष्टि हटाकर किसी भी समय पहुंच रद्द कर सकते हैं।"
   },
-  "students": {
-    "title": "छात्र",
-    "subtitle": "छात्र नामांकन का प्रबंधन और ट्रैक करें",
-    "export_list": "सूची निर्यात करें",
-    "add_student": "छात्र जोड़ें",
-    "search_placeholder": "नाम या रोल नंबर से खोजें",
-    "select_subject": "विषय चुनें",
-    "sort_by_attendance": "उपस्थिति के अनुसार छाँटें",
-    "table": {
-        "roll_number": "रोल नंबर",
-        "student": "छात्र",
-        "visual_grade": "ग्रेड",
-        "attendance": "उपस्थिति %",
-        "status": "स्थिति",
-        "actions": "कार्रवाई"
-    },
-    "filters": {
-       "all": "सभी",
-       "high": "उच्च (>75%)",
-       "medium": "मध्यम (50-75%)",
-       "low": "कम (<50%)"
-    }
-  },
-  "mark_attendance": {
-    "title": "उपस्थिति दर्ज करें",
-    "subtitle": "वास्तविक समय चेहरे की पहचान",
-    "status": {
-        "live": "लाइव",
-        "waking_up": "एमएल सेवा शुरू हो रही है...",
-        "connecting": "कनेक्ट हो रहा है..."
-    },
-    "alerts": {
-        "already_marked": "छात्र पहले से उपस्थित है!",
-        "success": "उपस्थिति सबमिट की गई!",
-        "failed": "सबमिशन विफल रहा।"
-    }
-  },
   "days": {
     "short": {
-      "sun": "रवि", "mon": "सोम", "tue": "मंगल", "wed": "बुध", "thu": "गुरु", "fri": "शुक्र", "sat": "शनि"
+      "sun": "रवि",
+      "mon": "सोम",
+      "tue": "मंगल",
+      "wed": "बुध",
+      "thu": "गुरु",
+      "fri": "शुक्र",
+      "sat": "शनि"
     },
     "long": {
-       "monday": "सोमवार", "tuesday": "मंगलवार", "wednesday": "बुधवार", "thursday": "गुरुवार", "friday": "शुक्रवार", "saturday": "शनिवार", "sunday": "रविवार"
+      "monday": "सोमवार",
+      "tuesday": "मंगलवार",
+      "wednesday": "बुधवार",
+      "thursday": "गुरुवार",
+      "friday": "शुक्रवार",
+      "saturday": "शनिवार",
+      "sunday": "रविवार"
     }
   },
   "months": {
-      "january": "जनवरी", "february": "फरवरी", "march": "मार्च", "april": "अप्रैल", "may": "मई", "june": "जून", "july": "जुलाई", "august": "अगस्त", "september": "सितंबर", "october": "अक्टूबर", "november": "नवंबर", "december": "दिसंबर"
+    "january": "जनवरी",
+    "february": "फरवरी",
+    "march": "मार्च",
+    "april": "अप्रैल",
+    "may": "मई",
+    "june": "जून",
+    "july": "जुलाई",
+    "august": "अगस्त",
+    "september": "सितंबर",
+    "october": "अक्टूबर",
+    "november": "नवंबर",
+    "december": "दिसंबर"
   },
   "common": {
-      "cancel": "रद्द करें",
-      "save_changes": "परिवर्तन सहेजें",
-      "close": "बंद करें"
+    "cancel": "रद्द करें",
+    "save_changes": "परिवर्तन सहेजें",
+    "close": "बंद करें"
   },
   "analytics": {
     "title": "विश्लेषण",
@@ -587,36 +563,36 @@
       "showing": "{{count}} छात्र दिखा रहा है",
       "sorted_by": "{{key}} ({{direction}}) द्वारा क्रमबद्ध",
       "sort_keys": {
-          "total": "कुल कक्षाएं",
-          "attended": "उपस्थित",
-          "percentage": "उपस्थिति %"
+        "total": "कुल कक्षाएं",
+        "attended": "उपस्थित",
+        "percentage": "उपस्थिति %"
       },
       "sort_dir": {
-          "asc": "निम्न से उच्च",
-          "desc": "उच्च से निम्न"
+        "asc": "निम्न से उच्च",
+        "desc": "उच्च से निम्न"
       },
       "good": "अच्छा (≥ {{threshold}}%)",
       "warning": "चेतावनी",
       "at_risk": "जोखिम में"
     },
     "status_labels": {
-        "good": "अच्छा",
-        "warning": "चेतावनी",
-        "at_risk": "जोखिम में",
-        "unknown": "अज्ञात"
+      "good": "अच्छा",
+      "warning": "चेतावनी",
+      "at_risk": "जोखिम में",
+      "unknown": "अज्ञात"
     }
   },
   "settings": {
     "title": "{{name}} के लिए सेटिंग्स",
     "subtitle": "उपस्थिति सीमा, प्रोफ़ाइल और चेहरा पहचान प्राथमिकताएं कॉन्फ़िगर करें",
     "sidebar": {
-        "heading": "सेटिंग्स",
-        "general": "सामान्य",
-        "thresholds": "सीमाएं",
-        "profile": "प्रोफ़ाइल",
-        "face_settings": "चेहरा सेटिंग्स",
-        "credits": "योगदानकर्ता",
-        "logout": "लॉग आउट"
+      "heading": "सेटिंग्स",
+      "general": "सामान्य",
+      "thresholds": "सीमाएं",
+      "profile": "प्रोफ़ाइल",
+      "face_settings": "चेहरा सेटिंग्स",
+      "credits": "योगदानकर्ता",
+      "logout": "लॉग आउट"
     },
     "general": {
       "title": "सामान्य प्राथमिकताएं",
@@ -636,64 +612,64 @@
       "saving": "सहेजा जा रहा है..."
     },
     "thresholds": {
-        "title": "उपस्थिति सीमाएं",
-        "subtitle": "परिभाषित करें कि उपस्थिति प्रतिशत के आधार पर छात्र को कब जोखिम या गंभीर माना जाता है।",
-        "ranges": "चेतावनी और गंभीर सीमाएं",
-        "warning": "चेतावनी",
-        "critical": "गंभीर",
-        "zone_critical": "गंभीर क्षेत्र",
-        "zone_warning": "चेतावनी क्षेत्र",
-        "zone_safe": "सुरक्षित क्षेत्र",
-        "info": "इन मूल्यों को समायोजित करने से डैशबोर्ड, छात्र प्रोफ़ाइल और रिपोर्ट में दृश्य अलर्ट अपडेट हो जाएंगे।"
+      "title": "उपस्थिति सीमाएं",
+      "subtitle": "परिभाषित करें कि उपस्थिति प्रतिशत के आधार पर छात्र को कब जोखिम या गंभीर माना जाता है।",
+      "ranges": "चेतावनी और गंभीर सीमाएं",
+      "warning": "चेतावनी",
+      "critical": "गंभीर",
+      "zone_critical": "गंभीर क्षेत्र",
+      "zone_warning": "चेतावनी क्षेत्र",
+      "zone_safe": "सुरक्षित क्षेत्र",
+      "info": "इन मूल्यों को समायोजित करने से डैशबोर्ड, छात्र प्रोफ़ाइल और रिपोर्ट में दृश्य अलर्ट अपडेट हो जाएंगे।"
     },
     "profile": {
-        "title": "प्रोफ़ाइल विवरण",
-        "subtitle": "अपनी बुनियादी जानकारी और संपर्क विवरण अद्यतित रखें।",
-        "view_public": "सार्वजनिक प्रोफ़ाइल देखें",
-        "change_photo": "फोटो बदलें",
-        "full_name": "पूरा नाम",
-        "role": "भूमिका",
-        "email": "ईमेल पता",
-        "phone": "फ़ोन नंबर",
-        "subjects": "सिखाए गए विषय",
-        "no_subjects": "कोई विषय नहीं जोड़ा गया",
-        "add_subject": "विषय जोड़ें",
-        "add_subject_modal": {
-            "title": "नया विषय जोड़ें",
-            "name_label": "विषय का नाम",
-            "name_placeholder": "उदा. डेटा स्ट्रक्चर्स",
-            "code_label": "विषय कोड",
-            "code_placeholder": "उदा. CS101",
-            "cancel": "रद्द करें",
-            "add": "विषय जोड़ें"
-        }
+      "title": "प्रोफ़ाइल विवरण",
+      "subtitle": "अपनी बुनियादी जानकारी और संपर्क विवरण अद्यतित रखें।",
+      "view_public": "सार्वजनिक प्रोफ़ाइल देखें",
+      "change_photo": "फोटो बदलें",
+      "full_name": "पूरा नाम",
+      "role": "भूमिका",
+      "email": "ईमेल पता",
+      "phone": "फ़ोन नंबर",
+      "subjects": "सिखाए गए विषय",
+      "no_subjects": "कोई विषय नहीं जोड़ा गया",
+      "add_subject": "विषय जोड़ें",
+      "add_subject_modal": {
+        "title": "नया विषय जोड़ें",
+        "name_label": "विषय का नाम",
+        "name_placeholder": "उदा. डेटा स्ट्रक्चर्स",
+        "code_label": "विषय कोड",
+        "code_placeholder": "उदा. CS101",
+        "cancel": "रद्द करें",
+        "add": "विषय जोड़ें"
+      }
     },
     "face_settings": {
-        "title": "चेहरा पहचान कॉन्फ़िगरेशन",
-        "subtitle": "नामांकन डेटा प्रबंधित करें और पहचान इंजन पैरामीटर ट्यून करें।",
-        "face_data": "चेहरा डेटा नामांकित",
-        "last_updated": "अंतिम अपडेट: 3 दिन पहले मोबाइल ऐप के माध्यम से",
-        "recalibrate": "पुन: कैलिब्रेट करें",
-        "threshold": "पहचान विश्वास सीमा",
-        "threshold_desc": "उच्च मान झूठी सकारात्मकता को कम करते हैं लेकिन बेहतर प्रकाश व्यवस्था की आवश्यकता हो सकती है। अनुशंसित: 80%।",
-        "security": "सुरक्षा उपाय",
-        "liveness": "जीवंतता का पता लगाना (एंटी-स्पूफ़िंग)",
-        "liveness_desc": "फोटो हमलों को रोकने के लिए विषयों को पलक झपकाने या थोड़ा हिलने की आवश्यकता होती है।",
-        "danger_zone": "खतरा क्षेत्र",
-        "reset_model": "पहचान मॉडल रीसेट करें",
-        "reset_desc": "यह इस प्रोफ़ाइल के लिए सभी सीखे गए चेहरे के पैटर्न को साफ़ कर देगा।",
-        "reset_data": "डेटा रीसेट करें",
-        "discard": "त्यागें",
-        "apply": "सेटिंग्स लागू करें"
+      "title": "चेहरा पहचान कॉन्फ़िगरेशन",
+      "subtitle": "नामांकन डेटा प्रबंधित करें और पहचान इंजन पैरामीटर ट्यून करें।",
+      "face_data": "चेहरा डेटा नामांकित",
+      "last_updated": "अंतिम अपडेट: 3 दिन पहले मोबाइल ऐप के माध्यम से",
+      "recalibrate": "पुन: कैलिब्रेट करें",
+      "threshold": "पहचान विश्वास सीमा",
+      "threshold_desc": "उच्च मान झूठी सकारात्मकता को कम करते हैं लेकिन बेहतर प्रकाश व्यवस्था की आवश्यकता हो सकती है। अनुशंसित: 80%।",
+      "security": "सुरक्षा उपाय",
+      "liveness": "जीवंतता का पता लगाना (एंटी-स्पूफ़िंग)",
+      "liveness_desc": "फोटो हमलों को रोकने के लिए विषयों को पलक झपकाने या थोड़ा हिलने की आवश्यकता होती है।",
+      "danger_zone": "खतरा क्षेत्र",
+      "reset_model": "पहचान मॉडल रीसेट करें",
+      "reset_desc": "यह इस प्रोफ़ाइल के लिए सभी सीखे गए चेहरे के पैटर्न को साफ़ कर देगा।",
+      "reset_data": "डेटा रीसेट करें",
+      "discard": "त्यागें",
+      "apply": "सेटिंग्स लागू करें"
     },
     "credits": {
-        "title": "हमारे योगदानकर्ता",
-        "badge": "ओपन सोर्स",
-        "subtitle": "अद्भुत लोग जिन्होंने इस परियोजना में कोड का योगदान दिया है।",
-        "send_thanks": "धन्यवाद भेजें",
-        "commits": "कमिट्स",
-         "no_contributors": "कोई योगदानकर्ता नहीं मिला।",
-         "footer": "स्मार्ट उपस्थिति प्रणाली बनाने में मदद करने वाले प्रत्येक डेवलपर को धन्यवाद।"
+      "title": "हमारे योगदानकर्ता",
+      "badge": "ओपन सोर्स",
+      "subtitle": "अद्भुत लोग जिन्होंने इस परियोजना में कोड का योगदान दिया है।",
+      "send_thanks": "धन्यवाद भेजें",
+      "commits": "कमिट्स",
+      "no_contributors": "कोई योगदानकर्ता नहीं मिला।",
+      "footer": "स्मार्ट उपस्थिति प्रणाली बनाने में मदद करने वाले प्रत्येक डेवलपर को धन्यवाद।"
     },
     "alerts": {
       "load_failed": "सेटिंग्स लोड करने में विफल: {{error}}",
@@ -721,46 +697,47 @@
       "custom": "कस्टम संदेश"
     },
     "form": {
-        "subject_class": "विषय/कक्षा",
-        "date": "दिनांक",
-        "assignment_title": "असाइनमेंट शीर्षक",
-        "subject": "विषय",
-        "due_date": "नियत दिनांक",
-        "exam_name": "परीक्षा का नाम",
-        "exam_date": "परीक्षा तिथि",
-        "time": "समय",
-        "venue": "स्थान",
-        "message_title": "संदेश शीर्षक",
-        "message": "संदेश",
-        "placeholders": {
-            "subject_class": "उदा., गणित 101",
-            "assignment_title": "उदा., अध्याय 5 होमवर्क",
-            "subject": "उदा., गणित",
-            "exam_name": "उदा., मध्यावधि परीक्षा",
-            "venue": "उदा., कमरा 101, मुख्य भवन",
-            "message_title": "उदा., महत्वपूर्ण घोषणा",
-            "message": "यहाँ अपना संदेश लिखें..."
-        },
-        "buttons": {
-            "send_absence": "अनुपस्थिति सूचना भेजें",
-            "send_assignment": "असाइनमेंट रिमाइंडर भेजें",
-            "send_exam": "परीक्षा अलर्ट भेजें",
-            "send_custom": "कस्टम संदेश भेजें"
-        }
+      "subject": "विषय",
+      "date": "दिनांक",
+      "assignment_title": "असाइनमेंट शीर्षक",
+      "due_date": "नियत दिनांक",
+      "exam_name": "परीक्षा का नाम",
+      "exam_date": "परीक्षा तिथि",
+      "time": "समय",
+      "venue": "स्थान",
+      "message_title": "संदेश शीर्षक",
+      "message_body": "Message Body",
+      "send_absence": "Send Absence Notification",
+      "send_assignment": "Send Assignment Reminder",
+      "send_exam": "Send Exam Alert",
+      "send_custom": "Send Custom Message"
+    },
+    "placeholders": {
+      "subject": "e.g., Mathematics 101",
+      "assignment_title": "e.g., Chapter 5 Homework",
+      "exam_name": "e.g., Midterm Examination",
+      "venue": "e.g., Room 101, Main Building",
+      "message_title": "e.g., Important Announcement",
+      "message_placeholder": "Type your message here..."
     },
     "recipients": {
-        "select": "प्राप्तकर्ताओं का चयन करें",
-        "select_all": "सभी का चयन करें",
-        "deselect_all": "सभी को अचयनित करें",
-        "selected_count": "{{count}} छात्र चयनित",
-        "selected_count_plural": "{{count}} छात्र चयनित",
-        "loading": "छात्र लोड हो रहे हैं...",
-        "no_students": "कोई छात्र नहीं मिला"
+      "select": "प्राप्तकर्ताओं का चयन करें",
+      "select_all": "सभी का चयन करें",
+      "deselect_all": "सभी को अचयनित करें",
+      "students_selected": "Students Selected",
+      "loading": "छात्र लोड हो रहे हैं...",
+      "no_students": "कोई छात्र नहीं मिला"
+    },
+    "summary": {
+      "title": "Email Send Summary",
+      "total": "Total Emails",
+      "success": "Successfully Sent",
+      "failed": "Failed"
     },
     "alerts": {
-        "fill_all": "कृपया सभी फ़ील्ड भरें और कम से कम एक छात्र का चयन करें",
-        "success": "ईमेल भेजने का सारांश",
-        "failed_send": "संदेश भेजने में विफल। कृपया पुन: प्रयास करें।"
+      "fill_all": "कृपया सभी फ़ील्ड भरें और कम से कम एक छात्र का चयन करें",
+      "success": "ईमेल भेजने का सारांश",
+      "failed_send": "संदेश भेजने में विफल। कृपया पुन: प्रयास करें।"
     }
   }
 }
