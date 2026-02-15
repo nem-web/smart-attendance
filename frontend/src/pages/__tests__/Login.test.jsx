@@ -48,7 +48,7 @@ describe('Login Page', () => {
             </BrowserRouter>
         );
 
-        expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /sign in to your account/i })).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/enter your email/i)).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/enter your password/i)).toBeInTheDocument();
     });

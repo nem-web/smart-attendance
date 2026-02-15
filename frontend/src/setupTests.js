@@ -9,6 +9,10 @@ vi.mock('react-i18next', () => {
             "loading": "Loading...",
             "error": "Error"
         },
+        "auth": {
+            "signInTitle": "Sign in to your account",
+            "emailLabel": "Email Address"
+        },
         "login": {
             "title": "Login",
             "email_label": "Email Address",
