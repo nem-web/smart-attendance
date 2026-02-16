@@ -118,7 +118,7 @@ async def mark_attendance(payload: Dict):
             class_pos = (float(location_cfg["lat"]), float(location_cfg["long"]))
             # Default radius 50m if not set
             allowed_radius = float(location_cfg.get("radius", 50))
-            
+
             if allowed_radius <= 0:
                 raise ValueError("Radius must be positive")
 
@@ -200,7 +200,9 @@ async def mark_attendance(payload: Dict):
         if not match_response.get("success"):
             raise HTTPException(
                 status_code=500,
-                detail=f"ML service error: {match_response.get('error', 'Unknown error')}",  # noqa: E501
+                detail=(
+                    f"ML service error: {match_response.get('error', 'Unknown error')}"
+                ),  # noqa: E501
             )
 
         matches = match_response.get("matches", [])

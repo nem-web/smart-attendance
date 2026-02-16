@@ -30,6 +30,7 @@ NONCE_TTL_SECONDS: int = int(os.getenv("NONCE_TTL_SECONDS", "30"))
 # ── Redis backend ──────────────────────────────────────────────
 _redis_client = None  # lazily initialised
 
+
 async def _get_redis():
     """Return an async Redis client, creating it on first call."""
     global _redis_client
@@ -41,6 +42,7 @@ async def _get_redis():
 
     try:
         import redis.asyncio as aioredis
+
         _redis_client = aioredis.from_url(
             REDIS_URL,
             decode_responses=True,
@@ -59,6 +61,7 @@ async def _get_redis():
 # ── MongoDB fallback ───────────────────────────────────────────
 _mongo_index_ensured = False
 
+
 async def _ensure_mongo_ttl_index():
     """Create a TTL index on `qr_nonces.expires_at` once per process."""
     global _mongo_index_ensured
@@ -66,6 +69,7 @@ async def _ensure_mongo_ttl_index():
         return
 
     from app.db.mongo import db
+
     # MongoDB automatically deletes documents once `expires_at` passes.
     await db.qr_nonces.create_index(
         "expires_at",
@@ -77,6 +81,7 @@ async def _ensure_mongo_ttl_index():
 
 
 # ── Public API ─────────────────────────────────────────────────
+
 
 async def is_nonce_used(nonce: str) -> bool:
     """
@@ -94,6 +99,7 @@ async def is_nonce_used(nonce: str) -> bool:
 
     # MongoDB fallback
     from app.db.mongo import db
+
     await _ensure_mongo_ttl_index()
     doc = await db.qr_nonces.find_one({"_id": nonce})
     return doc is not None
@@ -117,24 +123,26 @@ async def consume_nonce(nonce: str) -> bool:
         was_set = await r.set(
             f"qr_nonce:{nonce}",
             "1",
-            nx=True,                   # only set if key does NOT exist
-            ex=NONCE_TTL_SECONDS,      # auto-expire
+            nx=True,  # only set if key does NOT exist
+            ex=NONCE_TTL_SECONDS,  # auto-expire
         )
         return bool(was_set)
 
     # MongoDB fallback — use _id uniqueness for atomicity
     from app.db.mongo import db
+
     await _ensure_mongo_ttl_index()
     from pymongo.errors import DuplicateKeyError
 
     try:
-        await db.qr_nonces.insert_one({
-            "_id": nonce,
-            "expires_at": (
-                datetime.now(timezone.utc)
-                + timedelta(seconds=NONCE_TTL_SECONDS)
-            ),
-        })
+        await db.qr_nonces.insert_one(
+            {
+                "_id": nonce,
+                "expires_at": (
+                    datetime.now(timezone.utc) + timedelta(seconds=NONCE_TTL_SECONDS)
+                ),
+            }
+        )
         return True  # fresh nonce — consumed successfully
     except DuplicateKeyError:
         # Nonce was already stored → replay attempt

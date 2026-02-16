@@ -21,9 +21,7 @@ logger = logging.getLogger(__name__)
 
 # ── Configuration ───────────────────────────────────────────────
 # Dedicated secret for QR tokens; falls back to main JWT secret.
-QR_JWT_SECRET: str = (
-    os.getenv("QR_JWT_SECRET") or os.getenv("JWT_SECRET", "")
-)
+QR_JWT_SECRET: str = os.getenv("QR_JWT_SECRET") or os.getenv("JWT_SECRET", "")
 QR_JWT_ALGORITHM: str = os.getenv("QR_JWT_ALGORITHM", "HS256")
 
 if not QR_JWT_SECRET:
@@ -57,10 +55,10 @@ def create_qr_token(course_id: str) -> str:
 
     payload = {
         "course_id": course_id,
-        "timestamp": now_ms,                          # UNIX ms — spec requirement
-        "nonce": secrets.token_hex(32),                # 256-bit random
+        "timestamp": now_ms,  # UNIX ms — spec requirement
+        "nonce": secrets.token_hex(32),  # 256-bit random
         "iat": now_s,
-        "exp": now_s + QR_TOKEN_TTL_SECONDS,           # hard JWT expiry
+        "exp": now_s + QR_TOKEN_TTL_SECONDS,  # hard JWT expiry
     }
 
     token = jwt.encode(payload, QR_JWT_SECRET, algorithm=QR_JWT_ALGORITHM)

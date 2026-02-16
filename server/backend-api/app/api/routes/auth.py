@@ -41,7 +41,6 @@ oauth = OAuth()
 async def register(
     request: Request, payload: RegisterRequest, background_tasks: BackgroundTasks
 ):
-
     # Check existing user
     existing = await db.users.find_one({"email": payload.email})
 

@@ -10,8 +10,116 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.security import get_current_user
 from app.db.mongo import db
+from app.schemas.analytics import SubjectStatsResponse, StudentStat
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
+
+
+@router.get("/subject/{subject_id}", response_model=SubjectStatsResponse)
+async def get_subject_analytics(
+    subject_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get detailed analytics for a specific subject (context-aware leaderboards).
+    """
+    # Verify teacher
+    if current_user["role"] != "teacher":
+        raise HTTPException(
+            status_code=403, detail="Only teachers can access subject analytics"
+        )
+
+    try:
+        subject_oid = ObjectId(subject_id)
+        teacher_oid = ObjectId(current_user["id"])
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
+
+    # Fetch Subject
+    subject = await db.subjects.find_one({"_id": subject_oid})
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
+
+    # Verify Ownership
+    if teacher_oid not in subject.get("professor_ids", []):
+        raise HTTPException(
+            status_code=403, detail="Not authorized to view this subject"
+        )
+
+    # Process Student Stats
+    students_info = subject.get("students", [])
+    if not students_info:
+        return SubjectStatsResponse(
+            attendance=0.0,
+            avgLate=0,
+            riskCount=0,
+            lateTime="09:00 AM",
+            bestPerforming=[],
+            needsSupport=[],
+        )
+
+    # Fetch Student Names
+    student_uids = [s["student_id"] for s in students_info if "student_id" in s]
+    users_cursor = db.users.find({"_id": {"$in": student_uids}}, {"_id": 1, "name": 1})
+    users_list = []
+    async for u in users_cursor:
+        users_list.append(u)
+
+    users_map = {str(u["_id"]): u.get("name", "Unknown") for u in users_list}
+
+    stats_list = []
+    total_percentage = 0.0
+    valid_students_count = 0
+    risk_count = 0
+
+    for s in students_info:
+        sid_str = str(s.get("student_id"))
+        attendance = s.get("attendance", {})
+        present = attendance.get("present", 0)
+        absent = attendance.get("absent", 0)
+        total = present + absent
+
+        if total == 0:
+            percentage = 0.0
+        else:
+            percentage = (present / total) * 100.0
+
+        current_student_stat = StudentStat(
+            id=sid_str,
+            name=users_map.get(sid_str, "Unknown"),
+            score=round(percentage, 1),
+        )
+        stats_list.append(current_student_stat)
+
+        if total > 0:
+            total_percentage += percentage
+            valid_students_count += 1
+
+        if percentage < 75.0:
+            risk_count += 1
+
+    # Calculate Class Average
+    if valid_students_count > 0:
+        class_average = round(total_percentage / valid_students_count, 1)
+    else:
+        class_average = 0.0
+
+    # Sort for Leaderboards
+    # Best: High score desc
+    best_performing = sorted(stats_list, key=lambda x: x.score, reverse=True)[:5]
+
+    # Needs Support: Low score asc but only those < 75% maybe?
+    # Or just lowest performers regardless of threshold for the list
+    needs_support = sorted(stats_list, key=lambda x: x.score)[:5]
+
+    return SubjectStatsResponse(
+        attendance=class_average,
+        avgLate=0,  # Placeholder
+        riskCount=risk_count,
+        lateTime="09:00 AM",  # Placeholder
+        bestPerforming=best_performing,
+        needsSupport=needs_support,
+    )
 
 
 @router.get("/attendance-trend")
@@ -389,7 +497,6 @@ async def get_global_stats(
         if attendance_pct < 75:
             risk_count += 1
 
-    
     # Re-sort by attendancePercentage descending
     subject_stats.sort(key=lambda x: x["attendancePercentage"], reverse=True)
 

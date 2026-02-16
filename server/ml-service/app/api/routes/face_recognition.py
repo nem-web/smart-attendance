@@ -66,8 +66,8 @@ async def encode_face(request: EncodeFaceRequest):
         top = y
         right = x + face_w
         bottom = y + face_h
-        left = x 
-        
+        left = x
+
         im_h, im_w, _ = image_np.shape
         face_area = face_w * face_h
         image_area = im_h * im_w
@@ -115,9 +115,9 @@ async def detect_faces_api(request: DetectFacesRequest):
             left = x
             bottom = y + ch
             right = x + cw
-            
+
             face_area = cw * ch
-            
+
             if face_area / image_area < request.min_face_area_ratio:
                 continue
 

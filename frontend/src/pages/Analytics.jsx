@@ -19,6 +19,9 @@ import {
   Cell
 } from "recharts";
 import { useTranslation } from "react-i18next";
+import { fetchSubjectAnalytics } from "../api/analytics";
+import { fetchMySubjects } from "../api/teacher";
+import Spinner from "../components/Spinner";
 
 // --- Mock Data ---
 
@@ -43,14 +46,6 @@ const GLOBAL_STATS = {
   lateTime: '09:15 AM'
 };
 
-const SUBJECT_STATS_MAP = {
-  '1': { attendance: 92, avgLate: 4, riskCount: 5, lateTime: '09:05 AM' }, // Math
-  '2': { attendance: 85, avgLate: 8, riskCount: 12, lateTime: '09:10 AM' }, // Physics
-  '3': { attendance: 78, avgLate: 12, riskCount: 15, lateTime: '09:20 AM' }, // Chemistry
-  '4': { attendance: 95, avgLate: 2, riskCount: 2, lateTime: '09:02 AM' }, // CS
-  '5': { attendance: 82, avgLate: 6, riskCount: 9, lateTime: '09:08 AM' }, // English
-};
-
 const GLOBAL_LEADERBOARD_BEST = [
   { name: 'Grade 9A', score: 91 },
   { name: 'Grade 10A', score: 88 },
@@ -63,32 +58,11 @@ const GLOBAL_LEADERBOARD_RISK = [
   { name: 'Grade 7D', score: 73 },
 ];
 
-const STUDENT_LEADERBOARD_BEST = [
-  { name: 'Rahul Kumar', score: 98 },
-  { name: 'Anjali Singh', score: 96 },
-  { name: 'Vikram Patel', score: 95 },
-];
-
-const STUDENT_LEADERBOARD_RISK = [
-  { name: 'Rohan Gupta', score: 65 },
-  { name: 'Priya Sharma', score: 68 },
-  { name: 'Amit Verma', score: 70 },
-];
-
 const CLASS_BREAKDOWN = [
   { class: 'Grade 10A', students: 32, present: 88, late: 7, absent: 5, color: 'emerald' },
   { class: 'Grade 10B', students: 30, present: 82, late: 9, absent: 9, color: 'amber' },
   { class: 'Grade 9A', students: 28, present: 91, late: 5, absent: 4, color: 'emerald' },
   { class: 'Grade 11C', students: 29, present: 71, late: 11, absent: 18, color: 'red' },
-];
-
-// Mock subjects data
-const MOCK_SUBJECTS = [
-  { id: '1', name: 'Mathematics', code: 'MATH101' },
-  { id: '2', name: 'Physics', code: 'PHY201' },
-  { id: '3', name: 'Chemistry', code: 'CHEM201' },
-  { id: '4', name: 'Computer Science', code: 'CS301' },
-  { id: '5', name: 'English Literature', code: 'ENG101' },
 ];
 
 export default function Analytics() {
@@ -104,6 +78,12 @@ export default function Analytics() {
     "Month": t('analytics.chart.month'),
     "Semester": t('analytics.chart.semester')
   };
+
+  const [subjects, setSubjects] = useState([]);
+  const [stats, setStats] = useState(GLOBAL_STATS);
+  const [bestPerforming, setBestPerforming] = useState(GLOBAL_LEADERBOARD_BEST);
+  const [needingSupport, setNeedingSupport] = useState(GLOBAL_LEADERBOARD_RISK);
+  const [loading, setLoading] = useState(false);
 
   // Handle outside click to close dropdown
   useEffect(() => {
@@ -122,6 +102,17 @@ export default function Analytics() {
     };
   }, [isDropdownOpen]);
 
+  // Fetch subjects on mount
+  useEffect(() => {
+    fetchMySubjects()
+      .then(data => {
+        // Map _id to id to match expectation if needed, or just use _id
+        const mapped = data.map(s => ({ ...s, id: s._id }));
+        setSubjects(mapped);
+      })
+      .catch(console.error);
+  }, []);
+
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
     setIsDropdownOpen(false);
@@ -130,10 +121,55 @@ export default function Analytics() {
   
   // Logic for dynamic stats based on selection
   const isGlobal = selectedSubject === 'all';
-  const stats = isGlobal ? GLOBAL_STATS : (SUBJECT_STATS_MAP[selectedSubject] || GLOBAL_STATS);
 
-  const bestPerforming = isGlobal ? GLOBAL_LEADERBOARD_BEST : STUDENT_LEADERBOARD_BEST;
-  const needingSupport = isGlobal ? GLOBAL_LEADERBOARD_RISK : STUDENT_LEADERBOARD_RISK;
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAnalytics = async () => {
+      if (isGlobal) {
+        // Avoid synchronous state updates in effect
+        await Promise.resolve();
+        if (isMounted) {
+            setStats(GLOBAL_STATS);
+            setBestPerforming(GLOBAL_LEADERBOARD_BEST);
+            setNeedingSupport(GLOBAL_LEADERBOARD_RISK);
+        }
+      } else {
+        setLoading(true);
+        try {
+          const data = await fetchSubjectAnalytics(selectedSubject);
+            if (isMounted) {
+              setStats({
+                attendance: data.attendance || 0,
+                avgLate: data.avgLate || 0,
+                riskCount: data.riskCount || 0,
+                lateTime: data.lateTime || "N/A"
+              });
+              setBestPerforming(data.bestPerforming || []);
+              setNeedingSupport(data.needsSupport || []);
+            }
+        } catch (err) {
+            if (isMounted) {
+                 console.error("Failed to fetch analytics:", err);
+            }
+        } finally {
+            if(isMounted) setLoading(false);
+        }
+      }
+    };
+
+    loadAnalytics();
+
+    return () => { isMounted = false; };
+  }, [selectedSubject, isGlobal]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
@@ -152,7 +188,7 @@ export default function Analytics() {
               className="px-4 py-2 bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-secondary)] font-medium shadow-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
             >
               <option value="all">All Subjects</option>
-              {MOCK_SUBJECTS.map((subject) => (
+              {subjects.map((subject) => (
                 <option key={subject.id} value={subject.id}>
                   {subject.name} ({subject.code})
                 </option>

@@ -6,7 +6,7 @@ python-multipart
 python-dotenv
 httpx
 
-mediapipe==0.10.21
+mediapipe==0.10.32
 opencv-python-headless
 numpy==1.26.4
 pillow==11.0.0

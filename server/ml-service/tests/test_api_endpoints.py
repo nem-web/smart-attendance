@@ -92,14 +92,14 @@ def test_encode_face_success():
     with patch.object(fr_module, "detect_faces") as mock_detect:
         # Mock must return list of (x,y,w,h) tuples
         mock_detect.return_value = [(10, 10, 50, 50)]
-        
+
         response = client.post("/api/ml/encode-face", json={"image_base64": b64_img})
         assert response.status_code == 200
         data = response.json()
-        
+
         if not data["success"]:
             print(f"DEBUG FAIL: {data}")
-            
+
         assert data["success"] is True
         assert "embedding" in data
         assert len(data["embedding"]) > 0
@@ -109,7 +109,7 @@ def test_detect_faces_success():
     b64_img = create_dummy_image_b64()
     with patch.object(fr_module, "detect_faces") as mock_detect:
         mock_detect.return_value = [(10, 10, 50, 50)]
-        
+
         response = client.post("/api/ml/detect-faces", json={"image_base64": b64_img})
         assert response.status_code == 200
         data = response.json()
@@ -120,4 +120,3 @@ def test_detect_faces_success():
         assert loc["left"] == 10
         assert loc["right"] == 60
         assert loc["bottom"] == 60
-

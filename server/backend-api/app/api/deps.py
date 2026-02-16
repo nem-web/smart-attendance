@@ -48,7 +48,7 @@ async def get_current_teacher(
 
     user = await db.users.find_one({"_id": oid})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=401, detail="User not found")
 
     teacher = await db.teachers.find_one(
         {
