@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from bson import ObjectId
 from bson.errors import InvalidId
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
@@ -185,7 +185,10 @@ async def export_attendance_pdf(
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     current_teacher: dict = Depends(get_current_teacher),
 ):
-    """Export attendance report as a professional PDF document."""
+    """Export attendance report as a professional PDF document.
+    
+    Generates aggregated statistics for verified students.
+    """
     try:
         # --- Validate subject & teacher access ---
         subject, teacher_id = await _get_subject_and_validate(
@@ -199,18 +202,26 @@ async def export_attendance_pdf(
         )
         school_name = "Smart Attendance System"
 
-        # --- Query attendance + students ---
-        attendance_records, students, was_truncated = (
-            await _get_attendance_and_students(subject_id, start_date, end_date)
-        )
+        # --- Get students with their attendance data from subject ---
+        subject_students = subject.get("students", [])
+        
+        # Get student user IDs
+        student_user_ids = [s["student_id"] for s in subject_students]
+        
+        # Fetch student profiles and users
+        students_cursor = db.students.find({"userId": {"$in": student_user_ids}})
+        users_cursor = db.users.find({"_id": {"$in": student_user_ids}})
+        
+        students_map = {str(s["userId"]): s async for s in students_cursor}
+        users_map = {str(u["_id"]): u async for u in users_cursor}
 
         # --- Create PDF buffer ---
         buffer = io.BytesIO()
 
-        # Landscape A4 for wider tables
+        # Portrait A4 is sufficient for aggregated data
         doc = SimpleDocTemplate(
             buffer,
-            pagesize=landscape(A4),
+            pagesize=A4,
             rightMargin=30,
             leftMargin=30,
             topMargin=50,
@@ -268,22 +279,13 @@ async def export_attendance_pdf(
             ],
             [
                 Paragraph(
-                    f"<b>Total Records:</b> {len(attendance_records)}",
+                    f"<b>Total Students:</b> "
+                    f"{len([s for s in subject_students if s.get('verified', False)])}",
                     header_style,
                 ),
                 Paragraph(f"<b>Subject Code:</b> {safe_code}", header_style),
             ],
         ]
-
-        if was_truncated:
-            metadata_data.append([
-                Paragraph(
-                    f"<b><font color='red'>Note:</font></b> "
-                    f"Results truncated to {MAX_RECORDS:,} records.",
-                    header_style,
-                ),
-                Paragraph("", header_style),
-            ])
 
         metadata_table = Table(metadata_data, colWidths=[doc.width / 2.0] * 2)
         metadata_table.setStyle(TableStyle([
@@ -294,55 +296,69 @@ async def export_attendance_pdf(
         elements.append(metadata_table)
         elements.append(Spacer(1, 20))
 
-        # --- Attendance Data Table ---
-        table_data = [["Date", "Student Name", "Roll Number", "Status", "Time"]]
+        # --- Attendance Statistics Table ---
+        table_data = [[
+            "Student Name", "Roll No", "Total Classes",
+            "Attended", "Percentage", "Status"
+        ]]
 
-        for record in attendance_records:
-            student_id_str = str(record.get("student_id", ""))
-            student = students.get(student_id_str, {})
+        # Default threshold for status calculation
+        threshold = 75
 
-            date_val = record.get("date", "N/A")
-            date_str = (
-                date_val.strftime("%Y-%m-%d")
-                if isinstance(date_val, datetime)
-                else str(date_val)
-            )
-            name = html.escape(student.get("name", "Unknown"))
-            roll = html.escape(
-                str(student.get("roll", student.get("roll_number", "N/A")))
-            )
-            status = record.get("status", "unknown").capitalize()
-            time_str = record.get("time", "N/A")
-
-            # Color-coded status
-            status_colors = {
-                "Present": "green",
-                "Absent": "red",
-                "Late": "orange",
-                "Excused": "blue",
-            }
-            status_color = status_colors.get(status, "black")
+        for s in subject_students:
+            # Only include verified students
+            if not s.get("verified", False):
+                continue
+                
+            student_id_str = str(s["student_id"])
+            student_profile = students_map.get(student_id_str, {})
+            user = users_map.get(student_id_str, {})
+            
+            # Get attendance counts
+            attendance = s.get("attendance", {})
+            present = attendance.get("present", 0)
+            absent = attendance.get("absent", 0)
+            total = present + absent
+            
+            # Calculate percentage
+            percentage = 0 if total == 0 else round((present / total) * 100, 1)
+            
+            # Determine status and color
+            if percentage >= threshold:
+                status = "Good"
+                status_color = "green"
+            elif percentage >= threshold - 10:
+                status = "Warning"
+                status_color = "orange"
+            else:
+                status = "At Risk"
+                status_color = "red"
+            
+            # Get student info
+            name = html.escape(user.get("name", "Unknown"))
+            roll_no = html.escape(str(student_profile.get("roll_number", "N/A")))
 
             table_data.append([
-                date_str,
                 name,
-                roll,
+                roll_no,
+                str(total),
+                str(present),
+                f"{percentage}%",
                 Paragraph(
-                    f"<font color='{status_color}'>"
-                    f"<b>{html.escape(status)}</b></font>",
+                    f"<font color='{status_color}'><b>{html.escape(status)}</b></font>",
                     styles['Normal'],
                 ),
-                time_str,
             ])
 
         if len(table_data) > 1:
             # Calculate column widths proportionally
             col_widths = [
-                doc.width * 0.15,  # Date
                 doc.width * 0.30,  # Name
                 doc.width * 0.15,  # Roll
-                doc.width * 0.20,  # Status
-                doc.width * 0.20,  # Time
+                doc.width * 0.15,  # Total
+                doc.width * 0.15,  # Attended
+                doc.width * 0.12,  # Percentage
+                doc.width * 0.13,  # Status
             ]
 
             attendance_table = Table(
@@ -376,7 +392,7 @@ async def export_attendance_pdf(
                  [colors.white, colors.HexColor('#f9fafb')]),
 
                 # Column alignments
-                ('ALIGN', (1, 1), (1, -1), 'LEFT'),  # Name left-aligned
+                ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Name left-aligned
             ]))
 
             elements.append(attendance_table)
@@ -391,7 +407,7 @@ async def export_attendance_pdf(
             )
             elements.append(
                 Paragraph(
-                    "No attendance records found for the selected criteria.",
+                    "No verified students found for this subject.",
                     no_data_style,
                 )
             )
@@ -435,7 +451,7 @@ async def export_attendance_csv(
 ):
     """Export attendance report as a CSV file.
     
-    Generates a detailed log of attendance events corresponding to the date filters.
+    Generates aggregated attendance statistics per student.
     """
     try:
         # --- Validate subject & teacher access ---
@@ -443,39 +459,69 @@ async def export_attendance_csv(
             subject_id, current_teacher
         )
 
-        # --- Query attendance + students ---
-        attendance_records, students, was_truncated = (
-            await _get_attendance_and_students(subject_id, start_date, end_date)
-        )
+        # --- Get students with their attendance data from subject ---
+        subject_students = subject.get("students", [])
+        
+        # Get student user IDs
+        student_user_ids = [s["student_id"] for s in subject_students]
+        
+        # Fetch student profiles and users
+        students_cursor = db.students.find({"userId": {"$in": student_user_ids}})
+        users_cursor = db.users.find({"_id": {"$in": student_user_ids}})
+        
+        students_map = {str(s["userId"]): s async for s in students_cursor}
+        users_map = {str(u["_id"]): u async for u in users_cursor}
 
         # --- Build CSV in memory ---
         string_buffer = io.StringIO()
         writer = csv.writer(string_buffer)
 
-        # Header row
-        writer.writerow(["Date", "Student Name", "Roll Number", "Status", "Time"])
+        # Header row matching what the frontend displays
+        writer.writerow([
+            "Student Name", "Roll No", "Total Classes",
+            "Attended", "Percentage", "Status"
+        ])
 
-        for record in attendance_records:
-            student_id_str = str(record.get("student_id", ""))
-            student = students.get(student_id_str, {})
+        # Default threshold for status calculation
+        threshold = 75
 
-            date_val = record.get("date", "N/A")
-            date_str = (
-                date_val.strftime("%Y-%m-%d")
-                if isinstance(date_val, datetime)
-                else str(date_val)
-            )
-
+        for s in subject_students:
+            # Only include verified students
+            if not s.get("verified", False):
+                continue
+                
+            student_id_str = str(s["student_id"])
+            student_profile = students_map.get(student_id_str, {})
+            user = users_map.get(student_id_str, {})
+            
+            # Get attendance counts
+            attendance = s.get("attendance", {})
+            present = attendance.get("present", 0)
+            absent = attendance.get("absent", 0)
+            total = present + absent
+            
+            # Calculate percentage
+            percentage = 0 if total == 0 else round((present / total) * 100, 1)
+            
+            # Determine status
+            if percentage >= threshold:
+                status = "Good"
+            elif percentage >= threshold - 10:
+                status = "Warning"
+            else:
+                status = "At Risk"
+            
+            # Get student info
+            name = user.get("name", "Unknown")
+            roll_no = student_profile.get("roll_number", "N/A")
+            
             writer.writerow([
-                _sanitize_csv_value(date_str),
-                _sanitize_csv_value(student.get("name", "Unknown")),
-                _sanitize_csv_value(
-                    str(student.get("roll", student.get("roll_number", "N/A")))
-                ),
-                _sanitize_csv_value(
-                    record.get("status", "unknown").capitalize()
-                ),
-                _sanitize_csv_value(str(record.get("time", "N/A"))),
+                _sanitize_csv_value(name),
+                _sanitize_csv_value(str(roll_no)),
+                _sanitize_csv_value(str(total)),
+                _sanitize_csv_value(str(present)),
+                _sanitize_csv_value(f"{percentage}%"),
+                _sanitize_csv_value(status),
             ])
 
         # Convert to bytes for streaming
