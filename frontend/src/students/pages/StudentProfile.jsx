@@ -51,14 +51,14 @@ export default function StudentProfile() {
   const uploadMutation = useMutation({
     mutationFn: uploadFaceImage,
     onSuccess: () => {
-      queryClient.invalidateQueries(["myStudentProfile"]);
+      queryClient.invalidateQueries({ queryKey: ["myStudentProfile"] });
     }
   });
 
   const addSubjectMutation = useMutation({
     mutationFn: addSubjectToStudent,
     onSuccess: () => {
-      queryClient.invalidateQueries(["myStudentProfile"]);
+      queryClient.invalidateQueries({ queryKey: ["myStudentProfile"] });
       setOpen(false);
     }
   });
@@ -66,7 +66,7 @@ export default function StudentProfile() {
   const deleteMutation = useMutation({
     mutationFn: removeSubjectFromStudent,
     onSuccess: () => {
-      queryClient.invalidateQueries(["myStudentProfile"]);
+      queryClient.invalidateQueries({ queryKey: ["myStudentProfile"] });
       setSelectedSub(null);
     }
   });
