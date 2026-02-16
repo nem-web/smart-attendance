@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Bell, 
@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import StudentNavigation from "../components/StudentNavigation"
-import { getTodaySchedule } from "../../api/schedule";
 
 export default function StudentDashboard() {
   const { t, i18n } = useTranslation();
@@ -24,29 +23,37 @@ export default function StudentDashboard() {
     i18n.changeLanguage(lng);
   };
 
-  const [schedule, setSchedule] = useState([]);
-
-  useEffect(() => {
-    getTodaySchedule()
-      .then((data) => {
-        if (data && data.classes) {
-          const mapped = data.classes.map((cls, index) => ({
-            id: index,
-            subject: cls.subject || "Break / Unknown",
-            time: `${cls.start_time} - ${cls.end_time}`,
-            status: cls.attendance_status || "Upcoming",
-            color:
-              cls.attendance_status === "Present"
-                ? "green"
-                : cls.attendance_status === "Absent"
-                ? "red"
-                : "gray",
-          }));
-          setSchedule(mapped);
-        }
-      })
-      .catch((err) => console.error("Failed to load schedule", err));
-  }, []);
+  // Mock Data for Today's Schedule
+  const schedule = [
+    {
+      id: 1,
+      subject: "Mathematics",
+      time: "09:00 - 09:50 AM",
+      status: "Present",
+      color: "green"
+    },
+    {
+      id: 2,
+      subject: "Physics",
+      time: "10:00 - 10:50 AM",
+      status: "Absent",
+      color: "red"
+    },
+    {
+      id: 3,
+      subject: "English Literature",
+      time: "11:10 - 12:00 PM",
+      status: "Upcoming",
+      color: "gray"
+    },
+    {
+      id: 4,
+      subject: "Computer Science",
+      time: "01:00 - 01:50 PM",
+      status: "Upcoming",
+      color: "gray"
+    },
+  ];
 
   const currentDate = new Date().toLocaleDateString(i18n.language, {
     weekday: "long",

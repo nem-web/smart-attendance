@@ -1,23 +1,19 @@
 # backend/app/api/routes/schedule.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
 import os
 import pytz
-from bson import ObjectId
 
-from app.api.deps import get_current_user
-from app.db.mongo import db
-from app.schemas.schedule import ScheduleEntry
+from app.api.deps import get_current_teacher
+
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 
 # Response Models
 class ClassPeriod(BaseModel):
-    id: Optional[str] = None
-    day: Optional[str] = None
     subject: Optional[str] = None
     grade: Optional[str] = None
     room: Optional[str] = None
@@ -32,87 +28,26 @@ class TodayScheduleResponse(BaseModel):
     current_day: str
 
 
-class CreateScheduleRequest(ScheduleEntry):
-    pass
-
-
-@router.get("/", response_model=List[ClassPeriod])
-async def get_full_schedule(current_user: dict = Depends(get_current_user)):
-    """
-    Get full schedule for the authenticated user.
-    """
-    user_id = current_user["_id"]
-    role = current_user.get("role")
-    
-    query = {}
-
-    if role == "teacher":
-        teacher = await db.teachers.find_one({"user_id": user_id})
-        if not teacher:
-            raise HTTPException(status_code=404, detail="Teacher profile not found")
-        query["teacher_id"] = teacher["_id"]
-
-    elif role == "student":
-        student = await db.students.find_one({"user_id": user_id})
-        if not student:
-            raise HTTPException(status_code=404, detail="Student profile not found")
-
-        branch = student.get("branch")
-        semester = student.get("semester")
-
-        # Require both branch and semester for student schedule queries to avoid
-        # returning schedules for all semesters within a branch.
-        if not branch or not semester:
-            return []
-
-        query["branch"] = branch
-        query["semester"] = semester
-    else:
-        raise HTTPException(status_code=403, detail="Role not authorized")
-
-    schedules = await db.schedules.find(query).to_list(length=1000)
-
-    classes = []
-    for s in schedules:
-        subject_name = "Unknown Subject"
-        if s.get("subject_id"):
-            subject = await db.subjects.find_one({"_id": s["subject_id"]})
-            if subject:
-                subject_name = subject.get("name", "Unknown")
-
-        classes.append(
-            ClassPeriod(
-                id=str(s.get("_id")),
-                day=s.get("day", ""),
-                subject=subject_name,
-                grade=str(s.get("semester")) if s.get("semester") else None,
-                room=s.get("room_number"),
-                start_time=s.get("start_time"),
-                end_time=s.get("end_time"),
-                slot=s.get("slot", 0),
-            )
-        )
-    
-    return classes
-
-
 @router.get("/today", response_model=TodayScheduleResponse)
-async def get_today_schedule(current_user: dict = Depends(get_current_user)):
+async def get_today_schedule(current: dict = Depends(get_current_teacher)):
     """
-    Get today's schedule for the authenticated user (Student or Teacher).
-    Fetches from the dedicated 'schedules' collection.
+    Get today's schedule for the authenticated teacher.
+    Returns all classes scheduled for the current day of the week.
     """
-    user_id = current_user["_id"]
-    role = current_user.get("role")
+    # Reuse teacher document from dependency to avoid redundant DB query
+    teacher = current.get("teacher")
 
-    # Timezone setup
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher profile not found")
+
+    # Get current day of week with timezone awareness
+    # Use school timezone from env or default to Asia/Kolkata (IST)
     timezone_str = os.getenv("SCHOOL_TIMEZONE", "Asia/Kolkata")
     try:
         school_tz = pytz.timezone(timezone_str)
     except pytz.UnknownTimeZoneError:
         school_tz = pytz.timezone("Asia/Kolkata")
 
-    now_in_school_tz = datetime.now(school_tz)
     days_of_week = [
         "Monday",
         "Tuesday",
@@ -122,176 +57,61 @@ async def get_today_schedule(current_user: dict = Depends(get_current_user)):
         "Saturday",
         "Sunday",
     ]
+    now_in_school_tz = datetime.now(school_tz)
     current_day = days_of_week[now_in_school_tz.weekday()]
 
-    # Build Query
-    query = {"day": current_day}
+    # Extract schedule
+    schedule = teacher.get("schedule", {})
+    timetable = schedule.get("timetable", [])
 
-    if role == "teacher":
-        teacher = await db.teachers.find_one({"user_id": user_id})
-        if not teacher:
-            raise HTTPException(status_code=404, detail="Teacher profile not found")
-        query["teacher_id"] = teacher["_id"]
-
-    elif role == "student":
-        student = await db.students.find_one({"user_id": user_id})
-        # Fallback for older data where user_id might not be linked, 
-        # or if student id is passed
-        # But assuming user_id link exists
-        if not student:
-            raise HTTPException(status_code=404, detail="Student profile not found")
-
-        # Filter by branch and semester
-        # Both branch and semester are required to safely show a student's class schedule.
-        branch = student.get("branch")
-        semester = student.get("semester")
-
-        if not branch or not semester:
-            # If branch or semester is unknown, we cannot safely show class schedule for a student
-            return TodayScheduleResponse(classes=[], current_day=current_day)
-
-        query["branch"] = branch
-        query["semester"] = semester
-    else:
-        raise HTTPException(status_code=403, detail="Role not authorized")
-
-    # Execute Fetch
-    cursor = db.schedules.find(query)
-    schedules = await cursor.to_list(length=100)
-
+    # Find today's schedule
     today_classes = []
+    for day_schedule in timetable:
+        if day_schedule.get("day") == current_day:
+            periods = day_schedule.get("periods", [])
 
-    for s in schedules:
-        # Resolve Subject Name
-        subject_name = "Unknown Subject"
-        if s.get("subject_id"):
-            subject = await db.subjects.find_one({"_id": s["subject_id"]})
-            if subject:
-                subject_name = subject.get("name", "Unknown")
+            for period in periods:
+                metadata = period.get("metadata")
 
-        # Basic Validation of times
-        start_time = s.get("start_time")
-        end_time = s.get("end_time")
-        if not (start_time and end_time):
-            continue
+                # Only include periods with metadata (actual classes)
+                if metadata and metadata.get("tracked", True):
+                    # Validate that start and end times are present and non-empty
+                    start_time = period.get("start")
+                    end_time = period.get("end")
 
-        today_classes.append(
-            ClassPeriod(
-                id=str(s.get("_id")),
-                subject=subject_name,
-                grade=str(s.get("semester")) if s.get("semester") else None,
-                room=s.get("room_number"),
-                start_time=start_time,
-                end_time=end_time,
-                slot=s.get("slot", 0),
-                attendance_status=None,  # TODO: Implement attendance status check
-            )
-        )
+                    if not isinstance(start_time, str) or not start_time:
+                        continue  # Skip periods with missing start time
+                    if not isinstance(end_time, str) or not end_time:
+                        continue  # Skip periods with missing end time
 
-    # Sort by start time
-    try:
-        today_classes.sort(
-            key=lambda x: datetime.strptime(x.start_time, "%H:%M").time()
-        )
-    except ValueError:
-        pass # Keep original order if parsing fails
+                    # Validate time format (HH:MM)
+                    try:
+                        # Simple validation: split by ':' and check parts
+                        start_parts = start_time.split(":")
+                        end_parts = end_time.split(":")
+                        if len(start_parts) != 2 or len(end_parts) != 2:
+                            continue
+                        # Check if hours and minutes are valid numbers
+                        int(start_parts[0]), int(start_parts[1])
+                        int(end_parts[0]), int(end_parts[1])
+                    except (ValueError, AttributeError):
+                        continue  # Skip periods with invalid time format
+
+                    class_period = ClassPeriod(
+                        subject=metadata.get("subject_name"),
+                        grade=None,  # Can be extracted from subject_name if needed
+                        room=metadata.get("room"),
+                        start_time=start_time,
+                        end_time=end_time,
+                        slot=period.get("slot", 0),
+                        # TODO: Check if attendance exists for today
+                        attendance_status=None,
+                    )
+                    today_classes.append(class_period)
+
+            break  # Found today's schedule, no need to continue
+
+    # Sort by start time using proper time parsing to avoid lexicographical issues
+    today_classes.sort(key=lambda x: datetime.strptime(x.start_time, "%H:%M").time())
 
     return TodayScheduleResponse(classes=today_classes, current_day=current_day)
-
-
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_schedule_entry(
-    entry: CreateScheduleRequest, current_user: dict = Depends(get_current_user)
-):
-    if current_user.get("role") != "teacher":
-        raise HTTPException(
-            status_code=403, detail="Only teachers can manage schedule"
-        )
-
-    teacher = await db.teachers.find_one({"user_id": current_user["_id"]})
-    if not teacher:
-        raise HTTPException(status_code=404, detail="Teacher profile not found")
-
-    doc = entry.dict()
-
-    # Validate ObjectId
-    if not ObjectId.is_valid(entry.subject_id):
-        raise HTTPException(400, "Invalid Subject ID")
-
-    doc["subject_id"] = ObjectId(entry.subject_id)
-    doc["teacher_id"] = teacher["_id"]  # Enforce teacher ownership
-
-    result = await db.schedules.insert_one(doc)
-    return {"id": str(result.inserted_id), "msg": "Schedule created"}
-
-
-@router.delete("/{schedule_id}")
-async def delete_schedule_entry(
-    schedule_id: str, current_user: dict = Depends(get_current_user)
-):
-    if current_user.get("role") != "teacher":
-        raise HTTPException(
-            status_code=403, detail="Only teachers can manage schedule"
-        )
-
-    if not ObjectId.is_valid(schedule_id):
-        raise HTTPException(400, "Invalid ID")
-
-    teacher = await db.teachers.find_one({"user_id": current_user["_id"]})
-    if not teacher:
-        raise HTTPException(404, "Teacher info not found")
-
-    res = await db.schedules.delete_one(
-        {"_id": ObjectId(schedule_id), "teacher_id": teacher["_id"]}
-    )
-    
-    if res.deleted_count == 0:
-        raise HTTPException(404, "Schedule not found or permission denied")
-
-    return {"msg": "Deleted"}
-
-
-@router.put("/", status_code=status.HTTP_200_OK)
-async def replace_full_schedule(
-    entries: List[CreateScheduleRequest], current_user: dict = Depends(get_current_user)
-):
-    """
-    Replace the entire schedule for the teacher.
-    Deletes existing entries and inserts new ones.
-    """
-    if current_user.get("role") != "teacher":
-        raise HTTPException(
-            status_code=403, detail="Only teachers can manage schedule"
-        )
-
-    teacher = await db.teachers.find_one({"user_id": current_user["_id"]})
-    if not teacher:
-        raise HTTPException(status_code=404, detail="Teacher profile not found")
-
-    # 1. Delete all existing
-    await db.schedules.delete_many({"teacher_id": teacher["_id"]})
-
-    # 2. Insert new
-    if not entries:
-        return {"msg": "Schedule cleared"}
-
-    new_docs = []
-    for entry in entries:
-        doc = entry.dict()
-        if entry.subject_id and ObjectId.is_valid(entry.subject_id):
-            subject_oid = ObjectId(entry.subject_id)
-            # Ensure the referenced subject actually exists to avoid orphaned schedule entries
-            subject = await db.subjects.find_one({"_id": subject_oid})
-            if not subject:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Subject with id {entry.subject_id} not found",
-                )
-            doc["subject_id"] = subject_oid
-        doc["teacher_id"] = teacher["_id"]
-        new_docs.append(doc)
-
-    if new_docs:
-        await db.schedules.insert_many(new_docs)
-
-    return {"msg": f"Schedule updated with {len(new_docs)} entries"}

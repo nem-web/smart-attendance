@@ -48,16 +48,3 @@ class Schedule(BaseModel):
     holidays: Optional[List[Holiday]] = []
     exams: Optional[List[ExamOverride]] = []
     meta: Optional[Dict[str, str]] = None
-
-
-# New Dedicated Schema for Schedule Collection
-class ScheduleEntry(BaseModel):
-    day: str
-    slot: int
-    start_time: str
-    end_time: str
-    subject_id: str
-    teacher_id: str
-    room_number: Optional[str] = None
-    semester: Optional[int] = None
-    branch: Optional[str] = None

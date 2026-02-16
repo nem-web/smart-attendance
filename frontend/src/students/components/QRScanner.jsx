@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 import { XCircle, Camera, AlertCircle } from "lucide-react";
 
@@ -30,14 +29,12 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }) {
     scanner.render(
       (decodedText, decodedResult) => {
         // Success
-        if (onScanSuccess) {
-            scanner.clear().then(() => {
-                onScanSuccess(decodedText, decodedResult);
-            }).catch(err => {
-                console.error("Failed to clear scanner", err);
-                onScanSuccess(decodedText, decodedResult);
-            });
-        }
+        scanner.clear().then(() => {
+          onScanSuccess(decodedText, decodedResult);
+        }).catch(err => {
+          console.error("Failed to clear scanner", err);
+          onScanSuccess(decodedText, decodedResult);
+        });
       },
       (error) => {
         // Error (occurs constantly while scanning, so we only bubble up if explicitly needed)
@@ -48,7 +45,9 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }) {
     scannerRef.current = scanner;
 
     return () => {
-      // Cleanup logic if needed (Html5QrcodeScanner handles much of this, but clear is good)
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(err => console.error("Failed to clear scanner on unmount", err));
+      }
     };
   }, [onScanSuccess, onScanError]);
 
@@ -64,7 +63,7 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }) {
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Scan QR Code</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Point at teacher&apos;s screen</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Point at teacher's screen</p>
             </div>
           </div>
           <button 
@@ -99,9 +98,3 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }) {
     </div>
   );
 }
-
-QRScanner.propTypes = {
-  onScanSuccess: PropTypes.func.isRequired,
-  onScanError: PropTypes.func,
-  onClose: PropTypes.func.isRequired,
-};

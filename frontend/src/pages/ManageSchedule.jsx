@@ -17,7 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getSettings, getSchedule, replaceSchedule } from "../api/schedule";
+import { getSettings, updateSettings } from "../api/schedule";
 import Spinner from "../components/Spinner";
 
 export default function ManageSchedule() {
@@ -27,7 +27,7 @@ export default function ManageSchedule() {
   const [activeDay, setActiveDay] = useState("Mon");
   const [isLoading, setIsLoading] = useState(true);
   const [scheduleData, setScheduleData] = useState([]);
-  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [scheduleEnvelope, setScheduleEnvelope] = useState({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentClass, setCurrentClass] = useState(null);
   const [saveTemplateNotification, setSaveTemplateNotification] =
@@ -98,29 +98,16 @@ export default function ManageSchedule() {
         setIsLoading(true);
 
         const data = await getSettings();
-        if (data.subjects) {
-            setAvailableSubjects(data.subjects);
-        }
 
-        const classes = await getSchedule();
-        if (classes && classes.length > 0) {
-            const mapped = classes.map(c => ({
-                id: c.id, 
-                title: c.subject || "Unknown",
-                startTime: c.start_time,
-                endTime: c.end_time,
-                room: c.room,
-                teacher: "Me", 
-                day: c.day,
-                status: "active"
-            }));
-            setScheduleData(mapped);
-        } else {
-            console.log("No schedule found in new DB, checking legacy...");
-            // Optional: Migration logic check or just empty
-            setScheduleData([]);
-        }
-
+        const scheduleData = data.schedule || {
+          timetable: [],
+          recurring: null,
+          holidays: [],
+          exams: [],
+          meta: {},
+        };
+        loadSchedule(scheduleData);
+        setScheduleEnvelope(scheduleData);
       } catch (err) {
         console.error(err);
         alert(t('manage_schedule.error_loading', "Error loading schedule"));
@@ -137,29 +124,71 @@ export default function ManageSchedule() {
       setTemplates(JSON.parse(savedTemplates));
     }
   }, []);
+  const loadSchedule = (schedule) => {
+    const timetable = schedule?.timetable || [];
+    const flatData = timetable.flatMap(({ day, periods }) =>
+      periods.map((period) => ({
+        id: `${day}-${period.slot}`,
+        title: period.metadata?.subject_name || "Untitled",
+        startTime: period.start || "00:00",
+        endTime: period.end || "00:00",
+        room: period.metadata?.room || "TBD",
+        teacher: period.metadata?.teacher || "Self",
+        day: day.slice(0, 3),
+        status: "Active",
+      })),
+    );
+    setScheduleData(flatData);
+  };
+  const preparePayload = () => {
+    const fullDayMap = {
+      Mon: "Monday",
+      Tue: "Tuesday",
+      Wed: "Wednesday",
+      Thu: "Thursday",
+      Fri: "Friday",
+      Sat: "Saturday",
+    };
+    const grouped = {};
+    scheduleData.forEach((cls) => {
+      const fullDay = fullDayMap[cls.day] || cls.day || "Unknown";
+      if (!grouped[fullDay]) grouped[fullDay] = [];
+      grouped[fullDay].push({
+        slot: grouped[fullDay].length + 1,
+        start: cls.startTime,
+        end: cls.endTime,
+        metadata: {
+          subject_name: cls.title,
+          room: cls.room,
+          teacher: cls.teacher,
+          tracked: true,
+        },
+      });
+    });
+    return {
+      timetable: Object.keys(grouped).map((day) => ({
+        day,
+        periods: grouped[day],
+      })),
+      recurring: scheduleEnvelope.recurring ?? null,
+      holidays: scheduleEnvelope.holidays ?? [],
+      exams: scheduleEnvelope.exams ?? [],
+      meta: scheduleEnvelope.meta ?? {},
+    };
+  };
 
   const handleSave = async () => {
     try {
-      const entries = scheduleData.map((cls, index) => {
-        const found = availableSubjects.find(s => s.name === cls.title);
-        return {
-           day: cls.day,
-           slot: index + 1,
-           start_time: cls.startTime,
-           end_time: cls.endTime,
-           subject_id: found ? (found._id || found.id) : "000000000000000000000000", 
-           teacher_id: "me",
-           room_number: cls.room,
-           semester: null
-        };
-      });
+      const schedulePayload = preparePayload();
 
-      await replaceSchedule(entries);
+      await updateSettings({
+        schedule: schedulePayload,
+      });
 
       alert(t('manage_schedule.save_success', "Schedule saved successfully"));
     } catch (err) {
       console.error(err);
-      alert(err.message || "Save failed");
+      alert(err.message);
     }
   };
   const filteredClasses = scheduleData.filter((item) => item.day === activeDay);

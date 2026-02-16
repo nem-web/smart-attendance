@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
 
 export default function FaceOverlay({ faces, videoRef }) {
   const [videoDimensions, setVideoDimensions] = useState(null);
@@ -100,25 +99,3 @@ export default function FaceOverlay({ faces, videoRef }) {
     </div>
   );
 }
-
-FaceOverlay.propTypes = {
-  faces: PropTypes.arrayOf(
-    PropTypes.shape({
-      box: PropTypes.shape({
-        top: PropTypes.number,
-        right: PropTypes.number,
-        bottom: PropTypes.number,
-        left: PropTypes.number,
-      }),
-      status: PropTypes.string,
-      student: PropTypes.shape({
-        name: PropTypes.string,
-      }),
-      confidence: PropTypes.number,
-    })
-  ).isRequired,
-  videoRef: PropTypes.oneOfType([
-    PropTypes.func, 
-    PropTypes.shape({ current: PropTypes.any })
-  ]).isRequired,
-};

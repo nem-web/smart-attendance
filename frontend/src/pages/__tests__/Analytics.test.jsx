@@ -19,7 +19,6 @@ vi.mock('recharts', () => {
   const Original = vi.importActual('recharts');
   return {
     ...Original,
-    // eslint-disable-next-line react/prop-types
     ResponsiveContainer: ({ children }) => <div data-testid="chart-container">{children}</div>,
     AreaChart: () => <div data-testid="area-chart">AreaChart</div>,
     Area: () => <div />,

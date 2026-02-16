@@ -108,7 +108,7 @@ export default function MarkWithQR() {
                         <div className="space-y-3">
                             <h2 className="text-2xl font-black text-slate-900 leading-tight">Ready to check in?</h2>
                             <p className="text-slate-500 text-sm max-w-xs mx-auto">
-                                Scan the QR code displayed on your teacher&apos;s screen to mark your attendance instantly.
+                                Scan the QR code displayed on your teacher's screen to mark your attendance instantly.
                             </p>
                         </div>
 

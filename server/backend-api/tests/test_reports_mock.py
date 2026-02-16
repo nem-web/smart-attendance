@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from bson import ObjectId
 from app.api.routes.reports import export_attendance_csv
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 
 # Helper for async iteration
 class AsyncIterator:

@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useCurrentUser } from '../useCurrentUser';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,10 +21,6 @@ const createWrapper = () => {
     const Wrapper = ({ children }) => (
         <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
-
-    Wrapper.propTypes = {
-        children: PropTypes.node.isRequired,
-    };
     Wrapper.displayName = 'TestWrapper';
     return Wrapper;
 };
