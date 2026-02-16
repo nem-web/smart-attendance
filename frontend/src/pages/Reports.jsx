@@ -257,6 +257,7 @@ export default function Reports() {
 
             <DateRange
               onChange={(date) => setStartDate(date)}
+              initialDate={startDate}
             />
 
             {/* Classes Selector */}
