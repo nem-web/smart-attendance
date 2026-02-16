@@ -239,7 +239,15 @@ def test_reset_password_invalid_otp_400_generic(client, mock_deps):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid or expired OTP"
-    mock_db.users.update_one.assert_not_called()
+    # Should update fail count
+    mock_db.users.update_one.assert_called()
+    inc_calls = [
+        call
+        for call in mock_db.users.update_one.call_args_list
+        if "$inc" in call[0][1]
+        and call[0][1]["$inc"].get("otp_failed_attempts") == 1
+    ]
+    assert inc_calls
 
 
 def test_reset_password_success_200_and_clears_otp(client, mock_deps):

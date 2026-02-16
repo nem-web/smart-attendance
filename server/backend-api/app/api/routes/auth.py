@@ -395,11 +395,30 @@ async def reset_password(payload: ResetPasswordRequest) -> dict:
 
     stored_otp_hash = user.get("reset_otp_hash")
     expiry = _normalize_expiry(user.get("otp_expiry"))
+    failed_attempts = user.get("otp_failed_attempts", 0)
+
+    if failed_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+        await db.users.update_one({"_id": user["_id"]}, _clear_otp_fields())
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
     if expiry is None or expiry < datetime.now(UTC):
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$inc": {"otp_failed_attempts": 1}},
+        )
+        new_attempts = failed_attempts + 1
+        if new_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+            await db.users.update_one({"_id": user["_id"]}, _clear_otp_fields())
         raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
     if not stored_otp_hash or not verify_password(payload.otp, stored_otp_hash):
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$inc": {"otp_failed_attempts": 1}},
+        )
+        new_attempts = failed_attempts + 1
+        if new_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+            await db.users.update_one({"_id": user["_id"]}, _clear_otp_fields())
         raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
 
     new_hash = hash_password(payload.new_password)

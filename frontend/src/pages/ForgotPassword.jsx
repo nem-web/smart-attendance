@@ -12,6 +12,7 @@ import {
   Sparkles,
   Send,
 } from "lucide-react";
+import { forgotPassword, resetPassword } from "../api/auth";
 
 // Regex Patterns
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
@@ -76,23 +77,32 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
-    // Simulate API call to send OTP
-    await new Promise((resolve) => window.setTimeout(resolve, 1000));
-    setLoading(false);
-
-    setStep(2);
-    setResendCooldown(30);
-    setSuccess(t('forgot_password.alerts.code_sent', { email }));
+    try {
+      await forgotPassword(normalizedEmail);
+      setEmail(normalizedEmail); // IMPORTANT: lock normalized value
+      setStep(2);
+      setResendCooldown(30);
+      setSuccess(t('forgot_password.alerts.code_sent', { normalizedEmail }));
+    } catch (err) {
+      setError(err.response?.data?.detail || t('common.error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Step 2: Resend OTP (Only updates timer/message, stays on step 2)
   const handleResend = async () => {
     clearMessages();
-    setLoading(true); // Reuse loading state or create specific one
-    await new Promise((resolve) => window.setTimeout(resolve, 800));
-    setLoading(false);
-    setResendCooldown(30);
-    setSuccess(t('forgot_password.alerts.otp_sent'));
+    setLoading(true);
+    try {
+      await forgotPassword(normalizedEmail);
+      setResendCooldown(30);
+      setSuccess(t('forgot_password.alerts.otp_sent'));
+    } catch (err) {
+      setError(err.response?.data?.detail || t('common.error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Step 3: Final Reset
@@ -114,15 +124,18 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
-    // Simulate API call to reset password
-    await new Promise((resolve) => window.setTimeout(resolve, 1500));
-    setLoading(false);
-
-    setSuccess(t('forgot_password.alerts.success'));
-    setOtp("");
-    setNewPassword("");
-    setConfirmPassword("");
-    // Here you would typically redirect to login
+    try {
+      await resetPassword(normalizedEmail, otp, newPassword);
+      setSuccess(t('forgot_password.alerts.success'));
+      setOtp("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      // Specifically handle OTP errors here
+      setError(err.response?.data?.detail || t('common.error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Master Submit Handler (Handles Enter Key)
