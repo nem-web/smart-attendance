@@ -51,16 +51,28 @@ const SUBJECT_STATS_MAP = {
   '5': { attendance: 82, avgLate: 6, riskCount: 9, lateTime: '09:08 AM' }, // English
 };
 
-const CLASS_PERFORMANCE = [
+const GLOBAL_LEADERBOARD_BEST = [
   { name: 'Grade 9A', score: 91 },
   { name: 'Grade 10A', score: 88 },
   { name: 'Grade 8C', score: 86 },
 ];
 
-const CLASS_RISK = [
+const GLOBAL_LEADERBOARD_RISK = [
   { name: 'Grade 11C', score: 71 },
   { name: 'Grade 12B', score: 68 },
   { name: 'Grade 7D', score: 73 },
+];
+
+const STUDENT_LEADERBOARD_BEST = [
+  { name: 'Rahul Kumar', score: 98 },
+  { name: 'Anjali Singh', score: 96 },
+  { name: 'Vikram Patel', score: 95 },
+];
+
+const STUDENT_LEADERBOARD_RISK = [
+  { name: 'Rohan Gupta', score: 65 },
+  { name: 'Priya Sharma', score: 68 },
+  { name: 'Amit Verma', score: 70 },
 ];
 
 const CLASS_BREAKDOWN = [
@@ -119,6 +131,9 @@ export default function Analytics() {
   // Logic for dynamic stats based on selection
   const isGlobal = selectedSubject === 'all';
   const stats = isGlobal ? GLOBAL_STATS : (SUBJECT_STATS_MAP[selectedSubject] || GLOBAL_STATS);
+
+  const bestPerforming = isGlobal ? GLOBAL_LEADERBOARD_BEST : STUDENT_LEADERBOARD_BEST;
+  const needingSupport = isGlobal ? GLOBAL_LEADERBOARD_RISK : STUDENT_LEADERBOARD_RISK;
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
@@ -309,10 +324,10 @@ export default function Analytics() {
               </div>
             </div>
             {/* Best Performing List */}
-            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
+            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm" data-testid="best-performing-list">
               <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.best')}</h3>
               <div className="space-y-3">
-                {CLASS_PERFORMANCE.map((c, i) => (
+                {bestPerforming.map((c, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
@@ -324,10 +339,10 @@ export default function Analytics() {
               </div>
             </div>
              {/* Needs Support List */}
-             <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
+             <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm" data-testid="needing-support-list">
               <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.needs_support')}</h3>
               <div className="space-y-3">
-                {CLASS_RISK.map((c, i) => (
+                {needingSupport.map((c, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
