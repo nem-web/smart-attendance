@@ -63,7 +63,7 @@ async def db(db_client):
         patch("app.db.mongo.db", database),
         patch("app.db.mongo.client", db_client),
     ]
-    
+
     # Try patching other modules if they are already imported
     modules_to_patch = [
         "app.api.routes.analytics.db",
@@ -75,15 +75,15 @@ async def db(db_client):
         "app.services.qr_service.db",
         "app.services.students.db",
         "app.services.subject_service.db",
-        "app.db.subjects_repo.db"
+        "app.db.subjects_repo.db",
     ]
-    
+
     started_patchers = []
-    
+
     for p in patchers:
         p.start()
         started_patchers.append(p)
-        
+
     for target in modules_to_patch:
         try:
             # Check if module is loaded (simple heuristic using sys.modules)
@@ -130,7 +130,9 @@ def mock_ml_client():
     with patch("app.services.ml_client.ml_client") as mock:
         mock.close = AsyncMock()
         mock.detect_faces = AsyncMock(return_value={"success": True, "faces": []})
-        mock.get_embeddings = AsyncMock(return_value={"success": True, "embeddings": []})
+        mock.get_embeddings = AsyncMock(
+            return_value={"success": True, "embeddings": []}
+        )
         yield mock
 
 

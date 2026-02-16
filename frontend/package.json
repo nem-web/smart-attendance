@@ -27,6 +27,7 @@
     "react": "^19.2.0",
     "react-datepicker": "^9.0.0",
     "react-dom": "^19.2.0",
+    "react-hot-toast": "^2.6.0",
     "react-i18next": "^16.5.4",
     "react-router-dom": "^7.9.6",
     "react-webcam": "^7.2.0",

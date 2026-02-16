@@ -37,9 +37,9 @@ def _safe_filename(name: str) -> str:
     Strips non-alphanumeric characters (except underscores and hyphens),
     collapses duplicate underscores, and limits length.
     """
-    sanitized = re.sub(r'[^\w\-]', '_', name)
-    sanitized = re.sub(r'_+', '_', sanitized).strip('_')
-    return sanitized[:100] or 'subject'
+    sanitized = re.sub(r"[^\w\-]", "_", name)
+    sanitized = re.sub(r"_+", "_", sanitized).strip("_")
+    return sanitized[:100] or "subject"
 
 
 def _sanitize_csv_value(value: str) -> str:
@@ -48,7 +48,7 @@ def _sanitize_csv_value(value: str) -> str:
     Spreadsheet applications may interpret cells starting with =, +, -, or @
     as formulas. Prefixing with a single quote neutralises this.
     """
-    if isinstance(value, str) and value and value[0] in ('=', '+', '-', '@'):
+    if isinstance(value, str) and value and value[0] in ("=", "+", "-", "@"):
         return f"'{value}"
     return value
 
@@ -124,9 +124,7 @@ async def _get_attendance_and_students(
         query["date"] = date_filter
 
     attendance_records = await (
-        db.attendance.find(query)
-        .sort("date", -1)
-        .to_list(length=MAX_RECORDS)
+        db.attendance.find(query).sort("date", -1).to_list(length=MAX_RECORDS)
     )
 
     was_truncated = len(attendance_records) >= MAX_RECORDS
@@ -160,7 +158,7 @@ async def _get_attendance_and_students(
 def _add_page_footer(canvas, doc, school_name):
     """Draw page number, timestamp, and confidentiality note on every page."""
     canvas.saveState()
-    canvas.setFont('Helvetica', 9)
+    canvas.setFont("Helvetica", 9)
     canvas.setFillColor(colors.gray)
 
     # Page number on the right
@@ -171,7 +169,7 @@ def _add_page_footer(canvas, doc, school_name):
     canvas.drawString(30, 30, f"{school_name} - Confidential")
 
     # Generated timestamp in the center
-    canvas.setFont('Helvetica', 7)
+    canvas.setFont("Helvetica", 7)
     timestamp = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     canvas.drawCentredString(doc.pagesize[0] / 2, 30, timestamp)
 
@@ -200,9 +198,11 @@ async def export_attendance_pdf(
         school_name = "Smart Attendance System"
 
         # --- Query attendance + students ---
-        attendance_records, students, was_truncated = (
-            await _get_attendance_and_students(subject_id, start_date, end_date)
-        )
+        (
+            attendance_records,
+            students,
+            was_truncated,
+        ) = await _get_attendance_and_students(subject_id, start_date, end_date)
 
         # --- Create PDF buffer ---
         buffer = io.BytesIO()
@@ -223,22 +223,22 @@ async def export_attendance_pdf(
         styles = getSampleStyleSheet()
 
         title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
+            "CustomTitle",
+            parent=styles["Heading1"],
             fontSize=20,
-            textColor=colors.HexColor('#1e40af'),
+            textColor=colors.HexColor("#1e40af"),
             spaceAfter=20,
             alignment=TA_CENTER,
-            fontName='Helvetica-Bold',
+            fontName="Helvetica-Bold",
         )
 
         header_style = ParagraphStyle(
-            'HeaderStyle',
-            parent=styles['Normal'],
+            "HeaderStyle",
+            parent=styles["Normal"],
             fontSize=10,
-            textColor=colors.HexColor('#374151'),
+            textColor=colors.HexColor("#374151"),
             spaceAfter=6,
-            fontName='Helvetica',
+            fontName="Helvetica",
         )
 
         # --- Header Section ---
@@ -248,8 +248,8 @@ async def export_attendance_pdf(
         # Report metadata (2-column layout)
         date_range_str = f"{start_date or 'All Time'} to {end_date or 'Present'}"
         safe_teacher = html.escape(teacher_name)
-        safe_subject = html.escape(subject.get('name', 'Unknown'))
-        safe_code = html.escape(subject.get('code', 'N/A'))
+        safe_subject = html.escape(subject.get("name", "Unknown"))
+        safe_code = html.escape(subject.get("code", "N/A"))
 
         metadata_data = [
             [
@@ -276,21 +276,27 @@ async def export_attendance_pdf(
         ]
 
         if was_truncated:
-            metadata_data.append([
-                Paragraph(
-                    f"<b><font color='red'>Note:</font></b> "
-                    f"Results truncated to {MAX_RECORDS:,} records.",
-                    header_style,
-                ),
-                Paragraph("", header_style),
-            ])
+            metadata_data.append(
+                [
+                    Paragraph(
+                        f"<b><font color='red'>Note:</font></b> "
+                        f"Results truncated to {MAX_RECORDS:,} records.",
+                        header_style,
+                    ),
+                    Paragraph("", header_style),
+                ]
+            )
 
         metadata_table = Table(metadata_data, colWidths=[doc.width / 2.0] * 2)
-        metadata_table.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
+        metadata_table.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
         elements.append(metadata_table)
         elements.append(Spacer(1, 20))
 
@@ -323,17 +329,19 @@ async def export_attendance_pdf(
             }
             status_color = status_colors.get(status, "black")
 
-            table_data.append([
-                date_str,
-                name,
-                roll,
-                Paragraph(
-                    f"<font color='{status_color}'>"
-                    f"<b>{html.escape(status)}</b></font>",
-                    styles['Normal'],
-                ),
-                time_str,
-            ])
+            table_data.append(
+                [
+                    date_str,
+                    name,
+                    roll,
+                    Paragraph(
+                        f"<font color='{status_color}'>"
+                        f"<b>{html.escape(status)}</b></font>",
+                        styles["Normal"],
+                    ),
+                    time_str,
+                ]
+            )
 
         if len(table_data) > 1:
             # Calculate column widths proportionally
@@ -345,45 +353,47 @@ async def export_attendance_pdf(
                 doc.width * 0.20,  # Time
             ]
 
-            attendance_table = Table(
-                table_data, colWidths=col_widths, repeatRows=1
+            attendance_table = Table(table_data, colWidths=col_widths, repeatRows=1)
+            attendance_table.setStyle(
+                TableStyle(
+                    [
+                        # Header row
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e40af")),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, 0), 11),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                        ("TOPPADDING", (0, 0), (-1, 0), 10),
+                        # Body rows
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+                        ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                        ("ALIGN", (0, 1), (-1, -1), "CENTER"),
+                        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                        ("FONTSIZE", (0, 1), (-1, -1), 10),
+                        ("BOTTOMPADDING", (0, 1), (-1, -1), 8),
+                        ("TOPPADDING", (0, 1), (-1, -1), 6),
+                        # Grid
+                        ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#e5e7eb")),
+                        ("LINEBELOW", (0, 0), (-1, 0), 2, colors.HexColor("#1e40af")),
+                        # Alternating row backgrounds
+                        (
+                            "ROWBACKGROUNDS",
+                            (0, 1),
+                            (-1, -1),
+                            [colors.white, colors.HexColor("#f9fafb")],
+                        ),
+                        # Column alignments
+                        ("ALIGN", (1, 1), (1, -1), "LEFT"),  # Name left-aligned
+                    ]
+                )
             )
-            attendance_table.setStyle(TableStyle([
-                # Header row
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 11),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, 0), 10),
-
-                # Body rows
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 10),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-                ('TOPPADDING', (0, 1), (-1, -1), 6),
-
-                # Grid
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
-                ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#1e40af')),
-
-                # Alternating row backgrounds
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1),
-                 [colors.white, colors.HexColor('#f9fafb')]),
-
-                # Column alignments
-                ('ALIGN', (1, 1), (1, -1), 'LEFT'),  # Name left-aligned
-            ]))
 
             elements.append(attendance_table)
         else:
             no_data_style = ParagraphStyle(
-                'NoData',
-                parent=styles['Normal'],
+                "NoData",
+                parent=styles["Normal"],
                 fontSize=12,
                 alignment=TA_CENTER,
                 textColor=colors.gray,
@@ -405,10 +415,9 @@ async def export_attendance_pdf(
 
         buffer.seek(0)
 
-        safe_name = _safe_filename(subject.get('name', 'subject'))
+        safe_name = _safe_filename(subject.get("name", "subject"))
         filename = (
-            f"attendance_report_{safe_name}_"
-            f"{datetime.now().strftime('%Y%m%d')}.pdf"
+            f"attendance_report_{safe_name}_{datetime.now().strftime('%Y%m%d')}.pdf"
         )
 
         return StreamingResponse(
@@ -421,9 +430,7 @@ async def export_attendance_pdf(
         raise
     except Exception:
         logger.exception("Failed to generate PDF report")
-        raise HTTPException(
-            status_code=500, detail="Failed to generate PDF report"
-        )
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
 
 
 @router.get("/export/csv")
@@ -434,7 +441,7 @@ async def export_attendance_csv(
     current_teacher: dict = Depends(get_current_teacher),
 ):
     """Export attendance report as a CSV file.
-    
+
     Generates a detailed log of attendance events corresponding to the date filters.
     """
     try:
@@ -444,9 +451,11 @@ async def export_attendance_csv(
         )
 
         # --- Query attendance + students ---
-        attendance_records, students, was_truncated = (
-            await _get_attendance_and_students(subject_id, start_date, end_date)
-        )
+        (
+            attendance_records,
+            students,
+            was_truncated,
+        ) = await _get_attendance_and_students(subject_id, start_date, end_date)
 
         # --- Build CSV in memory ---
         string_buffer = io.StringIO()
@@ -466,26 +475,25 @@ async def export_attendance_csv(
                 else str(date_val)
             )
 
-            writer.writerow([
-                _sanitize_csv_value(date_str),
-                _sanitize_csv_value(student.get("name", "Unknown")),
-                _sanitize_csv_value(
-                    str(student.get("roll", student.get("roll_number", "N/A")))
-                ),
-                _sanitize_csv_value(
-                    record.get("status", "unknown").capitalize()
-                ),
-                _sanitize_csv_value(str(record.get("time", "N/A"))),
-            ])
+            writer.writerow(
+                [
+                    _sanitize_csv_value(date_str),
+                    _sanitize_csv_value(student.get("name", "Unknown")),
+                    _sanitize_csv_value(
+                        str(student.get("roll", student.get("roll_number", "N/A")))
+                    ),
+                    _sanitize_csv_value(record.get("status", "unknown").capitalize()),
+                    _sanitize_csv_value(str(record.get("time", "N/A"))),
+                ]
+            )
 
         # Convert to bytes for streaming
         csv_bytes = io.BytesIO(string_buffer.getvalue().encode("utf-8"))
         csv_bytes.seek(0)
 
-        safe_name = _safe_filename(subject.get('name', 'subject'))
+        safe_name = _safe_filename(subject.get("name", "subject"))
         filename = (
-            f"attendance_report_{safe_name}_"
-            f"{datetime.now().strftime('%Y%m%d')}.csv"
+            f"attendance_report_{safe_name}_{datetime.now().strftime('%Y%m%d')}.csv"
         )
 
         return StreamingResponse(
@@ -498,6 +506,4 @@ async def export_attendance_csv(
         raise
     except Exception:
         logger.exception("Failed to generate CSV report")
-        raise HTTPException(
-            status_code=500, detail="Failed to generate CSV report"
-        )
+        raise HTTPException(status_code=500, detail="Failed to generate CSV report")

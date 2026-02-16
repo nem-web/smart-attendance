@@ -10,7 +10,7 @@ import {
   ArrowDown,
   Loader2
 } from "lucide-react";
-import { fetchMySubjects, fetchSubjectStudents, exportAttendanceCSV } from "../api/teacher";
+import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
 import DateRange from '../components/DateRange.jsx';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useTranslation } from "react-i18next";
@@ -210,46 +210,6 @@ export default function Reports() {
   const handleExportCSV = () => handleExport("csv");
 
 
-  // Handle CSV Export
-  const handleExportCSV = async () => {
-    if (!selectedSubject) {
-      alert(t('reports.table.select_subject_prompt')); // Or use a toast if available
-      return;
-    }
-
-    try {
-      // Calculate end date (default to today if not set, logic handled in backend if null but good to be explicit)
-      // For now, passing startDate and let backend use it for filename.
-      // Ideally we'd have a date range picker with start/end, but currently only startDate is in state.
-      // Assuming today is end date for the report context.
-      const endDate = new Date();
-
-      const blob = await exportAttendanceCSV(selectedSubject, startDate, endDate);
-
-      // Create a link to download the blob
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-
-      // We can try to extract filename from content-disposition header if we had access to headers here,
-      // but simplistic approach:
-      const dateStr = startDate.toISOString().split('T')[0];
-      link.setAttribute('download', `attendance_report_${dateStr}.csv`);
-
-      document.body.appendChild(link);
-      link.click();
-
-      // Cleanup
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-    } catch (error) {
-      console.error("Failed to export CSV", error);
-      alert("Failed to export CSV. Please try again.");
-    }
-  };
-
-
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -282,28 +242,6 @@ export default function Reports() {
 
       {/* --- FILTERS CARD --- */}
       <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('reports.title')}</h2>
-            <p className="text-[var(--text-body)]">{t('reports.subtitle')}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExportCSV}
-              className="px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-card)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer"
-            >
-              <FileText size={18} />
-              {t('reports.export_csv')}
-            </button>
-            <button className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:opacity-90 font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
-              <Download size={18} />
-              {t('reports.export_pdf')}
-            </button>
-          </div>
-        </div>
-
-        {/* --- FILTERS CARD --- */}
-        <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
           <div className="flex justify-between items-start mb-6">
             <div>
               <h3 className="font-bold text-[var(--text-main)]">{t('reports.filters.title')}</h3>
