@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { 
-  Download, 
-  FileText, 
-  ChevronDown, 
-  RotateCcw, 
+import {
+  Download,
+  FileText,
+  ChevronDown,
+  RotateCcw,
   Filter,
   ArrowUpDown,
   ArrowUp,
   ArrowDown
 } from "lucide-react";
-import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
+import { fetchMySubjects, fetchSubjectStudents, exportAttendanceCSV } from "../api/teacher";
 import DateRange from '../components/DateRange.jsx';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useTranslation } from "react-i18next";
@@ -31,7 +31,7 @@ export default function Reports() {
 
   // Fetch Students when Subject/Date changes
   useEffect(() => {
-    if(!selectedSubject) return;
+    if (!selectedSubject) return;
     fetchSubjectStudents(selectedSubject).then(setStudents);
   }, [selectedSubject, startDate]);
 
@@ -61,14 +61,14 @@ export default function Reports() {
     let color = "gray";
 
     if (percentage >= threshold) {
-        statusKey = "good";
-        color = "green";
+      statusKey = "good";
+      color = "green";
     } else if (percentage >= threshold - 10) {
-        statusKey = "warning";
-        color = "amber";
+      statusKey = "warning";
+      color = "amber";
     } else {
-        statusKey = "at_risk";
-        color = "red";
+      statusKey = "at_risk";
+      color = "red";
     }
 
     return {
@@ -137,211 +137,254 @@ export default function Reports() {
   };
 
 
+  // Handle CSV Export
+  const handleExportCSV = async () => {
+    if (!selectedSubject) {
+      alert(t('reports.table.select_subject_prompt')); // Or use a toast if available
+      return;
+    }
+
+    try {
+      // Calculate end date (default to today if not set, logic handled in backend if null but good to be explicit)
+      // For now, passing startDate and let backend use it for filename.
+      // Ideally we'd have a date range picker with start/end, but currently only startDate is in state.
+      // Assuming today is end date for the report context.
+      const endDate = new Date();
+
+      const blob = await exportAttendanceCSV(selectedSubject, startDate, endDate);
+
+      // Create a link to download the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // We can try to extract filename from content-disposition header if we had access to headers here,
+      // but simplistic approach:
+      const dateStr = startDate.toISOString().split('T')[0];
+      link.setAttribute('download', `attendance_report_${dateStr}.csv`);
+
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error("Failed to export CSV", error);
+      alert("Failed to export CSV. Please try again.");
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
 
-      {/* --- HEADER --- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('reports.title')}</h2>
-          <p className="text-[var(--text-body)]">{t('reports.subtitle')}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-card)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
-            <FileText size={18} />
-            {t('reports.export_csv')}
-          </button>
-          <button className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:opacity-90 font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
-            <Download size={18} />
-             {t('reports.export_pdf')}
-          </button>
-        </div>
-      </div>
-
-      {/* --- FILTERS CARD --- */}
-      <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
-        <div className="flex justify-between items-start mb-6">
+        {/* --- HEADER --- */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="font-bold text-[var(--text-main)]">{t('reports.filters.title')}</h3>
-            <p className="text-sm text-[var(--text-body)]">{t('reports.filters.subtitle')}</p>
+            <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('reports.title')}</h2>
+            <p className="text-[var(--text-body)]">{t('reports.subtitle')}</p>
           </div>
-          <button className="px-6 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-full font-medium shadow-sm hover:opacity-90 transition flex items-center gap-2 cursor-pointer">
-            <Filter size={16} />
-            {t('reports.filters.generate')}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-card)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer"
+            >
+              <FileText size={18} />
+              {t('reports.export_csv')}
+            </button>
+            <button className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:opacity-90 font-medium flex items-center gap-2 shadow-sm transition cursor-pointer">
+              <Download size={18} />
+              {t('reports.export_pdf')}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-
-          <DateRange
-            onChange={(date) => setStartDate(date)}
-          />
-
-          {/* Classes Selector */}
-          <div className="md:col-span-4 space-y-2">
-            <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">{t('reports.filters.classes')}</label>
-            <div className="relative">
-              <select
-                value={selectedSubject || ""}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full pl-3 pr-10 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)] outline-none cursor-pointer text-[var(--text-main)]"
-              >
-                <option disabled value="">{t('reports.filters.select_subject')}</option>
-                {subjects.map(s => (
-                  <option key={s._id} value={s._id}>
-                    {s.name} ({s.code})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70 pointer-events-none" size={16} />
+        {/* --- FILTERS CARD --- */}
+        <div className="bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] shadow-sm">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="font-bold text-[var(--text-main)]">{t('reports.filters.title')}</h3>
+              <p className="text-sm text-[var(--text-body)]">{t('reports.filters.subtitle')}</p>
             </div>
+            <button className="px-6 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-full font-medium shadow-sm hover:opacity-90 transition flex items-center gap-2 cursor-pointer">
+              <Filter size={16} />
+              {t('reports.filters.generate')}
+            </button>
           </div>
 
-          {/* Threshold Slider */}
-          <div className="md:col-span-4 space-y-2 flex flex-col justify-end h-full pb-1">
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">{t('reports.filters.threshold')}</label>
-              <span className="text-sm font-bold text-[var(--primary)]">{threshold}%</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative h-2 bg-[var(--bg-secondary)] rounded-full">
-                <div
-                  className="absolute top-0 left-0 h-full bg-[var(--primary)] rounded-full"
-                  style={{ width: `${threshold}%` }}
-                ></div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={threshold}
-                  onChange={(e) => setThreshold(Number(e.target.value))}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+
+            <DateRange
+              onChange={(date) => setStartDate(date)}
+            />
+
+            {/* Classes Selector */}
+            <div className="md:col-span-4 space-y-2">
+              <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">{t('reports.filters.classes')}</label>
+              <div className="relative">
+                <select
+                  value={selectedSubject || ""}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="w-full pl-3 pr-10 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)] outline-none cursor-pointer text-[var(--text-main)]"
+                >
+                  <option disabled value="">{t('reports.filters.select_subject')}</option>
+                  {subjects.map(s => (
+                    <option key={s._id} value={s._id}>
+                      {s.name} ({s.code})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70 pointer-events-none" size={16} />
               </div>
-              <button onClick={()=> setThreshold(75)} className="text-sm text-[var(--text-body)] opacity-70 hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer">
-                <RotateCcw size={14} />
-                {t('reports.filters.reset')}
-              </button>
             </div>
-            <p className="text-[10px] text-[var(--text-body)] opacity-70 mt-1">{t('reports.filters.threshold_desc', {threshold})}</p>
+
+            {/* Threshold Slider */}
+            <div className="md:col-span-4 space-y-2 flex flex-col justify-end h-full pb-1">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">{t('reports.filters.threshold')}</label>
+                <span className="text-sm font-bold text-[var(--primary)]">{threshold}%</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex-1 relative h-2 bg-[var(--bg-secondary)] rounded-full">
+                  <div
+                    className="absolute top-0 left-0 h-full bg-[var(--primary)] rounded-full"
+                    style={{ width: `${threshold}%` }}
+                  ></div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={threshold}
+                    onChange={(e) => setThreshold(Number(e.target.value))}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+                <button onClick={() => setThreshold(75)} className="text-sm text-[var(--text-body)] opacity-70 hover:text-[var(--primary)] flex items-center gap-1 transition cursor-pointer">
+                  <RotateCcw size={14} />
+                  {t('reports.filters.reset')}
+                </button>
+              </div>
+              <p className="text-[10px] text-[var(--text-body)] opacity-70 mt-1">{t('reports.filters.threshold_desc', { threshold })}</p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* --- REPORT PREVIEW TABLE --- */}
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-[var(--border-color)] flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-[var(--text-main)]">{t('reports.preview.title')}</h3>
+              <p className="text-sm text-[var(--text-body)]">{t('reports.preview.subtitle')}</p>
+            </div>
+            <button className="text-sm font-medium text-[var(--primary)] hover:underline cursor-pointer">{t('reports.preview.view_full')}</button>
           </div>
 
-        </div>
-      </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
+              <thead className="bg-[var(--bg-secondary)]">
+                <tr className="text-left text-xs font-semibold text-[var(--text-body)] uppercase tracking-wider border-b border-[var(--border-color)]">
+                  <th className="px-6 py-4">{t('reports.table.student')}</th>
 
-      {/* --- REPORT PREVIEW TABLE --- */}
-      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-[var(--border-color)] flex justify-between items-center">
-          <div>
-            <h3 className="font-bold text-[var(--text-main)]">{t('reports.preview.title')}</h3>
-            <p className="text-sm text-[var(--text-body)]">{t('reports.preview.subtitle')}</p>
-          </div>
-          <button className="text-sm font-medium text-[var(--primary)] hover:underline cursor-pointer">{t('reports.preview.view_full')}</button>
-        </div>
+                  {/* Sortable Header: Total Classes */}
+                  <th
+                    className="px-6 py-4 cursor-pointer hover:bg-[var(--bg-card)] transition-colors select-none"
+                    onClick={() => handleSort('total')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{t('reports.table.total_classes')}</span>
+                      {getSortIcon('total')}
+                    </div>
+                  </th>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
-            <thead className="bg-[var(--bg-secondary)]">
-              <tr className="text-left text-xs font-semibold text-[var(--text-body)] uppercase tracking-wider border-b border-[var(--border-color)]">
-                <th className="px-6 py-4">{t('reports.table.student')}</th>
-                
-                {/* Sortable Header: Total Classes */}
-                <th 
-                  className="px-6 py-4 cursor-pointer hover:bg-[var(--bg-card)] transition-colors select-none"
-                  onClick={() => handleSort('total')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{t('reports.table.total_classes')}</span>
-                    {getSortIcon('total')}
-                  </div>
-                </th>
+                  {/* Sortable Header: Attended */}
+                  <th
+                    className="px-6 py-4 cursor-pointer hover:bg-[var(--bg-card)] transition-colors select-none"
+                    onClick={() => handleSort('attended')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{t('reports.table.attended')}</span>
+                      {getSortIcon('attended')}
+                    </div>
+                  </th>
 
-                {/* Sortable Header: Attended */}
-                <th 
-                  className="px-6 py-4 cursor-pointer hover:bg-[var(--bg-card)] transition-colors select-none"
-                  onClick={() => handleSort('attended')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{t('reports.table.attended')}</span>
-                    {getSortIcon('attended')}
-                  </div>
-                </th>
-
-                {/* Sortable Header: Percentage */}
-                <th 
-                  className="px-6 py-4 cursor-pointer hover:bg-[var(--bg-card)] transition-colors select-none"
-                  onClick={() => handleSort('percentage')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{t('reports.table.percentage')}</span>
-                    {getSortIcon('percentage')}
-                  </div>
-                </th>
-                <th className="px-6 py-4">{t('reports.table.status')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border-color)]">
-              {sortedStudents.length > 0 ? (
-                sortedStudents.map((row) => (
-                  <tr key={row._id} className="hover:bg-[var(--bg-secondary)] transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="font-semibold text-[var(--text-main)]">{row.name}</div>
-                        <div className="text-xs text-[var(--text-body)] opacity-70">{t('reports.table.student_id')}: {row.roll_number}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.total}</td>
-                    <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.present}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-[var(--text-main)]">{row.percentage}%</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(row.color)}`}>
-                        {t(`reports.status_labels.${row.statusKey}`)}
-                      </span>
+                  {/* Sortable Header: Percentage */}
+                  <th
+                    className="px-6 py-4 cursor-pointer hover:bg-[var(--bg-card)] transition-colors select-none"
+                    onClick={() => handleSort('percentage')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{t('reports.table.percentage')}</span>
+                      {getSortIcon('percentage')}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4">{t('reports.table.status')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-color)]">
+                {sortedStudents.length > 0 ? (
+                  sortedStudents.map((row) => (
+                    <tr key={row._id} className="hover:bg-[var(--bg-secondary)] transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="font-semibold text-[var(--text-main)]">{row.name}</div>
+                          <div className="text-xs text-[var(--text-body)] opacity-70">{t('reports.table.student_id')}: {row.roll_number}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.total}</td>
+                      <td className="px-6 py-4 text-sm text-[var(--text-body)]">{row.present}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-[var(--text-main)]">{row.percentage}%</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(row.color)}`}>
+                          {t(`reports.status_labels.${row.statusKey}`)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center text-[var(--text-body)] opacity-70">
+                      {selectedSubject ? t('reports.table.no_students') : t('reports.table.select_subject_prompt')}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-[var(--text-body)] opacity-70">
-                        {selectedSubject ? t('reports.table.no_students') : t('reports.table.select_subject_prompt')}
-                    </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer */}
-        {sortedStudents.length > 0 && (
-            <div className="bg-[var(--bg-secondary)] p-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[var(--text-body)] border-t border-[var(--border-color)]">
-            <span>
-                {t('reports.footer.showing', {count: sortedStudents.length})}
-                {sortConfig.key && (
-                <> • {t('reports.footer.sorted_by', {
-                  key: t(`reports.footer.sort_keys.${sortConfig.key}`),
-                  direction: t(`reports.footer.sort_dir.${sortConfig.direction}`)
-                })}</>
                 )}
-            </span>
+              </tbody>
+            </table>
+          </div>
 
-            <div className="flex items-center gap-4">
+          {/* Footer */}
+          {sortedStudents.length > 0 && (
+            <div className="bg-[var(--bg-secondary)] p-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[var(--text-body)] border-t border-[var(--border-color)]">
+              <span>
+                {t('reports.footer.showing', { count: sortedStudents.length })}
+                {sortConfig.key && (
+                  <> • {t('reports.footer.sorted_by', {
+                    key: t(`reports.footer.sort_keys.${sortConfig.key}`),
+                    direction: t(`reports.footer.sort_dir.${sortConfig.direction}`)
+                  })}</>
+                )}
+              </span>
+
+              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>{t('reports.footer.good', {threshold})}</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>{t('reports.footer.good', { threshold })}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                <span>{t('reports.footer.warning')}</span>
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <span>{t('reports.footer.warning')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                <span>{t('reports.footer.at_risk')}</span>
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  <span>{t('reports.footer.at_risk')}</span>
                 </div>
+              </div>
             </div>
-            </div>
-        )}
-      </div>
+          )}
+        </div>
       </div>
     </div>
   );
