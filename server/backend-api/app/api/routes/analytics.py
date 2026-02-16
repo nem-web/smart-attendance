@@ -43,30 +43,32 @@ async def get_attendance_trend(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid classId format")
 
-    # Query attendance_daily collection
-    cursor = db.attendance_daily.find(
-        {
-            "classId": class_oid,
-            "date": {"$gte": dateFrom, "$lte": dateTo},
-        }
-    ).sort("date", 1)
-
-    records = await cursor.to_list(length=1000)
-
-    # Format response
+    # Query attendance_daily collection - Single document per subject
+    doc = await db.attendance_daily.find_one({"subjectId": class_oid})
+    
     trend_data = []
-    for record in records:
-        summary = record.get("summary", {})
-        trend_data.append(
-            {
-                "date": record["date"],
-                "present": summary.get("present", 0),
-                "absent": summary.get("absent", 0),
-                "late": summary.get("late", 0),
-                "total": summary.get("total", 0),
-                "percentage": summary.get("percentage", 0.0),
-            }
-        )
+
+    if doc and "daily" in doc:
+        daily_map = doc["daily"]
+        for date_str, summary in daily_map.items():
+            try:
+                record_date = datetime.fromisoformat(date_str)
+                if start_date <= record_date <= end_date:
+                    trend_data.append(
+                        {
+                            "date": date_str,
+                            "present": summary.get("present", 0),
+                            "absent": summary.get("absent", 0),
+                            "late": summary.get("late", 0),
+                            "total": summary.get("total", 0),
+                            "percentage": summary.get("percentage", 0.0),
+                        }
+                    )
+            except ValueError:
+                continue
+
+    # Sort by date
+    trend_data.sort(key=lambda x: x["date"])
 
     return {
         "classId": classId,
@@ -92,16 +94,24 @@ async def get_monthly_summary(
     if classId:
         try:
             class_oid = ObjectId(classId)
-            match_filter["classId"] = class_oid
+            match_filter["subjectId"] = class_oid
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid classId format")
 
     # Aggregate by month
+    # New logic: Unwind 'daily' map -> group by month
     pipeline = [
-        {"$match": match_filter} if match_filter else {"$match": {}},
+        {"$match": match_filter},
+        # Ensure only documents with 'daily' field are processed
+        {"$match": {"daily": {"$exists": True}}},
+        # Convert daily map to array of k,v
+        {"$project": {"classId": "$subjectId", "dailyArray": {"$objectToArray": "$daily"}}},
+        {"$unwind": "$dailyArray"},
         {
             "$addFields": {
-                "yearMonth": {"$substr": ["$date", 0, 7]}  # Extract YYYY-MM
+                "date": "$dailyArray.k",
+                "summary": "$dailyArray.v",
+                "yearMonth": {"$substr": ["$dailyArray.k", 0, 7]}  # Extract YYYY-MM
             }
         },
         {
@@ -176,6 +186,15 @@ async def get_class_risk():
     """
     # Aggregate to get overall percentage per class
     pipeline = [
+         # Convert daily map to array
+        {"$project": {"classId": "$subjectId", "dailyArray": {"$objectToArray": "$daily"}}},
+        {"$unwind": "$dailyArray"},
+        {
+            "$addFields": {
+                "recordDate": "$dailyArray.k",
+                "summary": "$dailyArray.v",
+            }
+        },
         {
             "$group": {
                 "_id": "$classId",
@@ -183,7 +202,7 @@ async def get_class_risk():
                 "totalAbsent": {"$sum": "$summary.absent"},
                 "totalLate": {"$sum": "$summary.late"},
                 "totalStudents": {"$sum": "$summary.total"},
-                "lastRecorded": {"$max": "$date"},
+                "lastRecorded": {"$max": "$recordDate"},
             }
         },
         {
@@ -292,7 +311,15 @@ async def get_global_stats(
 
     # Aggregate attendance data for all teacher's subjects
     pipeline = [
-        {"$match": {"classId": {"$in": subject_ids}}},
+        {"$match": {"subjectId": {"$in": subject_ids}}},
+         # Convert daily map to array
+        {"$project": {"classId": "$subjectId", "dailyArray": {"$objectToArray": "$daily"}}},
+        {"$unwind": "$dailyArray"},
+        {
+            "$addFields": {
+                "summary": "$dailyArray.v",
+            }
+        },
         {
             "$group": {
                 "_id": "$classId",
@@ -359,25 +386,8 @@ async def get_global_stats(
         if attendance_pct < 75:
             risk_count += 1
 
-    # Add subjects with no attendance data as 0% attendance
-    # behavior: exclude from stats if no data (to match tests)
-    # previously loop was adding them as 0%
-    # for s in subjects:
-    #     sid = str(s["_id"])
-    #     if sid not in stats_by_id:
-    #         stat = {
-    #             "subjectId": sid,
-    #             "subjectName": s.get("name", "Unknown"),
-    #             "subjectCode": s.get("code", "N/A"),
-    #             "attendancePercentage": 0.0,
-    #             "totalPresent": 0,
-    #             "totalAbsent": 0,
-    #             "totalLate": 0,
-    #             "totalStudents": 0,
-    #         }
-    #         subject_stats.append(stat)
-    #         total_percentage += 0.0
-    #         # risk_count += 1  # 0% < 75%
+        if attendance_pct < 75:
+            risk_count += 1
 
     
     # Re-sort by attendancePercentage descending

@@ -351,7 +351,6 @@ async def confirm_attendance(payload: Dict):
     )
 
     await save_daily_summary(
-        class_id=subject_oid,
         subject_id=subject_oid,
         teacher_id=teacher_id,
         record_date=today,
