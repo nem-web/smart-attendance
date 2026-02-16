@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-const DateRange = ({ onChange, initialDate = new Date() }) => {
-    const [startDate, setStartDate] = useState(initialDate);
+const DateRange = ({ onChange, initialDate }) => {
+    const [startDate, setStartDate] = useState(() => initialDate || new Date());
 
     const handleDateChange = (date) => {
         setStartDate(date);
