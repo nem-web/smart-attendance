@@ -47,9 +47,35 @@ async def get_current_user(
     # Minimal payload expectation: {"sub": "<user_id>", "role": "student"}
     user_id = payload.get("sub") or payload.get("user_id")
     role = payload.get("role")
+    session_id = payload.get("session_id")
 
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    # Validate session if session_id is present in token
+    if session_id:
+        from app.db.mongo import db
+        from bson import ObjectId
+        from app.utils.jwt_token import hash_session_id
+
+        try:
+            user = await db.users.find_one({"_id": ObjectId(user_id)})
+            if not user:
+                raise HTTPException(status_code=401, detail="User not found")
+
+            stored_session_hash = user.get("current_active_session")
+            if not stored_session_hash or stored_session_hash != hash_session_id(
+                session_id
+            ):
+                raise HTTPException(
+                    status_code=401,
+                    detail="SESSION_CONFLICT: You have been logged out because this account was logged in on another device",
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Session validation error: {e}")
+            raise HTTPException(status_code=401, detail="Session validation failed")
 
     # Return a lightweight user object (can extend with email/name if in payload)
     return {"id": user_id, "role": role, "email": payload.get("email")}

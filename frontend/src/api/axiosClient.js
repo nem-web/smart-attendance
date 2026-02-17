@@ -19,6 +19,36 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // Check for session conflict error
+    if (
+      error.response?.status === 401 &&
+      error.response?.data?.detail?.includes("SESSION_CONFLICT")
+    ) {
+      // Import toast dynamically to avoid circular dependencies
+      const { toast } = await import("react-hot-toast");
+
+      // Clear all session data
+      localStorage.clear();
+
+      // Show user-friendly notification
+      toast.error(
+        "You have been logged out because this account was logged in on another device",
+        {
+          duration: 5000,
+          position: "top-center",
+        }
+      );
+
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
+
+      return Promise.reject(error);
+    }
+
+    // Handle token refresh for other 401 errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem("refresh_token");

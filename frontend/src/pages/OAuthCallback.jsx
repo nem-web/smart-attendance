@@ -31,16 +31,22 @@ export default function OAuthCallback() {
     // console.log(token,email,userId,name,role);
 
     if (!token || !role) {
-        // Nothing to do — go back to login (or show error)
+      // Nothing to do — go back to login (or show error)
       navigate("/login");
       return;
     }
 
-   // Save as your normal login flow does
+    // Save as your normal login flow does
     try {
+      // Clear existing authentication-related data before storing new session
+      // This ensures no residual auth data from previous accounts remains
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+
       localStorage.setItem("token", token);
       if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
-      localStorage.setItem("user", JSON.stringify({ email, role , name, userId}));
+      localStorage.setItem("user", JSON.stringify({ email, role, name, userId }));
       // optionally set global auth header for axios/fetch here
       // axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } catch (err) {

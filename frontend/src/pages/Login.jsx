@@ -45,6 +45,10 @@ export default function Login() {
 
       const data = await res.json();
 
+      // Clear all existing session data before storing new session
+      // This ensures no residual data from previous accounts remains
+      localStorage.clear();
+
       localStorage.setItem("token", data.token)
       if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
       localStorage.setItem("user", JSON.stringify(data));
