@@ -138,7 +138,7 @@ export default function Register() {
                   onClick={() => handleRoleSelect('teacher')}
                   className="w-full p-4 border border-[var(--border-color)] rounded-2xl hover:border-[var(--primary)] hover:bg-[var(--bg-secondary)] transition-all group flex items-center gap-4 text-left"
                 >
-                  <div className="w-12 h-12 bg-[var(--action-info-bg)]/10 text-[var(--primary)] rounded-full flex items-center justify-center group-hover:bg-[var(--action-info-bg)] group-hover:text-[var(--text-on-primary)] transition-colors">
+                  <div className="w-12 h-12 bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] rounded-full flex items-center justify-center group-hover:bg-[var(--action-info-bg)] group-hover:text-[var(--text-on-primary)] transition-colors">
                     <Briefcase size={24} />
                   </div>
                   <div>
