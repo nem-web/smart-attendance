@@ -11,6 +11,7 @@ from app.utils.utils import serialize_bson
 from app.api.deps import get_current_teacher
 from app.services.subject_service import add_subject_for_teacher
 from app.db.subjects_repo import get_subjects_by_ids
+from app.services import schedule_service
 from bson import ObjectId, errors as bson_errors
 from app.schemas.schedule import Schedule
 from app.services.attendance_alerts import send_low_attendance_for_teacher
@@ -44,6 +45,10 @@ async def get_settings(current: dict = Depends(get_current_teacher)):
     subject_ids = teacher.get("subjects", [])
     subjects = await get_subjects_by_ids(subject_ids)
 
+    # Fetch schedule from dedicated service
+    # user_id is already ObjectId from deps
+    schedule_blob = await schedule_service.get_teacher_schedule_blob(str(user_id))
+
     profile = {
         "id": user_id,
         # Identity (Users collection)
@@ -58,7 +63,7 @@ async def get_settings(current: dict = Depends(get_current_teacher)):
         "department": teacher.get("department"),
         "subjects": subjects,
         "settings": teacher.get("settings", {}),
-        "schedule": teacher.get("schedule", {}),
+        "schedule": schedule_blob,
     }
 
     return serialize_bson(profile)
@@ -117,6 +122,8 @@ async def patch_settings_route(
     subject_ids = fresh_teacher.get("subjects", [])
     subjects = await get_subjects_by_ids(subject_ids)
 
+    schedule_blob = await schedule_service.get_teacher_schedule_blob(str(user_id))
+
     profile = {
         "id": str(user_id),
         "name": fresh_user.get("name", ""),
@@ -128,7 +135,7 @@ async def patch_settings_route(
         "avatarUrl": fresh_teacher.get("avatarUrl"),
         "subjects": subjects,
         "settings": fresh_teacher.get("settings", {}),
-        "schedule": fresh_teacher.get("schedule", {}),
+        "schedule": schedule_blob,
     }
 
     return serialize_bson(profile)
@@ -288,18 +295,24 @@ async def replace_settings(user_id_str: str, payload: dict) -> dict:
     if "settings" in payload and isinstance(payload["settings"], dict):
         teacher_updates["settings"] = payload["settings"]
 
-    # Accept schedule as an object; basic type check performed here. More
-    # validation can be added by parsing with `Schedule.parse_obj(...)`.
+    # Validating and saving schedule using the dedicated service.
+    # The dedicated service saves entries into the 'schedules' collection.
     if "schedule" in payload:
         if payload["schedule"] is None:
-            teacher_updates["schedule"] = None
+            await schedule_service.save_teacher_schedule(
+                str(user_id), {"timetable": []}
+            )
         elif isinstance(payload["schedule"], dict):
             # optional deeper validation
             try:
                 Schedule.parse_obj(payload["schedule"])
             except Exception:
                 raise HTTPException(status_code=400, detail="Invalid schedule format")
-            teacher_updates["schedule"] = payload["schedule"]
+            
+            # Save to separate collection
+            await schedule_service.save_teacher_schedule(
+                str(user_id), payload["schedule"]
+            )
         else:
             raise HTTPException(status_code=400, detail="Invalid schedule format")
 
@@ -319,18 +332,21 @@ async def replace_settings(user_id_str: str, payload: dict) -> dict:
     subject_ids = fresh_teacher.get("subjects", [])
     subjects = await get_subjects_by_ids(subject_ids)
 
+    # Fetch from dedicated collection
+    schedule_blob = await schedule_service.get_teacher_schedule_blob(str(user_id))
+
     profile = {
         "id": str(user_id),
         "name": fresh_user.get("name", ""),
         "email": fresh_user.get("email", ""),
-        "phone": fresh_user.get("phone", ""),
+        "phone": fresh_teacher.get("phone", ""),
         "employee_id": fresh_user.get("employee_id"),
         "role": "teacher",
         "department": fresh_teacher.get("department"),
         "avatarUrl": fresh_teacher.get("avatarUrl"),
         "subjects": subjects,
         "settings": fresh_teacher.get("settings", {}),
-        "schedule": fresh_teacher.get("schedule", {}),
+        "schedule": schedule_blob,
     }
 
     return profile
