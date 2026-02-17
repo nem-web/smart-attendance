@@ -1,5 +1,4 @@
-# backend/app/api/routes/schedule.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
@@ -7,7 +6,7 @@ import os
 import pytz
 
 from app.api.deps import get_current_teacher
-
+from app.services import schedule_service
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
@@ -31,17 +30,22 @@ class TodayScheduleResponse(BaseModel):
 @router.get("/today", response_model=TodayScheduleResponse)
 async def get_today_schedule(current: dict = Depends(get_current_teacher)):
     """
-    Get today's schedule for the authenticated teacher.
-    Returns all classes scheduled for the current day of the week.
+    Get today's schedule for the authenticated teacher using the 
+    dedicated schedule service.
+    Returns all classes
+    scheduled for the current day of the week.
     """
-    # Reuse teacher document from dependency to avoid redundant DB query
     teacher = current.get("teacher")
-
+    # Teacher ID is stored as ObjectId in 'userId' (reference to users collection)
     if not teacher:
-        raise HTTPException(status_code=404, detail="Teacher profile not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Teacher profile not found"
+        )
+    
+    teacher_id = str(teacher.get("userId"))
 
     # Get current day of week with timezone awareness
-    # Use school timezone from env or default to Asia/Kolkata (IST)
     timezone_str = os.getenv("SCHOOL_TIMEZONE", "Asia/Kolkata")
     try:
         school_tz = pytz.timezone(timezone_str)
@@ -60,58 +64,28 @@ async def get_today_schedule(current: dict = Depends(get_current_teacher)):
     now_in_school_tz = datetime.now(school_tz)
     current_day = days_of_week[now_in_school_tz.weekday()]
 
-    # Extract schedule
-    schedule = teacher.get("schedule", {})
-    timetable = schedule.get("timetable", [])
-
-    # Find today's schedule
+    # Use the service to fetch schedule entries
+    entries = await schedule_service.get_today_schedule_entries(teacher_id, current_day)
+    
     today_classes = []
-    for day_schedule in timetable:
-        if day_schedule.get("day") == current_day:
-            periods = day_schedule.get("periods", [])
+    for entry in entries:
+        # Validate time format (HH:MM) - though service handles storage, 
+        # extra check doesn't hurt
+        start_time = entry.get("start_time", "")
+        end_time = entry.get("end_time", "")
+        
+        if not start_time or not end_time:
+            continue
 
-            for period in periods:
-                metadata = period.get("metadata")
-
-                # Only include periods with metadata (actual classes)
-                if metadata and metadata.get("tracked", True):
-                    # Validate that start and end times are present and non-empty
-                    start_time = period.get("start")
-                    end_time = period.get("end")
-
-                    if not isinstance(start_time, str) or not start_time:
-                        continue  # Skip periods with missing start time
-                    if not isinstance(end_time, str) or not end_time:
-                        continue  # Skip periods with missing end time
-
-                    # Validate time format (HH:MM)
-                    try:
-                        # Simple validation: split by ':' and check parts
-                        start_parts = start_time.split(":")
-                        end_parts = end_time.split(":")
-                        if len(start_parts) != 2 or len(end_parts) != 2:
-                            continue
-                        # Check if hours and minutes are valid numbers
-                        int(start_parts[0]), int(start_parts[1])
-                        int(end_parts[0]), int(end_parts[1])
-                    except (ValueError, AttributeError):
-                        continue  # Skip periods with invalid time format
-
-                    class_period = ClassPeriod(
-                        subject=metadata.get("subject_name"),
-                        grade=None,  # Can be extracted from subject_name if needed
-                        room=metadata.get("room"),
-                        start_time=start_time,
-                        end_time=end_time,
-                        slot=period.get("slot", 0),
-                        # TODO: Check if attendance exists for today
-                        attendance_status=None,
-                    )
-                    today_classes.append(class_period)
-
-            break  # Found today's schedule, no need to continue
-
-    # Sort by start time using proper time parsing to avoid lexicographical issues
-    today_classes.sort(key=lambda x: datetime.strptime(x.start_time, "%H:%M").time())
+        class_period = ClassPeriod(
+            subject=entry.get("subject_name"),
+            grade=entry.get("semester"),  # Map semester/batch to grade if applicable
+            room=entry.get("room"),
+            start_time=start_time,
+            end_time=end_time,
+            slot=entry.get("slot", 0),
+            attendance_status=None, # TODO: integrate with attendance check
+        )
+        today_classes.append(class_period)
 
     return TodayScheduleResponse(classes=today_classes, current_day=current_day)
