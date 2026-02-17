@@ -42,6 +42,7 @@ export default function MarkAttendance() {
   const [attendanceSubmitted, setAttendanceSubmitted] = useState(false);
   
   const [showQRModal, setShowQRModal] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
   
   const [locationError, setLocationError] = useState(
     !navigator.geolocation ? "Geolocation is not supported by your browser" : null
@@ -247,6 +248,7 @@ export default function MarkAttendance() {
                   alert(t('mark_attendance.alerts.select_subject_first') || 'Please select a subject first');
                   return;
                 }
+                setSessionId(`${selectedSubject}-${Date.now()}`);
                 setShowQRModal(true);
               }}
               disabled={!selectedSubject}
@@ -270,7 +272,7 @@ export default function MarkAttendance() {
         {/* QR Code Modal */}
         {showQRModal && selectedSubject && (
           <StartAttendanceModal 
-            sessionId={`${selectedSubject}-${Date.now()}`}
+            sessionId={sessionId}
             onClose={() => setShowQRModal(false)} 
           />
         )}

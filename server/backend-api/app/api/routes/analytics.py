@@ -20,7 +20,9 @@ router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 # -------------------------------------------------------------------------
 def _get_teacher_oid(current_user: dict) -> ObjectId:
     if current_user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Only teachers can access analytics")
+        raise HTTPException(
+            status_code=403, detail="Only teachers can access analytics"
+        )
 
     try:
         return ObjectId(current_user["id"])
@@ -36,7 +38,9 @@ async def _get_teacher_subjects(teacher_oid: ObjectId) -> list[dict]:
     return await subjects_cursor.to_list(length=1000)
 
 
-async def _verify_teacher_class_access(teacher_oid: ObjectId, class_oid: ObjectId) -> None:
+async def _verify_teacher_class_access(
+    teacher_oid: ObjectId, class_oid: ObjectId
+) -> None:
     subject = await db.subjects.find_one(
         {"_id": class_oid, "professor_ids": teacher_oid},
         {"_id": 1},

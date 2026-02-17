@@ -108,7 +108,7 @@ export default function MarkWithQR() {
                         <div className="space-y-3">
                             <h2 className="text-2xl font-black text-[var(--text-main)] leading-tight">Ready to check in?</h2>
                             <p className="text-[var(--text-body)]/80 text-sm max-w-xs mx-auto">
-                                Scan the QR code displayed on your teacher's screen to mark your attendance instantly.
+                                Scan the QR code displayed on your teacher&apos;s screen to mark your attendance instantly.
                             </p>
                         </div>
 
@@ -158,8 +158,8 @@ export default function MarkWithQR() {
                             </h3>
                             <p className="text-[var(--text-body)]/80 text-sm">
                                 {status === "geolocating"
-                                    ? "We're verifying you're in the classroom."
-                                    : "Hang tight, we're marking your attendance."}
+                                    ? "We&apos;re verifying you&apos;re in the classroom."
+                                    : "Hang tight, we&apos;re marking your attendance."}
                             </p>
                         </div>
                     </div>

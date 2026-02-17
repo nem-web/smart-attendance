@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from app.core.scheduler import start_scheduler, shutdown_scheduler, scheduler
 

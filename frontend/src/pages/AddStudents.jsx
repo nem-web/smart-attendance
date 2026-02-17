@@ -266,7 +266,6 @@ export default function AddStudents() {
 }
 
 // Simple Helper Component for Sidebar Items
-// eslint-disable-next-line no-unused-vars
 function NavItem({ icon: IconComp, label }) {
   return (
     <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[var(--text-body)] hover:bg-[var(--bg-secondary)] rounded-lg text-sm font-medium transition-colors">

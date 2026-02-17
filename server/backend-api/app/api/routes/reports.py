@@ -367,7 +367,8 @@ async def export_attendance_pdf(
                 str(present),
                 f"{percentage}%",
                 Paragraph(
-                    f"<font color='{status_color}'><b>{html.escape(status)}</b></font>",
+                    f"<font color='{status_color}'>"
+                    f"<b>{html.escape(status)}</b></font>",
                     styles['Normal'],
                 ),
             ])

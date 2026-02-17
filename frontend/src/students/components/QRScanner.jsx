@@ -63,7 +63,7 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }) {
             </div>
             <div>
               <h3 className="text-lg font-bold text-[var(--text-main)]">Scan QR Code</h3>
-              <p className="text-xs text-[var(--text-body)]/90">Point at teacher's screen</p>
+              <p className="text-xs text-[var(--text-body)]/90">Point at teacher&apos;s screen</p>
             </div>
           </div>
           <button 
