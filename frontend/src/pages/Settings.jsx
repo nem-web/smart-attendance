@@ -104,7 +104,7 @@ export default function Settings() {
   const [liveness, setLiveness] = useState(true);
   const [sensitivity, setSensitivity] = useState(80);
 
-  // State for email preff - Initialize from localStorage
+  // State for email preferences - Initialize from localStorage
   const [_emailPreferences, setEmailPreferences] = useState(() => {
     try {
       const saved = localStorage.getItem('smart_attendance_email_preferences');
@@ -329,8 +329,6 @@ export default function Settings() {
       if (serverProfile) {
         await loadProfile(serverProfile);
       }
-      // optional: show toast success
-      console.log("Settings saved successfully");
     } catch (err) {
       console.error("Save profile failed", err);
       setSaveError(err.message || t('settings.alerts.save_failed'));
