@@ -1,4 +1,4 @@
-import api from "./axios";
+import api from "./axiosClient";
 
 /**
  * Fetch all holidays for the current teacher.
