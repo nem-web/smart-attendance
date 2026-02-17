@@ -155,7 +155,7 @@ export default function ForgotPassword() {
     }
     if (step > targetStep) {
       // Completed steps
-      return "bg-green-500 text-white border-green-500";
+      return "bg-[var(--success)] text-[var(--text-on-primary)] border-[var(--success)]";
     }
     return "bg-transparent text-[var(--text-body)] border-[var(--border-color)]";
   };
@@ -263,7 +263,7 @@ export default function ForgotPassword() {
                   onClick={handleSendOtp}
                   disabled={!isEmailValid || loading}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-[var(--primary)] p-2 text-[var(--text-on-primary)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-body)]"
-                  title="Send verification code"
+                  title={t("forgot_password.send_code_title")}
                 >
                   {loading ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -407,7 +407,7 @@ export default function ForgotPassword() {
           {error && (
             <div
               role="alert"
-              className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-600 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-400"
+              className="flex items-start gap-2 rounded-xl border border-[var(--danger)]/25 bg-[var(--danger)]/10 px-3 py-2.5 text-sm text-[var(--danger)]"
             >
               <span className="mt-0.5">⚠️</span>
               <span>{error}</span>
@@ -417,7 +417,7 @@ export default function ForgotPassword() {
           {success && (
             <div
               role="status"
-              className="flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-600 dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400"
+              className="flex items-start gap-2 rounded-xl border border-[var(--success)]/25 bg-[var(--success)]/10 px-3 py-2.5 text-sm text-[var(--success)]"
             >
               <CircleCheck size={16} className="mt-0.5 shrink-0" />
               <span>{success}</span>

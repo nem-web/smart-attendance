@@ -21,7 +21,7 @@ const SubjectAttendanceCard = ({ subject, onDelete }) => {
         {onDelete && (
           <button
             onClick={() => onDelete(subjectId)}
-            className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50/50 transition-colors cursor-pointer"
+            className="text-[var(--danger)]/70 hover:text-[var(--danger)] p-1.5 rounded-lg hover:bg-[var(--danger)]/10 transition-colors cursor-pointer"
             title="Remove subject"
             aria-label={`Remove ${name}`}
           >
@@ -33,7 +33,7 @@ const SubjectAttendanceCard = ({ subject, onDelete }) => {
       <div className="space-y-3">
         <div className="flex justify-between items-end">
            <span className="text-[var(--text-body)] text-sm font-medium">{attended} / {total} Classes</span>
-           <span className={`text-lg font-bold ${isSafe ? 'text-emerald-500' : 'text-red-500'}`}>
+           <span className={`text-lg font-bold ${isSafe ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
              {percentage.toFixed(1)}%
            </span>
         </div>
@@ -41,7 +41,7 @@ const SubjectAttendanceCard = ({ subject, onDelete }) => {
         {/* Progress Bar */}
         <div className="w-full bg-[var(--bg-secondary)] rounded-full h-2 overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isSafe ? 'bg-emerald-500' : 'bg-red-500'}`}
+            className={`h-full rounded-full transition-all duration-500 ${isSafe ? 'bg-[var(--success)]' : 'bg-[var(--danger)]'}`}
             style={{ width: `${Math.min(100, percentage)}%` }}
           ></div>
         </div>
@@ -50,8 +50,8 @@ const SubjectAttendanceCard = ({ subject, onDelete }) => {
         <div className="pt-1">
             <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${
                 isSafe
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                : 'bg-red-50 text-red-700 border border-red-100'
+                ? 'bg-[var(--success)]/15 text-[var(--success)] border border-[var(--success)]/20'
+                : 'bg-[var(--danger)]/15 text-[var(--danger)] border border-[var(--danger)]/20'
             }`}>
             {isSafe ? 'On Track' : 'Low Attendance'}
             </span>

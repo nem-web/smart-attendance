@@ -15,9 +15,9 @@ export default function SettingsSidebar({ activeTab, setActiveTab, onLogout}) {
   ];
 
   return (
-    <aside className="w-full md:w-64 flex-shrink-0 bg-white md:bg-transparent rounded-xl border md:border-none border-gray-100 shadow-sm md:shadow-none p-2 md:p-0">
+    <aside className="w-full md:w-64 flex-shrink-0 bg-[var(--bg-card)] md:bg-transparent rounded-xl border md:border-none border-[var(--border-color)] shadow-sm md:shadow-none p-2 md:p-0">
       <div className="space-y-1">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 px-3 hidden md:block">
+        <h3 className="text-xs font-semibold text-[var(--text-body)]/80 uppercase tracking-wide mb-3 px-3 hidden md:block">
           {t('settings.sidebar.heading')}
         </h3>
         {sidebarItems.map((item) => (
@@ -26,8 +26,8 @@ export default function SettingsSidebar({ activeTab, setActiveTab, onLogout}) {
             onClick={() => setActiveTab(item.id)}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               activeTab === item.id
-                ? "bg-blue-600 text-white shadow-md"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                ? "bg-[var(--action-info-bg)] text-[var(--text-on-primary)] shadow-lg shadow-black/10"
+                : "text-[var(--text-body)]/80 hover:bg-[var(--bg-secondary)] hover:text-[var(--text-main)]"
             }`}
           >
             <item.icon size={18} />
@@ -36,10 +36,10 @@ export default function SettingsSidebar({ activeTab, setActiveTab, onLogout}) {
         ))}
       </div>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-[var(--border-color)]">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"
         >
           <LogOut size={18} />
           {t('settings.sidebar.logout')}

@@ -105,17 +105,17 @@ export default function StudentProfile() {
         
         {/* Language Switcher */}
         <div className="absolute top-6 right-6 z-10">
-            <div className="flex gap-2 items-center bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+            <div className="flex gap-2 items-center bg-[var(--bg-card)] px-3 py-1.5 rounded-full border border-[var(--border-color)] shadow-sm">
               <button 
                 onClick={() => changeLanguage('en')} 
-                className={`text-xs ${i18n.language === 'en' ? 'font-bold text-blue-900 border-b-2 border-blue-900' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`text-xs ${i18n.language === 'en' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)]' : 'text-[var(--text-body)]/80 hover:text-[var(--text-body)]'}`}
               >
                 English
               </button>
-              <span className="text-gray-300 text-xs">|</span>
+              <span className="text-[var(--text-body)]/70 text-xs">|</span>
               <button 
                 onClick={() => changeLanguage('hi')} 
-                className={`text-xs ${i18n.language === 'hi' ? 'font-bold text-blue-900 border-b-2 border-blue-900' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`text-xs ${i18n.language === 'hi' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)]' : 'text-[var(--text-body)]/80 hover:text-[var(--text-body)]'}`}
               >
                 हिंदी
               </button>
@@ -130,8 +130,8 @@ export default function StudentProfile() {
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">{t('profile.title')}</h2>
-              <p className="text-slate-500 text-sm">{t('profile.subtitle')}</p>
+              <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('profile.title')}</h2>
+              <p className="text-[var(--text-body)]/80 text-sm">{t('profile.subtitle')}</p>
             </div>
           </div>
 
@@ -147,8 +147,8 @@ export default function StudentProfile() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera className="text-white w-6 h-6" />
+                <div className="absolute inset-0 bg-[var(--overlay)] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="text-[var(--text-on-primary)] w-6 h-6" />
                 </div>
               </div>
 
@@ -160,7 +160,7 @@ export default function StudentProfile() {
                       {data.name || "John"}
                     </h3>
                     <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
-                      <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">{t('profile.roll_no')}: {data.roll || "21CS045"}</span>
+                      <span className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] text-[10px] font-bold px-2 py-0.5 rounded">{t('profile.roll_no')}: {data.roll || "21CS045"}</span>
                     </div>
                   </div>
                   <button className="text-xs font-medium text-[var(--text-body)] hover:text-[var(--primary)] hover:bg-[var(--bg-secondary)] px-3 py-1.5 rounded-lg transition mt-3 sm:mt-0 border border-[var(--border-color)] flex items-center gap-2 cursor-not-allowed">
@@ -171,16 +171,16 @@ export default function StudentProfile() {
 
                 <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-[var(--text-body)] pt-2">
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">{t('profile.year')}:</span>
-                    <span className="font-medium text-slate-800">{data.year || "1st"}</span>
+                    <span className="text-[var(--text-body)]/80">{t('profile.year')}:</span>
+                    <span className="font-medium text-[var(--text-main)]">{data.year || "1st"}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">{t('profile.branch')}:</span>
-                    <span className="font-medium text-slate-800">{(data.branch).toUpperCase()}</span>
+                    <span className="text-[var(--text-body)]/80">{t('profile.branch')}:</span>
+                    <span className="font-medium text-[var(--text-main)]">{(data.branch).toUpperCase()}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">{t('profile.email')}:</span>
-                    <span className="font-medium text-slate-800">{data.email || "ananya@example.edu"}</span>
+                    <span className="text-[var(--text-body)]/80">{t('profile.email')}:</span>
+                    <span className="font-medium text-[var(--text-main)]">{data.email || "ananya@example.edu"}</span>
                   </div>
                 </div>
               </div>
@@ -203,8 +203,8 @@ export default function StudentProfile() {
           <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-sm p-6 space-y-4">
             <div className="flex justify-between items-start">
               <div>
-                <h4 className="text-base font-bold text-slate-800">{t('profile.face_image.title')}</h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-md leading-relaxed">
+                <h4 className="text-base font-bold text-[var(--text-main)]">{t('profile.face_image.title')}</h4>
+                <p className="text-xs text-[var(--text-body)]/80 mt-1 max-w-md leading-relaxed">
                   {t('profile.face_image.desc')}
                 </p>
               </div>
@@ -233,7 +233,7 @@ export default function StudentProfile() {
                 </button>
               )}
             </div>
-            <div className="bg-gray-50 text-slate-500 text-[10px] px-3 py-2 rounded-lg inline-block font-medium border border-gray-100">
+            <div className="bg-[var(--bg-primary)] text-[var(--text-body)]/80 text-[10px] px-3 py-2 rounded-lg inline-block font-medium border border-[var(--border-color)]">
               {t('profile.face_image.tips')}
             </div>
           </div>
@@ -241,19 +241,19 @@ export default function StudentProfile() {
           {/* Card 3: Attendance Summary (Weighted) */}
           <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-sm p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h4 className="text-base font-bold text-slate-800">{t('profile.summary.title')}</h4>
-              <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">{t('profile.summary.this_semester')}</span>
+              <h4 className="text-base font-bold text-[var(--text-main)]">{t('profile.summary.title')}</h4>
+              <span className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">{t('profile.summary.this_semester')}</span>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-end text-sm mb-1">
-                <span className="text-slate-500 font-medium">{t('profile.summary.overall')}</span>
-                <span className="font-bold text-slate-900 text-lg">{data.attendance.percentage}</span>
+                <span className="text-[var(--text-body)]/80 font-medium">{t('profile.summary.overall')}</span>
+                <span className="font-bold text-[var(--text-main)] text-lg">{data.attendance.percentage}</span>
               </div>
               <div className="h-3 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-1000 ${
-                    isOverallOnTrack ? "bg-emerald-500" : "bg-red-500"
+                    isOverallOnTrack ? "bg-[var(--success)]" : "bg-[var(--danger)]"
                   }`}
                   style={{ width: `${Math.min(100, overallPercentage)}%` }}
                 ></div>
@@ -262,31 +262,31 @@ export default function StudentProfile() {
 
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div>
-                <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">{t('profile.summary.attended')}</p>
-                <p className="text-xl font-bold text-slate-800 mt-1">{data.attendance.present}</p>
+                <p className="text-xs text-[var(--text-body)]/80 uppercase font-bold tracking-wide">{t('profile.summary.attended')}</p>
+                <p className="text-xl font-bold text-[var(--text-main)] mt-1">{data.attendance.present}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-400 uppercase font-bold tracking-wide">{t('profile.summary.total')}</p>
-                <p className="text-xl font-bold text-slate-800 mt-1">{data.attendance.present + data.attendance.absent}</p>
+                <p className="text-xs text-[var(--text-body)]/80 uppercase font-bold tracking-wide">{t('profile.summary.total')}</p>
+                <p className="text-xl font-bold text-[var(--text-main)] mt-1">{data.attendance.present + data.attendance.absent}</p>
               </div>
             </div>
 
             <div
               className={`px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-bold shadow-sm ${
                 isOverallOnTrack
-                  ? "bg-emerald-500 text-white"
-                  : "bg-red-500 text-white"
+                  ? "bg-[var(--success)] text-[var(--text-on-primary)]"
+                  : "bg-[var(--danger)] text-[var(--text-on-primary)]"
               }`}
             >
-              <CheckCircle size={18} className="text-white" />
+              <CheckCircle size={18} className="text-[var(--text-on-primary)]" />
               {t('profile.summary.on_track')}
             </div>
           </div>
 
           {/* Card 4: Subjects Grid */}
           {open && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl p-6 w-80 space-y-4">
+            <div className="fixed inset-0 bg-[var(--overlay)] flex items-center justify-center z-50">
+              <div className="bg-[var(--bg-card)] rounded-xl p-6 w-80 space-y-4">
                 <h3 className="font-bold text-lg">{t('profile.subjects_card.modal_title')}</h3>
 
                 {availableSubjects?.map((sub) => (
@@ -312,8 +312,8 @@ export default function StudentProfile() {
           <div className="space-y-4">
             <div className="flex justify-between items-start">
               <div>
-                <h4 className="text-base font-bold text-slate-800">{t('profile.subjects_card.title')}</h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
+                <h4 className="text-base font-bold text-[var(--text-main)]">{t('profile.subjects_card.title')}</h4>
+                <p className="text-xs text-[var(--text-body)]/80 mt-1 max-w-sm leading-relaxed">
                   {t('profile.subjects_card.desc')}
                 </p>
               </div>

@@ -83,14 +83,14 @@ export default function Login() {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => changeLanguage('en')} 
-                    className={`text-sm ${i18n.language === 'en' ? 'font-bold text-blue-600' : 'text-gray-500'}`}
+                    className={`text-sm ${i18n.language === 'en' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)]' : 'text-[var(--text-body)]/80 hover:text-[var(--text-main)]'}`}
                   >
                     English
                   </button>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-[var(--text-body)]/60">|</span>
                   <button 
                     onClick={() => changeLanguage('hi')} 
-                    className={`text-sm ${i18n.language === 'hi' ? 'font-bold text-blue-600' : 'text-gray-500'}`}
+                    className={`text-sm ${i18n.language === 'hi' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)] ' : 'text-[var(--text-body)]/80 hover:text-[var(--text-main)]'}`}
                   >
                     हिंदी
                   </button>
@@ -112,7 +112,7 @@ export default function Login() {
                 <span className="w-full border-t border-[var(--border-color)]" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[var(--bg-card)] px-2 text-[var(--text-body)] opacity-70 font-medium">{t('login.or_continue')}</span>
+                <span className="bg-[var(--bg-card)] px-2 text-[var(--text-body)]/70 font-medium">{t('login.or_continue')}</span>
               </div>
             </div>
 
@@ -127,11 +127,11 @@ export default function Login() {
                     <input
                       type="email"
                       placeholder={t('login.email_placeholder')}
-                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
-                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
+                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70" />
                   </div>
                 </div>
 
@@ -142,15 +142,15 @@ export default function Login() {
                     <input
                       type={showPassword ? "text" : "password"}
                       placeholder={t('login.password_placeholder')}
-                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 pr-10"
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 pr-10"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
-                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
+                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70 hover:opacity-100 focus:outline-none"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70 hover:text-[var(--text-body)] focus:outline-none"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -166,7 +166,7 @@ export default function Login() {
                       className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary)] focus:ring-[var(--primary)]" />
                     <span className="text-sm text-[var(--text-body)] select-none">{t('login.remember_me')}</span>
                   </label>
-                  <Link to="/forgot-password" className="text-sm font-medium text-[var(--primary)] opacity-80 hover:text-[var(--primary)] hover:underline">
+                  <Link to="/forgot-password" className="text-sm font-medium text-[var(--primary)]/80 hover:text-[var(--primary)] hover:underline">
                     {t('login.forgot_password')}
                   </Link>
                 </div>
@@ -177,7 +177,7 @@ export default function Login() {
                 <p className="text-[var(--danger)] text-sm font-medium text-center">{error}</p>
               )}
 
-              <button className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] hover:text-[var(--text-main)] shadow-md transition-all active:scale-[0.98]">
+              <button className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:opacity-95 shadow-md transition-all active:scale-[0.98]">
                 {t('login.submit')}
               </button>
             </form>

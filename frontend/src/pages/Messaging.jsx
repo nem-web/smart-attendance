@@ -259,23 +259,23 @@ export default function Messaging() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-8">
+    <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('messaging.title')}</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-[var(--text-main)]">{t('messaging.title')}</h1>
+            <p className="text-[var(--text-body)] mt-1">
               {t('messaging.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="bg-white border border-gray-200 rounded-lg px-4 py-2">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-4 py-2">
               <div className="flex items-center gap-2">
-                <Mail className="text-indigo-600" size={18} />
+                <Mail className="text-[var(--primary)]" size={18} />
                 <div className="text-sm">
-                  <div className="text-gray-500">{t('messaging.stats.emails_sent')}</div>
-                  <div className="font-bold text-gray-900">
+                  <div className="text-[var(--text-body)]/80">{t('messaging.stats.emails_sent')}</div>
+                  <div className="font-bold text-[var(--text-main)]">
                     {stats ? stats.total_sent : "—"}
                   </div>
                 </div>
@@ -288,8 +288,8 @@ export default function Messaging() {
           {/* Left Column - Message Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tabs */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="flex border-b border-gray-200 overflow-x-auto">
+            <div className="bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-color)]">
+              <div className="flex border-b border-[var(--border-color)] overflow-x-auto">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -298,8 +298,8 @@ export default function Messaging() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap ${
                         activeTab === tab.id
-                          ? "text-indigo-600 border-b-2 border-indigo-600"
-                          : "text-gray-600 hover:text-gray-900"
+                          ? "text-[var(--primary)] border-b-2 border-[var(--primary)]"
+                          : "text-[var(--text-body)] hover:text-[var(--text-main)]"
                       }`}
                     >
                       <Icon size={18} />
@@ -314,7 +314,7 @@ export default function Messaging() {
                 {activeTab === "absence" && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.subject')}
                       </label>
                       <input
@@ -324,11 +324,11 @@ export default function Messaging() {
                           setAbsenceData({ ...absenceData, subject: e.target.value })
                         }
                         placeholder={t('messaging.placeholders.subject')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.date')}
                       </label>
                       <input
@@ -337,13 +337,13 @@ export default function Messaging() {
                         onChange={(e) =>
                           setAbsenceData({ ...absenceData, date: e.target.value })
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <button
                       onClick={handleSendAbsence}
                       disabled={loading || selectedStudents.length === 0}
-                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                      className="w-full bg-[var(--primary)] text-[var(--text-on-primary)] px-6 py-3 rounded-lg hover:bg-[var(--primary-hover)] disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-body)] disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <Loader2 size={18} className="animate-spin" />
@@ -359,7 +359,7 @@ export default function Messaging() {
                 {activeTab === "assignment" && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.assignment_title')}
                       </label>
                       <input
@@ -372,11 +372,11 @@ export default function Messaging() {
                           })
                         }
                         placeholder={t('messaging.placeholders.assignment_title')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.subject')}
                       </label>
                       <input
@@ -386,11 +386,11 @@ export default function Messaging() {
                           setAssignmentData({ ...assignmentData, subject: e.target.value })
                         }
                         placeholder={t('messaging.placeholders.subject')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.due_date')}
                       </label>
                       <input
@@ -399,13 +399,13 @@ export default function Messaging() {
                         onChange={(e) =>
                           setAssignmentData({ ...assignmentData, due_date: e.target.value })
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <button
                       onClick={handleSendAssignment}
                       disabled={loading || selectedStudents.length === 0}
-                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                      className="w-full bg-[var(--primary)] text-[var(--text-on-primary)] px-6 py-3 rounded-lg hover:bg-[var(--primary-hover)] disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-body)] disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <Loader2 size={18} className="animate-spin" />
@@ -421,7 +421,7 @@ export default function Messaging() {
                 {activeTab === "exam" && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.exam_name')}
                       </label>
                       <input
@@ -431,11 +431,11 @@ export default function Messaging() {
                           setExamData({ ...examData, exam_name: e.target.value })
                         }
                         placeholder={t('messaging.placeholders.exam_name')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.subject')}
                       </label>
                       <input
@@ -445,12 +445,12 @@ export default function Messaging() {
                           setExamData({ ...examData, subject: e.target.value })
                         }
                         placeholder={t('messaging.placeholders.subject')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                           {t('messaging.form.exam_date')}
                         </label>
                         <input
@@ -459,11 +459,11 @@ export default function Messaging() {
                           onChange={(e) =>
                             setExamData({ ...examData, exam_date: e.target.value })
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                           {t('messaging.form.time')}
                         </label>
                         <input
@@ -472,12 +472,12 @@ export default function Messaging() {
                           onChange={(e) =>
                             setExamData({ ...examData, time: e.target.value })
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.venue')}
                       </label>
                       <input
@@ -487,13 +487,13 @@ export default function Messaging() {
                           setExamData({ ...examData, venue: e.target.value })
                         }
                         placeholder={t('messaging.placeholders.venue')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <button
                       onClick={handleSendExam}
                       disabled={loading || selectedStudents.length === 0}
-                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                      className="w-full bg-[var(--primary)] text-[var(--text-on-primary)] px-6 py-3 rounded-lg hover:bg-[var(--primary-hover)] disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-body)] disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <Loader2 size={18} className="animate-spin" />
@@ -509,7 +509,7 @@ export default function Messaging() {
                 {activeTab === "custom" && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                          {t('messaging.form.message_title')}
                       </label>
                       <input
@@ -519,11 +519,11 @@ export default function Messaging() {
                           setCustomData({ ...customData, message_title: e.target.value })
                         }
                         placeholder={t('messaging.placeholders.message_title')}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                          {t('messaging.form.message_body')}
                       </label>
                       <textarea
@@ -534,16 +534,16 @@ export default function Messaging() {
                         placeholder={t('messaging.placeholders.message_placeholder')}
                         rows={6}
                         maxLength={2000}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                        className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-none"
                       />
-                      <div className="text-sm text-gray-500 mt-1 text-right">
+                      <div className="text-sm text-[var(--text-body)]/80 mt-1 text-right">
                         {customData.message_body.length}/2000
                       </div>
                     </div>
                     <button
                       onClick={handleSendCustom}
                       disabled={loading || selectedStudents.length === 0}
-                      className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                      className="w-full bg-[var(--primary)] text-[var(--text-on-primary)] px-6 py-3 rounded-lg hover:bg-[var(--primary-hover)] disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-body)] disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <Loader2 size={18} className="animate-spin" />
@@ -558,27 +558,27 @@ export default function Messaging() {
                 {/* Result Display */}
                 {result && (
                   <div
-                    className={`mt-6 p-4 rounded-lg ${
+                    className={`mt-6 p-4 rounded-lg border ${
                       result.failed === 0
-                        ? "bg-green-50 border border-green-200"
-                        : "bg-yellow-50 border border-yellow-200"
+                        ? "bg-[var(--success)]/10 border-[var(--success)]/25"
+                        : "bg-[var(--warning)]/10 border-[var(--warning)]/25"
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       {result.failed === 0 ? (
-                        <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                        <CheckCircle className="text-[var(--success)] flex-shrink-0" size={20} />
                       ) : (
-                        <AlertTriangle className="text-yellow-600 flex-shrink-0" size={20} />
+                        <AlertTriangle className="text-[var(--warning)] flex-shrink-0" size={20} />
                       )}
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-2">
+                        <h3 className="font-semibold text-[var(--text-main)] mb-2">
                           {t('messaging.summary.title')}
                         </h3>
-                        <div className="text-sm text-gray-700 space-y-1">
+                        <div className="text-sm text-[var(--text-body)] space-y-1">
                           <div>{t('messaging.summary.total')}: {result.total}</div>
-                          <div className="text-green-700">✓ {t('messaging.summary.success')}: {result.sent}</div>
+                          <div className="text-[var(--success)]">✓ {t('messaging.summary.success')}: {result.sent}</div>
                           {result.failed > 0 && (
-                            <div className="text-red-700">✗ {t('messaging.summary.failed')}: {result.failed}</div>
+                            <div className="text-[var(--danger)]">✗ {t('messaging.summary.failed')}: {result.failed}</div>
                           )}
                         </div>
                       </div>
@@ -591,22 +591,22 @@ export default function Messaging() {
 
           {/* Right Column - Student Selection */}
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-color)] p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-[var(--text-main)] flex items-center gap-2">
                   <Users size={18} />
                   {t('messaging.recipients.select')}
                 </h3>
                 <button
                   onClick={handleSelectAll}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="text-sm text-[var(--primary)] hover:opacity-90 font-medium"
                 >
                   {selectedStudents.length === students.length ? t('messaging.recipients.deselect_all') : t('messaging.recipients.select_all')}
                 </button>
               </div>
 
-              <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-                <div className="text-sm text-indigo-900">
+              <div className="mb-4 p-3 bg-[var(--primary)]/10 border border-[var(--primary)]/25 rounded-lg">
+                <div className="text-sm text-[var(--text-main)]">
                   <span className="font-semibold">{selectedStudents.length}</span> {t('messaging.recipients.students_selected')}
                 </div>
               </div>
@@ -618,26 +618,26 @@ export default function Messaging() {
               ) : (
                 <div className="max-h-96 overflow-y-auto space-y-2">
                   {students.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-[var(--text-body)]/80">
                       {t('messaging.recipients.no_students')}
                     </div>
                   ) : (
                     students.map((student) => (
                       <label
                         key={student.email}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                        className="flex items-center gap-3 p-3 hover:bg-[var(--bg-primary)] rounded-lg cursor-pointer transition-colors"
                       >
                         <input
                           type="checkbox"
                           checked={selectedStudents.includes(student.email)}
                           onChange={() => handleStudentToggle(student.email)}
-                          className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          className="w-4 h-4 accent-[var(--primary)] border-[var(--border-color)] rounded"
                         />
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-[var(--text-main)]">
                             {student.name}
                           </div>
-                          <div className="text-xs text-gray-500">{student.email}</div>
+                          <div className="text-xs text-[var(--text-body)]/80">{student.email}</div>
                         </div>
                       </label>
                     ))
@@ -648,30 +648,30 @@ export default function Messaging() {
 
             {/* Stats Card */}
             {stats && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
+              <div className="bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-color)] p-6">
+                <h3 className="font-semibold text-[var(--text-main)] flex items-center gap-2 mb-4">
                   <BarChart3 size={18} />
                   {t('messaging.stats.title')}
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{t('messaging.stats.total_sent')}</span>
-                    <span className="font-semibold text-green-600">{stats.total_sent}</span>
+                    <span className="text-sm text-[var(--text-body)]">{t('messaging.stats.total_sent')}</span>
+                    <span className="font-semibold text-[var(--success)]">{stats.total_sent}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{t('messaging.stats.failed')}</span>
-                    <span className="font-semibold text-red-600">{stats.total_failed}</span>
+                    <span className="text-sm text-[var(--text-body)]">{t('messaging.stats.failed')}</span>
+                    <span className="font-semibold text-[var(--danger)]">{stats.total_failed}</span>
                   </div>
                   {stats.sent_by_type && Object.keys(stats.sent_by_type).length > 0 && (
                     <>
-                      <hr className="my-3" />
-                      <div className="text-xs font-medium text-gray-500 uppercase">{t('messaging.stats.by_type')}</div>
+                      <hr className="my-3 border-[var(--border-color)]" />
+                      <div className="text-xs font-medium text-[var(--text-body)]/80 uppercase">{t('messaging.stats.by_type')}</div>
                       {Object.entries(stats.sent_by_type).map(([type, counts]) => (
                         <div key={type} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 capitalize">
+                          <span className="text-[var(--text-body)] capitalize">
                             {type.replaceAll("_", " ")}
                           </span>
-                          <span className="text-gray-900">{counts.sent}</span>
+                          <span className="text-[var(--text-main)]">{counts.sent}</span>
                         </div>
                       ))}
                     </>

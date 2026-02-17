@@ -52,23 +52,23 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }) {
   }, [onScanSuccess, onScanError]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm p-4">
+      <div className="bg-[var(--bg-card)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative animate-in fade-in zoom-in duration-300">
         
         {/* Header */}
-        <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
+        <div className="p-5 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--bg-card)] sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[var(--action-info-bg)]/10  text-[var(--action-info-bg)]  flex items-center justify-center">
               <Camera size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Scan QR Code</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Point at teacher's screen</p>
+              <h3 className="text-lg font-bold text-[var(--text-main)]">Scan QR Code</h3>
+              <p className="text-xs text-[var(--text-body)]/90">Point at teacher's screen</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+            className="p-2 text-[var(--text-body)]/80 hover:text-[var(--text-body)] hover:bg-[var(--bg-secondary)]  rounded-full transition-colors"
             aria-label="Close scanner"
           >
             <XCircle size={24} />
@@ -76,23 +76,23 @@ export default function QRScanner({ onScanSuccess, onScanError, onClose }) {
         </div>
 
         {/* Scanner Body */}
-        <div className="p-6 pb-8 bg-gray-50 dark:bg-slate-950">
-          <div id="reader" className="w-full overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-black aspect-square relative shadow-inner">
+        <div className="p-6 pb-8 bg-[var(--bg-primary)]">
+          <div id="reader" className="w-full overflow-hidden rounded-2xl border-2 border-dashed border-[var(--border-color)]  bg-black/90 aspect-square relative shadow-inner">
             {/* Custom overlay components can be added here if html5-qrcode allows, 
                 but by default it renders its own UI into this div */}
           </div>
 
-          <div className="mt-6 flex items-start gap-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-900/30">
-            <AlertCircle size={18} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+          <div className="mt-6 flex items-start gap-4 p-4 bg-[var(--warning)]/10  rounded-2xl border border-[var(--warning)]/20">
+            <AlertCircle size={18} className="text-[var(--warning)] flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-[var(--text-main)]/80 leading-relaxed">
               <span className="font-bold">Privacy Note:</span> We use your camera and GPS to verify your attendance. Stay within the classroom.
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 text-center">
-             <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold">Smart Attendance System</p>
+        <div className="p-4 bg-[var(--bg-card)] border-t border-[var(--border-color)] text-center">
+             <p className="text-[10px] text-[var(--text-body)]/80 uppercase tracking-widest font-bold">Smart Attendance System</p>
         </div>
       </div>
     </div>

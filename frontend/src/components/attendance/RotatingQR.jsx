@@ -33,12 +33,12 @@ export default function RotatingQR({ sessionId, onClose }) {
       <div className="transition-opacity duration-300">
         <QRCodeCanvas value={token} size={250} />
       </div>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-[var(--text-body)]/80">
         Code refreshes in {secondsLeft}s...
       </p>
       <button
         onClick={onClose}
-        className="px-4 py-2 bg-red-500 text-white rounded cursor-pointer hover:bg-red-600 transition"
+        className="px-4 py-2 bg-[var(--danger)] text-[var(--text-on-primary)] rounded cursor-pointer hover:opacity-90 transition"
       >
         Stop Session
       </button>

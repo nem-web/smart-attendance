@@ -88,7 +88,7 @@ export default function StudentList() {
   const getColorClasses = (color) => {
     switch (color) {
       case "green": return "bg-[var(--success)] text-[var(--text-on-primary)]";
-      case "amber": return "bg-[var(--warning)] text-[var(--text-on-primary)]";
+      case "amber": return "bg-[var(--warning)] text-[var(--text-main)]";
       case "red": return "bg-[var(--danger)] text-[var(--text-on-primary)]";
       default: return "bg-[var(--text-body)] text-[var(--text-on-primary)]";
     }
@@ -215,7 +215,7 @@ export default function StudentList() {
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                       selectedFilter === filter 
                       ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                      : "text-[var(--text-body)] hover:bg-[var(--bg-hover)]"
+                      : "text-[var(--text-body)] hover:bg-[var(--bg-secondary)]"
                     }`}
                     title={getLabel()}
                   >
@@ -276,7 +276,7 @@ export default function StudentList() {
                     return (
                       <tr
                         key={student.student_id}
-                        className="hover:bg-[var(--bg-hover)] transition-colors group"
+                        className="hover:bg-[var(--bg-secondary)] transition-colors group"
                       >
                         {/* Roll Number column */}
                         <td className="px-6 py-4">
@@ -332,7 +332,7 @@ export default function StudentList() {
                               {trend}% {t('students.trend.vs_last_month')}
                             </div>
                           ) : (
-                            <div className="text-xs font-medium text-[var(--text-body)] opacity-70">
+                            <div className="text-xs font-medium text-[var(--text-body)]/70">
                               {t('students.trend.no_change')}
                             </div>
                           )}
@@ -340,7 +340,7 @@ export default function StudentList() {
 
                         {/* Actions Column */}
                         <td className="px-6 py-4 text-right">
-                          <button className="text-[var(--text-body)]/50 hover:text-[var(--text-body)] p-1 hover:bg-[var(--bg-hover)] rounded-full transition">
+                          <button className="text-[var(--text-body)]/50 hover:text-[var(--text-body)] p-1 hover:bg-[var(--bg-secondary)] rounded-full transition">
                             <MoreHorizontal size={20} />
                           </button>
                         </td>
@@ -390,7 +390,7 @@ export default function StudentList() {
 
           {/* Card 2: Top Performers */}
           {topPerformers.length > 0 && (
-            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-gray-100 shadow-sm">
+            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
               <h3 className="font-semibold text-[var(--text-main)] mb-1">{t('students.stats.top_performers')}</h3>
               <p className="text-xs text-[var(--text-body)] mb-4">{t('students.stats.top_performers_desc')}</p>
               
@@ -398,10 +398,10 @@ export default function StudentList() {
                 {topPerformers.map((s, i) => (
                   <div key={s._id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{i+1}</div>
-                      <span className="text-sm font-medium text-gray-700">{s.name}</span>
+                      <div className="w-6 h-6 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-xs font-bold">{i+1}</div>
+                      <span className="text-sm font-medium text-[var(--text-body)]">{s.name}</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{s.attendancePercentage}%</span>
+                    <span className="text-sm font-bold text-[var(--text-main)]">{s.attendancePercentage}%</span>
                   </div>
                 ))}
               </div>
@@ -410,7 +410,7 @@ export default function StudentList() {
 
           {/* Card 3: Needs Support */}
           {needsSupport.length > 0 && (
-            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-gray-100 shadow-sm">
+            <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm">
               <h3 className="font-semibold text-[var(--text-main)] mb-1">{t('students.stats.needs_support')}</h3>
               <p className="text-xs text-[var(--text-body)] mb-4">{t('students.stats.needs_support_desc')}</p>
               
@@ -418,10 +418,10 @@ export default function StudentList() {
                 {needsSupport.map((s, i) => (
                   <div key={s._id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">{i+1}</div>
-                      <span className="text-sm font-medium text-gray-700">{s.name}</span>
+                      <div className="w-6 h-6 rounded-full bg-[var(--danger)]/10 text-[var(--danger)] flex items-center justify-center text-xs font-bold">{i+1}</div>
+                      <span className="text-sm font-medium text-[var(--text-body)]">{s.name}</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{s.attendancePercentage}%</span>
+                    <span className="text-sm font-bold text-[var(--text-main)]">{s.attendancePercentage}%</span>
                   </div>
                 ))}
               </div>

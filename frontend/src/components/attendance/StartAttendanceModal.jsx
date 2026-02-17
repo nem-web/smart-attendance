@@ -9,11 +9,11 @@ export default function StartAttendanceModal({ sessionId, onClose }) {
   const [actualSessionId] = useState(() => sessionId || "session-" + Date.now());
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md relative shadow-xl border border-gray-100 animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-[var(--overlay)] flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className="bg-[var(--bg-card)] rounded-2xl p-6 w-full max-w-md relative shadow-xl border border-[var(--border-color)] animate-in fade-in zoom-in duration-200">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+          className="absolute top-4 right-4 text-[var(--text-body)]/80 hover:text-[var(--text-body)] cursor-pointer"
         >
           <X size={24} />
         </button>
@@ -28,7 +28,7 @@ export default function StartAttendanceModal({ sessionId, onClose }) {
             </p>
             <button
               onClick={() => setShowQR(true)}
-              className="w-full py-3 bg-[var(--primary)] text-white rounded-xl hover:bg-[var(--primary-hover)] transition font-medium shadow-md cursor-pointer flex justify-center items-center"
+              className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl hover:bg-[var(--primary-hover)] transition font-medium shadow-md cursor-pointer flex justify-center items-center"
             >
               Generate QR
             </button>

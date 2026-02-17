@@ -138,7 +138,7 @@ export default function Register() {
                   onClick={() => handleRoleSelect('teacher')}
                   className="w-full p-4 border border-[var(--border-color)] rounded-2xl hover:border-[var(--primary)] hover:bg-[var(--bg-secondary)] transition-all group flex items-center gap-4 text-left"
                 >
-                  <div className="w-12 h-12 bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] rounded-full flex items-center justify-center group-hover:bg-[var(--action-info-bg)] group-hover:text-[var(--text-on-primary)] transition-colors">
+                  <div className="w-12 h-12 bg-[var(--action-info-bg)]/10 text-[var(--primary)] rounded-full flex items-center justify-center group-hover:bg-[var(--action-info-bg)] group-hover:text-[var(--text-on-primary)] transition-colors">
                     <Briefcase size={24} />
                   </div>
                   <div>
@@ -209,7 +209,7 @@ export default function Register() {
                       name="branch"
                       value={formData.branch}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 appearance-none text-[var(--text-body)]"
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 appearance-none text-[var(--text-main)]"
                     >
                       <option value="" disabled>{t('register.select_branch')}</option>
                       <option value="cse">Computer Science (CSE)</option>

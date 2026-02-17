@@ -76,10 +76,10 @@ const STUDENT_LEADERBOARD_RISK = [
 ];
 
 const CLASS_BREAKDOWN = [
-  { class: 'Grade 10A', students: 32, present: 88, late: 7, absent: 5, color: 'emerald' },
-  { class: 'Grade 10B', students: 30, present: 82, late: 9, absent: 9, color: 'amber' },
-  { class: 'Grade 9A', students: 28, present: 91, late: 5, absent: 4, color: 'emerald' },
-  { class: 'Grade 11C', students: 29, present: 71, late: 11, absent: 18, color: 'red' },
+  { class: 'Grade 10A', students: 32, present: 88, late: 7, absent: 5, color: "var(--success)" },
+  { class: 'Grade 10B', students: 30, present: 82, late: 9, absent: 9, color: "var(--warning)" },
+  { class: 'Grade 9A', students: 28, present: 91, late: 5, absent: 4, color: "var(--success)" },
+  { class: 'Grade 11C', students: 29, present: 71, late: 11, absent: 18, color: "var(--danger)" },
 ];
 
 // Mock subjects data
@@ -370,14 +370,14 @@ export default function Analytics() {
                 {/* Progress Bar Container */}
                 <div className="h-4 w-full bg-[var(--bg-card)] rounded-full flex overflow-hidden shadow-inner mb-2">
                   <div 
-                    className={`h-full ${cls.color === 'red' ? 'bg-[var(--danger)]' : cls.color === 'amber' ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'}`} 
-                    style={{width: `${cls.present}%`}}
+                    className="h-full" 
+                    style={{width: `${cls.present}%`, backgroundColor: cls.color}}
                   ></div>
                   <div className="h-full bg-[var(--warning)]/40" style={{width: `${cls.late}%`}}></div>
                   <div className="h-full bg-[var(--danger)]/40" style={{width: `${cls.absent}%`}}></div>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                    <span className={`px-2 py-0.5 rounded text-[var(--text-on-primary)] font-bold ${cls.color === 'red' ? 'bg-[var(--danger)]' : cls.color === 'amber' ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'}`}>
+                    <span className="px-2 py-0.5 rounded text-[var(--text-on-primary)] font-bold" style={{ backgroundColor: cls.color }}>
                       {t('analytics.breakdown.present_val', {val: cls.present})}
                     </span>
                     <span className="text-[var(--text-body)] opacity-80">

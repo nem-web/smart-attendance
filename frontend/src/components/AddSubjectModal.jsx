@@ -17,13 +17,13 @@ export default function AddSubjectModal({ open, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-[var(--bg-card)] w-full max-w-md rounded-2xl shadow-xl border border-[var(--border-color)] overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b border-[var(--border-color)]">
           <h3 className="text-lg font-bold text-[var(--text-main)]">{t('settings.profile.add_subject_modal.title')}</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[var(--bg-hover)] text-[var(--text-body)] rounded-full transition-colors"
+            className="p-2 hover:bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full transition-colors"
           >
             <X size={20} />
           </button>
@@ -40,7 +40,7 @@ export default function AddSubjectModal({ open, onClose, onSave }) {
               placeholder={t('settings.profile.add_subject_modal.name_placeholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
+              className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition-all"
             />
           </div>
 
@@ -54,7 +54,7 @@ export default function AddSubjectModal({ open, onClose, onSave }) {
               placeholder={t('settings.profile.add_subject_modal.code_placeholder')}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
+              className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none transition-all"
             />
           </div>
 
@@ -62,7 +62,7 @@ export default function AddSubjectModal({ open, onClose, onSave }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl font-medium text-[var(--text-body)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] transition-colors"
+              className="flex-1 py-2.5 rounded-xl font-medium text-[var(--text-body)] hover:bg-[var(--bg-secondary)] border border-[var(--border-color)] transition-colors"
             >
               {t('settings.profile.add_subject_modal.cancel')}
             </button>

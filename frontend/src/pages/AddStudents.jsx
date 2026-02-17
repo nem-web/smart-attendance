@@ -93,7 +93,7 @@ export default function AddStudents() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-hover)] flex items-center gap-2 transition shadow-sm">
+            <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-secondary)] flex items-center gap-2 transition shadow-sm">
               <RefreshCw size={16} />
               {t('add_students.refresh', "Refresh")}
             </button>
@@ -198,7 +198,7 @@ export default function AddStudents() {
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
                 {filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-[var(--bg-hover)] transition-colors group">
+                  <tr key={student.id} className="hover:bg-[var(--bg-secondary)] transition-colors group">
 
                     <td className="px-6 py-4 text-sm font-medium text-[var(--text-body)]">{student.roll}</td>
                     <td className="px-6 py-4">
@@ -219,7 +219,7 @@ export default function AddStudents() {
                            {t('add_students.status_unverified', "Unverified")}
                          </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--bg-secondary)] text-[var(--text-body)] border-[var(--border-color)]">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--bg-secondary)] text-[var(--text-body)] border border-[var(--border-color)]">
                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-body)] opacity-70"></span>
                            {t('add_students.status_waiting_image', "Waiting image")}
                          </span>
@@ -269,7 +269,7 @@ export default function AddStudents() {
 // eslint-disable-next-line no-unused-vars
 function NavItem({ icon: IconComp, label }) {
   return (
-    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[var(--text-body)] hover:bg-[var(--bg-hover)] rounded-lg text-sm font-medium transition-colors">
+    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-[var(--text-body)] hover:bg-[var(--bg-secondary)] rounded-lg text-sm font-medium transition-colors">
       <IconComp size={18} />
       <span>{label}</span>
     </button>

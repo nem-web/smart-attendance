@@ -50,10 +50,10 @@ export default function FaceOverlay({ faces, videoRef }) {
 
         const color =
           f.status === "present"
-            ? "#22c55e"
+            ? "var(--success)"
             : f.status === "uncertain"
-            ? "#f59e0b"
-            : "#ef4444";
+            ? "var(--warning)"
+            : "var(--danger)";
 
         const label =
           f.status === "present"
@@ -83,7 +83,7 @@ export default function FaceOverlay({ faces, videoRef }) {
                 top: "-18px",
                 left: 0,
                 background: color,
-                color: "#fff",
+                color: "var(--text-on-primary)",
                 fontSize: "10px",
                 padding: "2px 6px",
                 borderRadius: "4px",

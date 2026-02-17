@@ -10,8 +10,8 @@ function DesktopItem({ icon: Icon, label, active, path }) {
       to={path}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-sm ${
         active
-          ? "bg-blue-50 text-blue-600 shadow-sm shadow-blue-100"
-          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          ? "bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] shadow-sm shadow-black/10"
+          : "text-[var(--text-body)]/90 hover:bg-[var(--bg-secondary)] hover:text-[var(--text-main)]"
       }`}
     >
       <Icon
@@ -37,7 +37,7 @@ function MobileItem({ icon: Icon, label, active, path }) {
     <Link
       to={path}
       className={`flex flex-col items-center gap-1 text-xs font-medium transition-colors ${
-        active ? "text-blue-600" : "text-gray-400"
+        active ? "text-[var(--action-info-bg)]" : "text-[var(--text-body)]/70"
       }`}
     >
       <Icon size={20} />
@@ -76,10 +76,10 @@ export default function StudentNavigation({ activePage = "home" }) {
   return (
     <>
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col fixed h-full z-10">
+      <aside className="hidden md:flex w-64 bg-[var(--bg-card)] border-r border-[var(--border-color)] flex-col fixed h-full z-10">
         <div className="p-6 flex items-center gap-3">
           <img className="w-14 h-14 rounded-full" src="logo.png" alt="" />
-          <span className="font-bold text-lg tracking-tight">{t('student_dashboard.nav.app_name')}</span>
+          <span className="font-bold text-lg tracking-tight text-[var(--text-main)]">{t('student_dashboard.nav.app_name')}</span>
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
@@ -94,18 +94,18 @@ export default function StudentNavigation({ activePage = "home" }) {
           ))}
         </nav>
 
-        <div className="flex items-center justify-between p-4 border-t border-gray-100 mb-10">
+        <div className="flex items-center justify-between p-4 border-t border-[var(--border-color)] mb-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] flex items-center justify-center">
               <CircleUser size={24} strokeWidth={2} />
             </div>
             <div>
               <p className="text-sm font-bold">{username}</p>
-              <p className="text-xs text-gray-500">{t('student_dashboard.nav.student_role')}</p>
+              <p className="text-xs text-[var(--text-body)]/80">{t('student_dashboard.nav.student_role')}</p>
             </div>
           </div>
           <div className="logout">
-            <LogOut className="cursor-pointer"  onClick={()=>{
+            <LogOut className="cursor-pointer text-[var(--text-body)]/80 hover:text-[var(--danger)] transition-colors" onClick={()=>{
               localStorage.setItem("user", null);
               navigate("/");
             }}/>
@@ -115,7 +115,7 @@ export default function StudentNavigation({ activePage = "home" }) {
       </aside>
 
       {/* MOBILE BOTTOM NAVBAR */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 pb-6 flex justify-between items-center z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--bg-card)] border-t border-[var(--border-color)] px-6 py-3 pb-6 flex justify-between items-center z-50">
         {navItems.map(item => (
           <MobileItem
             key={item.id}

@@ -48,10 +48,10 @@ export default function Reports() {
 
   const getStatusColor = (color) => {
     switch (color) {
-      case "green": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
-      case "amber": return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
-      case "red": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
+      case "green": return "bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/25";
+      case "amber": return "bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/25";
+      case "red": return "bg-[var(--danger)]/10 text-[var(--danger)] border border-[var(--danger)]/25";
+      default: return "bg-[var(--bg-secondary)] text-[var(--text-body)] border border-[var(--border-color)]";
     }
   };
 
@@ -408,15 +408,15 @@ export default function Reports() {
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span className="w-2 h-2 rounded-full bg-[var(--success)]"></span>
                   <span>{t('reports.footer.good', { threshold })}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <span className="w-2 h-2 rounded-full bg-[var(--warning)]"></span>
                   <span>{t('reports.footer.warning')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  <span className="w-2 h-2 rounded-full bg-[var(--danger)]"></span>
                   <span>{t('reports.footer.at_risk')}</span>
                 </div>
               </div>

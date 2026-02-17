@@ -416,7 +416,7 @@ export default function ManageSchedule() {
       )}
 
       {previewTemplate && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] backdrop-blur-sm">
           <div className="bg-[var(--bg-card)] border border-[var(--border-color)] w-full max-w-2xl p-6 rounded-2xl shadow-2xl">
             <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3 mb-4">
               <h3 className="text-xl font-bold">{previewTemplate.name}</h3>
@@ -559,7 +559,7 @@ export default function ManageSchedule() {
                       · {cls.teacher}
                     </p>
                     <span
-                      className={`text-[var(--text-on-primary)] text-[10px] font-bold px-2 py-0.5 rounded ${cls.status === "Active" ? "bg-[var(--success)]" : "bg-[var(--warning)]"}`}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${cls.status === "Active" ? "bg-[var(--success)] text-[var(--text-on-primary)]" : "bg-[var(--warning)] text-[var(--text-main)]"}`}
                     >
                       {cls.status}
                     </span>
@@ -735,7 +735,7 @@ export default function ManageSchedule() {
 
           {/* Templates Modal */}
           {showTemplates && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-[var(--overlay)] z-50 flex items-center justify-center p-4">
               <div className="bg-[var(--bg-card)] w-full max-w-lg rounded-2xl p-6 shadow-xl border border-[var(--border-color)]">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-bold text-lg text-[var(--text-main)]">

@@ -253,7 +253,7 @@ export default function MarkAttendance() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
                 selectedSubject
                   ? 'bg-[var(--primary)] text-[var(--text-on-primary)] hover:bg-[var(--primary-hover)] cursor-pointer'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-body)]/80 cursor-not-allowed'
               }`}
             >
               <QrCode size={16} />
@@ -302,7 +302,7 @@ export default function MarkAttendance() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {locationError && (
-            <div className="lg:col-span-12 flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700">
+            <div className="lg:col-span-12 flex items-center gap-3 p-4 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/25 text-[var(--danger)]">
                <AlertCircle className="w-5 h-5 flex-shrink-0" />
                <div>
                  <h4 className="font-semibold text-sm">Location Service Issue</h4>
@@ -333,12 +333,12 @@ export default function MarkAttendance() {
 
               {/* Bottom Camera Controls */}
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/60 to-transparent flex justify-between items-end">
-                <div className="text-white/70 text-xs">
+                <div className="text-[var(--text-on-primary)]/70 text-xs">
                   <p>{t('mark_attendance.camera_overlay.recognition_running')}</p>
                   <p className="opacity-70">{t('mark_attendance.camera_overlay.tip')}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                   <button className="p-2 bg-white/10 hover:bg-white/20 text-[var(--text-on-primary)] rounded-lg transition backdrop-blur-md">
+                   <button className="p-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 text-[var(--text-on-primary)] rounded-lg transition backdrop-blur-md">
                      <Grid size={20} />
                    </button>
                 </div>
