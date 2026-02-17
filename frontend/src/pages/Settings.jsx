@@ -82,19 +82,37 @@ export default function Settings() {
   // State for Theme
   const { theme, setTheme } = useTheme();
 
-  // Notifications
-  const [notifications, setNotifications] = useState({
-    push: true,
-    inApp: true,
-    sound: false,
+  // Notifications - Initialize from localStorage
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smart_attendance_notifications');
+      return saved ? JSON.parse(saved) : {
+        push: true,
+        inApp: true,
+        sound: false,
+      };
+    } catch {
+      return {
+        push: true,
+        inApp: true,
+        sound: false,
+      };
+    }
   });
 
   // State for Face Settings
   const [liveness, setLiveness] = useState(true);
   const [sensitivity, setSensitivity] = useState(80);
 
-  // State for email preff
-  const [_emailPreferences, setEmailPreferences] = useState(false);
+  // State for email preff - Initialize from localStorage
+  const [_emailPreferences, setEmailPreferences] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smart_attendance_email_preferences');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
 
   // Contributors state
   const [contributors, setContributors] = useState([]);
@@ -222,15 +240,29 @@ export default function Settings() {
         // Use consistent loader function
         await loadProfile(data);
 
-        setTheme(data?.theme ?? data?.settings?.theme ?? "Light");
+        // CRITICAL FIX: Only update theme if database has a valid theme value
+        // This prevents theme reset on navigation
+        const dbTheme = data?.settings?.theme || data?.theme;
+        if (dbTheme && ["Light", "Dark", "Forest", "Cyber"].includes(dbTheme)) {
+          setTheme(dbTheme);
+          // Sync to localStorage
+          localStorage.setItem('smart_attendance_theme', dbTheme);
+        }
+        // If no valid theme in DB, keep current theme from context (which uses localStorage)
 
-        setNotifications({
+        // Update notifications and sync to localStorage
+        const dbNotifications = {
           push: data?.settings?.notifications?.push ?? true,
           inApp: data?.settings?.notifications?.inApp ?? true,
           sound: data?.settings?.notifications?.sound ?? false,
-        });
+        };
+        setNotifications(dbNotifications);
+        localStorage.setItem('smart_attendance_notifications', JSON.stringify(dbNotifications));
 
-        setEmailPreferences(data?.settings?.emailPreferences ?? []);
+        // Update email preferences and sync to localStorage
+        const dbEmailPrefs = data?.settings?.emailPreferences ?? false;
+        setEmailPreferences(dbEmailPrefs);
+        localStorage.setItem('smart_attendance_email_preferences', JSON.stringify(dbEmailPrefs));
 
         setWarningVal(data?.settings?.thresholds?.warningVal ?? 75);
         setSafeVal(data?.settings?.thresholds?.safeVal ?? 85);
@@ -271,6 +303,7 @@ export default function Settings() {
           avatarUrl: profile.avatarUrl,
         },
         settings: {
+          theme, // Include theme in settings
           thresholds: {
             warningVal,
             safeVal,
@@ -281,10 +314,15 @@ export default function Settings() {
             sensitivity,
           },
           emailPreferences: _emailPreferences,
-          theme,
         },
       };
       const updated = await patchSettings(payload); // your API helper
+      
+      // Update localStorage on successful save to keep in sync
+      localStorage.setItem('smart_attendance_theme', theme);
+      localStorage.setItem('smart_attendance_notifications', JSON.stringify(notifications));
+      localStorage.setItem('smart_attendance_email_preferences', JSON.stringify(_emailPreferences));
+      
       // update local profile from server response (server returns serialized doc)
       const serverProfile =
         updated.profile ?? updated.settings?.profile ?? null;
@@ -292,6 +330,7 @@ export default function Settings() {
         await loadProfile(serverProfile);
       }
       // optional: show toast success
+      console.log("Settings saved successfully");
     } catch (err) {
       console.error("Save profile failed", err);
       setSaveError(err.message || t('settings.alerts.save_failed'));
