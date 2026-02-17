@@ -8,9 +8,16 @@ def test_scheduler_starts_and_shuts_down():
     with patch.object(scheduler, "start") as mock_start:
         start_scheduler()
         mock_start.assert_called_once()
-    shutdown_scheduler()
+    with patch.object(scheduler, "shutdown") as mock_shutdown:
+        with patch.object(
+            type(scheduler), "running", new_callable=lambda: property(lambda s: True)
+        ):
+            shutdown_scheduler()
+        mock_shutdown.assert_called_once()
 
 
 def test_scheduler_double_shutdown():
-    """Shutting down an already stopped scheduler should not error."""
-    shutdown_scheduler()
+    """Shutting down a non-running scheduler should be a no-op."""
+    with patch.object(scheduler, "shutdown") as mock_shutdown:
+        shutdown_scheduler()
+        mock_shutdown.assert_not_called()

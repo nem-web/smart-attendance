@@ -147,9 +147,16 @@ export default function Settings() {
     setNoticeResult(null);
     try {
       const res = await sendLowAttendanceNotice();
-      setNoticeResult({ success: true, message: res.message || "Notices sent successfully" });
+      setNoticeResult({
+        success: true,
+        message: res.message || "Notices sent successfully",
+      });
     } catch (err) {
-      setNoticeResult({ success: false, message: err?.response?.data?.detail || err.message || "Failed to send notices" });
+      const errorMsg =
+        err?.response?.data?.detail ||
+        err.message ||
+        "Failed to send notices";
+      setNoticeResult({ success: false, message: errorMsg });
     } finally {
       setSendingNotice(false);
     }
