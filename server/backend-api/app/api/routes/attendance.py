@@ -1,7 +1,7 @@
 import base64
 import logging
 from datetime import date
-from typing import Dict, List, Set, Tuple
+from typing import Dict
 
 from bson import ObjectId
 from bson import errors as bson_errors
@@ -15,10 +15,65 @@ from app.services.ml_client import ml_client
 from app.utils.geo import calculate_distance
 from app.schemas.attendance import QRAttendanceRequest
 from app.core.security import get_current_user
+from app.utils.jwt_token import decode_jwt
 from fastapi import Depends
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
+
+
+def _parse_object_id(value: str, field_name: str) -> ObjectId:
+    """
+    Parse a string value to ObjectId, raising HTTPException on failure.
+    
+    Args:
+        value: The string value to parse
+        field_name: The field name for error messages
+        
+    Returns:
+        ObjectId: The parsed ObjectId
+        
+    Raises:
+        HTTPException: If the value is not a valid ObjectId
+    """
+    if not value:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    try:
+        return ObjectId(value)
+    except bson_errors.InvalidId:
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}")
+
+
+def _parse_object_id_list(
+    values: list[str], field_name: str
+) -> tuple[list[ObjectId], set[ObjectId]]:
+    """
+    Parse a list of string values to ObjectIds with deduplication.
+    
+    Args:
+        values: List of string values to parse
+        field_name: The field name for error messages
+        
+    Returns:
+        tuple: (list of ObjectIds, set of ObjectIds for deduplication)
+        
+    Raises:
+        HTTPException: If any value is not a valid ObjectId
+    """
+    oid_list = []
+    oid_set = set()
+    
+    for val in values:
+        try:
+            oid = ObjectId(val)
+            oid_list.append(oid)
+            oid_set.add(oid)
+        except bson_errors.InvalidId:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid ObjectId in {field_name}: {val}"
+            )
+    
+    return oid_list, oid_set
 
 
 @router.post("/mark-qr")
@@ -163,21 +218,21 @@ async def mark_attendance(request: Request, payload: Dict):
 
         trusted_device_id = user.get("trusted_device_id")
 
-        # Case A: First time (no trusted device set)
+        # Case A: First time (no trusted device set) - Auto-bind and allow
         if not trusted_device_id:
-            logger.warning(
-                "First-time device detected for user %s: %s. OTP verification required before binding.",
+            logger.info(
+                "First-time device detected for user %s: %s. Auto-binding device.",
                 user_id,
                 device_id,
             )
-            raise HTTPException(
-                status_code=403,
-                detail="First-time device detected. Please verify this device with the OTP sent to your email before attendance can be marked.",
+            await db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"trusted_device_id": device_id}},
             )
         # Case B: Device matches
         elif trusted_device_id == device_id:
             logger.debug("Device match for user %s", user_id)
-        # Case C: Device mismatch
+        # Case C: Device mismatch - Require OTP verification
         else:
             logger.warning(
                 "Device mismatch for user %s. Trusted: %s, Current: %s",

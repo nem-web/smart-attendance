@@ -4,6 +4,7 @@ from authlib.integrations.starlette_client import OAuth
 from datetime import datetime, timedelta, UTC, timezone
 import secrets
 import os
+import jwt
 from bson import ObjectId
 from app.utils.jwt_token import (
     create_access_token,
@@ -195,7 +196,33 @@ async def login(request: Request, payload: LoginRequest):
     if not user.get("is_verified", False):
         raise HTTPException(status_code=403, detail="Please verify your email first..")
 
-    # 4. Generate session ID and tokens
+    # 4. Check device binding cooldown after logout
+    device_id = request.headers.get("X-Device-ID")
+    last_logout_time = user.get("last_logout_time")
+    trusted_device_id = user.get("trusted_device_id")
+    
+    if device_id and last_logout_time and trusted_device_id:
+        # Normalize logout time to UTC
+        if last_logout_time.tzinfo is None:
+            last_logout_time = last_logout_time.replace(tzinfo=timezone.utc)
+        
+        # Check if less than 5 hours have passed since logout
+        time_since_logout = datetime.now(UTC) - last_logout_time
+        cooldown_period = timedelta(hours=5)
+        
+        # If logging in from a different device within cooldown period
+        if time_since_logout < cooldown_period and device_id != trusted_device_id:
+            hours_remaining = (cooldown_period - time_since_logout).total_seconds() / 3600
+            logger.warning(
+                "Login attempt from new device within cooldown period for user: %s",
+                payload.email
+            )
+            raise HTTPException(
+                status_code=403,
+                detail=f"DEVICE_COOLDOWN: You recently logged out. Please wait {hours_remaining:.1f} hours before logging in from a new device, or verify with OTP.",
+            )
+
+    # 5. Generate session ID and tokens
     session_id = generate_session_id()
     access_token = create_access_token(
         user_id=str(user["_id"]),
@@ -207,7 +234,7 @@ async def login(request: Request, payload: LoginRequest):
         user_id=str(user["_id"]), session_id=session_id
     )
 
-    # 5. Store hashed session ID in database (invalidates previous sessions)
+    # 6. Store hashed session ID in database (invalidates previous sessions)
     await db.users.update_one(
         {"_id": user["_id"]},
         {
@@ -808,4 +835,46 @@ async def verify_device_binding_otp(
         payload.new_device_id,
     )
     return VerifyDeviceBindingOtpResponse()
+
+
+# ----- Logout endpoint -----
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    """
+    Logout endpoint that tracks logout time for device binding cooldown.
+    
+    When a user logs out, we save the timestamp. If they try to login from
+    a new/untrusted device within 5 hours, they'll need OTP verification.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization required")
+
+    try:
+        token = auth_header.split(" ")[1]
+        decoded = decode_jwt(token)
+        user_id = decoded.get("user_id")
+    except (jwt.DecodeError, jwt.ExpiredSignatureError) as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {type(e).__name__}")
+    except Exception as e:
+        logger.error("Unexpected error during token decode: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Update last logout time
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {
+            "$set": {
+                "last_logout_time": datetime.now(UTC),
+            },
+            "$unset": {
+                "current_active_session": 1,
+            },
+        },
+    )
+
+    logger.info("User logged out: %s", user_id)
+    return {"message": "Logged out successfully"}
 
