@@ -341,13 +341,25 @@ export default function ManageSchedule() {
                     });
                   }}
                   className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg px-3 py-2 outline-none focus:ring-2 ring-[var(--primary)]"
+                  required
+                  disabled={subjects.length === 0}
                 >
-                  <option value="" disabled>Select a subject</option>
-                  {subjects.map((sub) => (
-                    <option key={sub._id} value={sub._id}>
-                      {sub.name}
+                  {subjects.length === 0 ? (
+                    <option value="" disabled>
+                      {t('manage_schedule.no_subjects_available', 'No subjects available')}
                     </option>
-                  ))}
+                  ) : (
+                    <>
+                      <option value="" disabled>
+                        {t('manage_schedule.select_subject', 'Select a subject')}
+                      </option>
+                      {subjects.map((sub) => (
+                        <option key={sub._id} value={sub._id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
