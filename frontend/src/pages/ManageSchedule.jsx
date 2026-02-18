@@ -1,9 +1,9 @@
-import React, { useState, useEffect ,useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Plus,
   Calendar as CalendarIcon,
-  RefreshCw,
+  CalendarDays,
   Folder,
   ChevronDown,
   MoreHorizontal,
@@ -20,6 +20,7 @@ import {
 import { getSettings, updateSettings } from "../api/schedule";
 import { fetchMySubjects } from "../api/teacher";
 import Spinner from "../components/Spinner";
+import HolidaysModal from "../components/HolidaysModal";
 
 export default function ManageSchedule() {
   const { t } = useTranslation();
@@ -37,6 +38,7 @@ export default function ManageSchedule() {
   const [previewTemplate, setPreviewTemplate] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [holidaysModalOpen, setHolidaysModalOpen] = useState(false);
   const yearScrollRef = useRef(null);
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -171,13 +173,14 @@ export default function ManageSchedule() {
         },
       });
     });
+    // Holidays are now in a dedicated collection (per issue #315),
+    // so we no longer include them in the schedule payload.
     return {
       timetable: Object.keys(grouped).map((day) => ({
         day,
         periods: grouped[day],
       })),
       recurring: scheduleEnvelope.recurring ?? null,
-      holidays: scheduleEnvelope.holidays ?? [],
       exams: scheduleEnvelope.exams ?? [],
       meta: scheduleEnvelope.meta ?? {},
     };
@@ -596,8 +599,9 @@ export default function ManageSchedule() {
             </div>
           </div>
 
-          {/* RIGHT SECTION: CALENDAR OVERVIEW*/}
+          {/* RIGHT SECTION: CALENDAR OVERVIEW */}
           <div className="xl:col-span-4 space-y-6">
+            {/* Calendar Card */}
             <div className="bg-[var(--bg-card)] p-6 rounded-2xl border border-[var(--border-color)] shadow-sm">
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-[var(--text-main)]">
@@ -707,58 +711,67 @@ export default function ManageSchedule() {
               </div>
             </div>
 
-            {/* Recurring Timetable */}
+            {/* Holidays Card — SIBLING of calendar, NOT nested */}
+            <div
+              onClick={() => setHolidaysModalOpen(true)}
+              className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition"
+            >
+              <div>
+                <h4 className="font-bold text-[var(--text-main)] text-sm">
+                  {t('manage_schedule.holidays_title', "Holidays")}
+                </h4>
+                <p className="text-xs text-[var(--text-body)] mt-0.5">
+                  {t('manage_schedule.holidays_desc', "Manage non-instructional days")}
+                </p>
+              </div>
+              <CalendarDays size={18} className="text-[var(--text-body)]" />
+            </div>
+
+            {/* Exam Days Card — SIBLING of holidays card */}
             <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition">
               <div>
                 <h4 className="font-bold text-[var(--text-main)] text-sm">
-                  {t('manage_schedule.recurring_timetable', "Recurring timetable")}
+                  {t('manage_schedule.exam_days', "Exam days")}
                 </h4>
-                  <p className="text-xs text-[var(--text-body)] mt-0.5">
-                    {t('manage_schedule.recurring_desc', "Mon-Fri use default weekly pattern")}
-                  </p>
-                </div>
-                <RefreshCw size={18} className="text-[var(--text-body)]" />
+                <p className="text-xs text-[var(--text-body)] mt-0.5">
+                  {t('manage_schedule.exam_desc', "Override schedule for exams")}
+                </p>
               </div>
+              <CalendarIcon size={18} className="text-[var(--text-body)]" />
+            </div>
 
-              {/* Exam Days */}
-              <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition">
-                <div>
-                  <h4 className="font-bold text-[var(--text-main)] text-sm">
-                    {t('manage_schedule.exam_days', "Exam days")}
-                  </h4>
-                  <p className="text-xs text-[var(--text-body)] mt-0.5">
-                    {t('manage_schedule.exam_desc', "Override schedule for exams")}
-                  </p>
-                </div>
-                <CalendarIcon size={18} className="text-[var(--text-body)]" />
+            {/* Custom Templates Card — SIBLING */}
+            <div
+              onClick={() => setShowTemplates(true)}
+              className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition"
+            >
+              <div>
+                <h4 className="font-bold text-[var(--text-main)] text-sm">
+                  {t('manage_schedule.custom_templates', "Custom templates")}
+                </h4>
+                <p className="text-xs text-[var(--text-body)] mt-0.5">
+                  {t('manage_schedule.templates_desc', "Save and reuse schedule presets")}
+                </p>
               </div>
-
-              {/* Custom Templates */}
-              <div
-                onClick={() => setShowTemplates(true)}
-                className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] flex items-center justify-between cursor-pointer hover:bg-[var(--bg-secondary)] transition"
-              >
-                <div>
-                  <h4 className="font-bold text-[var(--text-main)] text-sm">
-                    {t('manage_schedule.custom_templates', "Custom templates")}
-                  </h4>
-                  <p className="text-xs text-[var(--text-body)] mt-0.5">
-                    {t('manage_schedule.templates_desc', "Save and reuse schedule presets")}
-                  </p>
-                </div>
-                <Folder size={18} className="text-[var(--text-body)]" />
-              </div>
+              <Folder size={18} className="text-[var(--text-body)]" />
             </div>
           </div>
+        </div>
 
-          {/* Templates Modal */}
-          {showTemplates && (
-            <div className="fixed inset-0 bg-[var(--overlay)] z-50 flex items-center justify-center p-4">
-              <div className="bg-[var(--bg-card)] w-full max-w-lg rounded-2xl p-6 shadow-xl border border-[var(--border-color)]">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-lg text-[var(--text-main)]">
-                    {t('manage_schedule.custom_templates', "Custom Templates")}
-                  </h3>
+        {/* Holidays Modal — rendered at page root level, outside all cards */}
+        <HolidaysModal
+          isOpen={holidaysModalOpen}
+          onClose={() => setHolidaysModalOpen(false)}
+        />
+
+        {/* Templates Modal */}
+        {showTemplates && (
+          <div className="fixed inset-0 bg-[var(--overlay)] z-50 flex items-center justify-center p-4">
+            <div className="bg-[var(--bg-card)] w-full max-w-lg rounded-2xl p-6 shadow-xl border border-[var(--border-color)]">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-lg text-[var(--text-main)]">
+                  {t('manage_schedule.custom_templates', "Custom Templates")}
+                </h3>
                 <button
                   onClick={() => setShowTemplates(false)}
                   className="text-[var(--text-body)] hover:text-[var(--text-main)]"
@@ -817,7 +830,6 @@ export default function ManageSchedule() {
                     ))}
                   </div>
                 )}
-
 
                 <button
                   className="w-full bg-[var(--primary)] text-[var(--text-on-primary)] py-3 rounded-lg font-medium hover:opacity-90 transition shadow-md flex items-center justify-center gap-2"
