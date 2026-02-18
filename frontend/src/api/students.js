@@ -16,6 +16,11 @@ export const fetchMySubjects = async () => {
   return res.data;
 };
 
+export const fetchStudentTodaySchedule = async () => {
+  const res = await api.get("/students/me/today-schedule");
+  return res.data;
+};
+
 export const uploadFaceImage = async (file) => {
   const formData = new FormData();
   formData.append("file", file);

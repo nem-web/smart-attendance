@@ -110,3 +110,21 @@ async def get_today_schedule_entries(teacher_id: str, day_of_week: str) -> List[
     )  # Sort by slot
 
     return await cursor.to_list(length=None)
+
+
+async def get_student_schedule_for_day(
+    subject_ids: List[str], day_of_week: str
+) -> List[dict]:
+    """
+    Get schedule entries for a student based on their enrolled subjects and the day.
+    """
+    if not subject_ids:
+        return []
+
+    # Find schedules where subject_id is in the student's list AND day matches
+    query = {"subject_id": {"$in": subject_ids}, "day": day_of_week}
+
+    cursor = db[COLLECTION_NAME].find(query).sort("start_time", 1)
+
+    return await cursor.to_list(length=None)
+

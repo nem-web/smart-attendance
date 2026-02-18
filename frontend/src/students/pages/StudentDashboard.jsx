@@ -15,45 +15,70 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import StudentNavigation from "../components/StudentNavigation"
+import { fetchStudentTodaySchedule } from "../../api/students";
+import { useEffect, useState } from "react";
 
 export default function StudentDashboard() {
   const { t, i18n } = useTranslation();
+  const [schedule, setSchedule] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [tick, setTick] = useState(0);
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
   };
 
-  // Mock Data for Today's Schedule
-  const schedule = [
-    {
-      id: 1,
-      subject: "Mathematics",
-      time: "09:00 - 09:50 AM",
-      status: "Present",
-      color: "green"
-    },
-    {
-      id: 2,
-      subject: "Physics",
-      time: "10:00 - 10:50 AM",
-      status: "Absent",
-      color: "red"
-    },
-    {
-      id: 3,
-      subject: "English Literature",
-      time: "11:10 - 12:00 PM",
-      status: "Upcoming",
-      color: "gray"
-    },
-    {
-      id: 4,
-      subject: "Computer Science",
-      time: "01:00 - 01:50 PM",
-      status: "Upcoming",
-      color: "gray"
-    },
-  ];
+  useEffect(() => {
+    // Force re-render every minute to update class status (Upcoming -> Live -> Completed)
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadSchedule = async () => {
+      try {
+        const data = await fetchStudentTodaySchedule();
+        // data.classes is the list
+        setSchedule(data.classes || []);
+      } catch (err) {
+        console.error("Failed to load schedule", err);
+        setError("Failed to load schedule");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSchedule();
+  }, []);
+
+  const formatTimeRange = (start, end) => {
+    if (!start || !end) return "";
+    const format = (timeStr) => {
+      const [h, m] = timeStr.split(":").map(Number);
+      const suffix = h >= 12 ? "PM" : "AM";
+      const hour12 = h % 12 || 12;
+      return `${hour12}:${m.toString().padStart(2, "0")} ${suffix}`;
+    };
+    return `${format(start)} - ${format(end)}`;
+  };
+
+  const getStatus = (start, end) => {
+    if (!start || !end) return "Upcoming";
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const [sh, sm] = start.split(":").map(Number);
+    const startMinutes = sh * 60 + sm;
+
+    const [eh, em] = end.split(":").map(Number);
+    const endMinutes = eh * 60 + em;
+
+    if (currentMinutes < startMinutes) return "Upcoming";
+    if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) return "Live";
+    return "Completed";
+  };
 
   const currentDate = new Date().toLocaleDateString(i18n.language, {
     weekday: "long",
@@ -176,38 +201,57 @@ export default function StudentDashboard() {
               </div>
 
               <div className="space-y-3">
-                {schedule.map((item) => (
-                  <div key={item.id} className="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-color)] shadow-sm flex items-center justify-between group hover:border-[var(--primary)]/20 transition-colors">
-                    <div className="flex items-start gap-4">
-                      {/* Timeline Line Visual */}
-                      <div className="flex flex-col items-center gap-1 pt-1">
-                        <div className={`w-2 h-2 rounded-full ${item.status === "Present" ? "bg-[var(--success)]" : item.status === "Absent" ? "bg-[var(--danger)]" : "bg-[var(--border-color)]"}`}></div>
-                        <div className="w-0.5 h-8 bg-[var(--border-color)]/50 group-last:hidden"></div>
-                      </div>
+                {loading ? (
+                  <div className="text-center py-8 text-[var(--text-body)]/60 text-sm">Loading schedule...</div>
+                ) : error ? (
+                   <div className="text-center py-8 text-[var(--danger)] text-sm">{error}</div>
+                ) : schedule.length === 0 ? (
+                  <div className="text-center py-8 text-[var(--text-body)]/60 text-sm">No classes scheduled for today</div>
+                ) : (
+                  schedule.map((item) => {
+                    const status = getStatus(item.start_time, item.end_time);
+                    const timeRange = formatTimeRange(item.start_time, item.end_time);
 
-                      <div>
-                        <div className="flex items-center gap-2 text-[10px] text-[var(--text-body)]/70 font-medium uppercase tracking-wide">
-                          <Clock size={10} />
-                          {item.time}
+                    return (
+                      <div key={item.id} className="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-color)] shadow-sm flex items-center justify-between group hover:border-[var(--primary)]/20 transition-colors">
+                        <div className="flex items-start gap-4">
+                          {/* Timeline Line Visual */}
+                          <div className="flex flex-col items-center gap-1 pt-1">
+                            {/* Status Indicator Dot */}
+                            <div className={`w-2 h-2 rounded-full ${
+                              status === "Completed" ? "bg-[var(--success)]" : 
+                              status === "Live" ? "bg-[var(--warning)] animate-pulse" : 
+                              "bg-[var(--primary)]" // Upcoming
+                            }`}></div>
+                            <div className="w-0.5 h-8 bg-[var(--border-color)]/50 group-last:hidden"></div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2 text-[10px] text-[var(--text-body)]/70 font-medium uppercase tracking-wide">
+                              <Clock size={10} />
+                              {timeRange}
+                            </div>
+                            <h4 className="text-sm font-bold text-[var(--text-main)] mt-0.5">{item.subject_name}</h4>
+                            {item.room && <span className="text-xs text-[var(--text-body)]/60 block mt-0.5 flex items-center gap-1"><Home size={10}/> Room {item.room}</span>}
+                          </div>
                         </div>
-                        <h4 className="text-sm font-bold text-[var(--text-main)] mt-0.5">{item.subject}</h4>
-                      </div>
-                    </div>
 
-                    {/* Status Pill */}
-                    <div>
-                      {item.status === "Present" && (
-                        <span className="px-3 py-1 rounded-full bg-[var(--success)]/15 text-[var(--success)] text-xs font-bold">{t("student_dashboard.schedule.status_present")}</span>
-                      )}
-                      {item.status === "Absent" && (
-                        <span className="px-3 py-1 rounded-full bg-[var(--danger)]/15 text-[var(--danger)] text-xs font-bold">{t("student_dashboard.schedule.status_absent")}</span>
-                      )}
-                      {item.status === "Upcoming" && (
-                        <span className="px-3 py-1 rounded-full bg-[var(--bg-secondary)] text-[var(--text-body)]/80 text-xs font-bold">{t("student_dashboard.schedule.status_upcoming")}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                        {/* Status Pill */}
+                        <div>
+                          {status === "Completed" && (
+                            <span className="px-3 py-1 rounded-full bg-[var(--success)]/15 text-[var(--success)] text-xs font-bold">Completed</span>
+                          )}
+                          {status === "Live" && (
+                            <span className="px-3 py-1 rounded-full bg-[var(--warning)]/15 text-[var(--warning)] text-xs font-bold">Live Now</span>
+                          )}
+                          {status === "Upcoming" && (
+                            <span className="px-3 py-1 rounded-full bg-[var(--bg-secondary)] text-[var(--text-body)]/80 text-xs font-bold">{t("student_dashboard.schedule.status_upcoming")}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               {/* Empty State / End of List Decor */}
