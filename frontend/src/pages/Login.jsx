@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import EnhancedThemeToggle from "../components/EnhancedThemeToggle";
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -72,7 +73,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4 relative">
+      {/* Theme Toggle in Top-Right Corner */}
+      <EnhancedThemeToggle position="absolute" />
+      
       <div className="max-w-5xl w-full bg-[var(--bg-card)] rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row h-[600px]">
 
         {/* Left Side: Login Form */}

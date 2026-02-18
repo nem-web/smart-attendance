@@ -77,10 +77,10 @@ export default function StudentDashboard() {
       <StudentNavigation activePage="home" />
 
       {/* --- MAIN CONTENT AREA --- */}
-      <main className="flex-1 md:ml-64 pb-20 md:pb-8">
+      <main className="flex-1 md:ml-64 pb-20 md:pb-0">
 
         {/* Header */}
-        <header className="px-6 py-5 bg-[var(--bg-card)] border-b border-[var(--border-color)] md:bg-transparent md:border-none sticky top-0 z-10 flex justify-between items-center">
+        <header className="px-6 py-5 bg-[var(--bg-card)] md:bg-transparent flex justify-between items-center">
           <div>
             <p className="text-xs text-[var(--text-body)]/80 font-medium md:hidden">{t("student_dashboard.portal_name")}</p>
             <h1 className="text-xl md:text-2xl font-bold text-[var(--text-main)]">{t("student_dashboard.welcome", { name: username })}</h1>
