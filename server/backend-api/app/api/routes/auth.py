@@ -4,6 +4,7 @@ from authlib.integrations.starlette_client import OAuth
 from datetime import datetime, timedelta, UTC, timezone
 import secrets
 import os
+import jwt
 from bson import ObjectId
 from app.utils.jwt_token import (
     create_access_token,
@@ -26,6 +27,12 @@ from ...schemas.auth import (
     VerifyOtpResponse,
     ResetPasswordRequest,
     ResetPasswordResponse,
+)
+from ...schemas.device_binding import (
+    SendDeviceBindingOtpRequest,
+    SendDeviceBindingOtpResponse,
+    VerifyDeviceBindingOtpRequest,
+    VerifyDeviceBindingOtpResponse,
 )
 from ...core.security import hash_password, verify_password
 
@@ -73,6 +80,7 @@ async def register(
         "verification_token": verification_token,
         "verification_expiry": verification_expiry,
         "created_at": datetime.now(UTC),
+        "trusted_device_id": None,
     }
     # Insert into users collection
     try:
@@ -188,7 +196,33 @@ async def login(request: Request, payload: LoginRequest):
     if not user.get("is_verified", False):
         raise HTTPException(status_code=403, detail="Please verify your email first..")
 
-    # 4. Generate session ID and tokens
+    # 4. Check device binding cooldown after logout
+    device_id = request.headers.get("X-Device-ID")
+    last_logout_time = user.get("last_logout_time")
+    trusted_device_id = user.get("trusted_device_id")
+    
+    if device_id and last_logout_time and trusted_device_id:
+        # Normalize logout time to UTC
+        if last_logout_time.tzinfo is None:
+            last_logout_time = last_logout_time.replace(tzinfo=timezone.utc)
+        
+        # Check if less than 5 hours have passed since logout
+        time_since_logout = datetime.now(UTC) - last_logout_time
+        cooldown_period = timedelta(hours=5)
+        
+        # If logging in from a different device within cooldown period
+        if time_since_logout < cooldown_period and device_id != trusted_device_id:
+            hours_remaining = (cooldown_period - time_since_logout).total_seconds() / 3600
+            logger.warning(
+                "Login attempt from new device within cooldown period for user: %s",
+                payload.email
+            )
+            raise HTTPException(
+                status_code=403,
+                detail=f"DEVICE_COOLDOWN: You recently logged out. Please wait {hours_remaining:.1f} hours before logging in from a new device, or verify with OTP.",
+            )
+
+    # 5. Generate session ID and tokens
     session_id = generate_session_id()
     access_token = create_access_token(
         user_id=str(user["_id"]),
@@ -200,7 +234,7 @@ async def login(request: Request, payload: LoginRequest):
         user_id=str(user["_id"]), session_id=session_id
     )
 
-    # 5. Store hashed session ID in database (invalidates previous sessions)
+    # 6. Store hashed session ID in database (invalidates previous sessions)
     await db.users.update_one(
         {"_id": user["_id"]},
         {
@@ -637,3 +671,210 @@ async def google_callback(request: Request):
     )
 
     return RedirectResponse(url=redirect_url)
+
+
+# ----- Device Binding with OTP flow -----
+
+
+@router.post("/device-binding-otp", response_model=SendDeviceBindingOtpResponse)
+@limiter.limit("5/hour")
+async def send_device_binding_otp(
+    request: Request,
+    payload: SendDeviceBindingOtpRequest,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Request a device binding OTP when a new device is detected.
+
+    Generates a secure 6-digit OTP, hashes it before storing, and sends it
+    via email. Returns the same message whether the email exists or not to
+    avoid email enumeration.
+    """
+    user = await db.users.find_one({"email": payload.email})
+    if not user:
+        return SendDeviceBindingOtpResponse()
+
+    otp = _generate_otp()
+    otp_hash = hash_password(otp)
+    otp_expiry = _get_otp_expiry()
+
+    # Store OTP for device binding with device_id info
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {
+                "device_binding_otp_hash": otp_hash,
+                "device_binding_otp_expiry": otp_expiry,
+                "device_binding_new_device_id": payload.new_device_id,
+                "device_binding_otp_failed_attempts": 0,
+            }
+        },
+    )
+
+    background_tasks.add_task(
+        BrevoEmailService.send_otp_email,
+        payload.email,
+        user.get("name", "User"),
+        otp,
+        subject="Device Binding Verification",
+    )
+
+    logger.info(
+        "Device binding OTP sent for email: %s, device: %s",
+        payload.email,
+        payload.new_device_id,
+    )
+    return SendDeviceBindingOtpResponse()
+
+
+@router.post("/verify-device-binding-otp", response_model=VerifyDeviceBindingOtpResponse)
+async def verify_device_binding_otp(
+    payload: VerifyDeviceBindingOtpRequest,
+) -> dict:
+    """
+    Verify the OTP sent for device binding and bind the new device.
+
+    Returns a generic 400 error for invalid/expired OTP or unknown email to
+    prevent enumeration. After 5 failed attempts, the OTP is cleared.
+    """
+    user = await db.users.find_one({"email": payload.email})
+    if not user:
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
+
+    stored_otp_hash = user.get("device_binding_otp_hash")
+    expiry = _normalize_expiry(user.get("device_binding_otp_expiry"))
+    failed_attempts = user.get("device_binding_otp_failed_attempts", 0)
+    stored_device_id = user.get("device_binding_new_device_id")
+
+    if failed_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {
+                "$unset": {
+                    "device_binding_otp_hash": 1,
+                    "device_binding_otp_expiry": 1,
+                    "device_binding_new_device_id": 1,
+                    "device_binding_otp_failed_attempts": 1,
+                }
+            },
+        )
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
+
+    if expiry is None or expiry < datetime.now(UTC):
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$inc": {"device_binding_otp_failed_attempts": 1}},
+        )
+        new_attempts = failed_attempts + 1
+        if new_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {
+                    "$unset": {
+                        "device_binding_otp_hash": 1,
+                        "device_binding_otp_expiry": 1,
+                        "device_binding_new_device_id": 1,
+                        "device_binding_otp_failed_attempts": 1,
+                    }
+                },
+            )
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
+
+    reason = None
+    if not stored_otp_hash:
+        reason = "missing_otp_hash"
+    elif not verify_password(payload.otp, stored_otp_hash):
+        reason = "invalid_otp"
+    elif stored_device_id != payload.new_device_id:
+        reason = "device_id_mismatch"
+
+    if reason is not None:
+        logger.warning(
+            "Device binding OTP verification failed for user %s: %s",
+            payload.email,
+            reason,
+        )
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$inc": {"device_binding_otp_failed_attempts": 1}},
+        )
+        new_attempts = failed_attempts + 1
+        if new_attempts >= OTP_FAILED_ATTEMPTS_MAX:
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {
+                    "$unset": {
+                        "device_binding_otp_hash": 1,
+                        "device_binding_otp_expiry": 1,
+                        "device_binding_new_device_id": 1,
+                        "device_binding_otp_failed_attempts": 1,
+                    }
+                },
+            )
+        raise HTTPException(status_code=400, detail=GENERIC_OTP_ERROR)
+
+    # Update trusted device ID and clear OTP fields
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {
+                "trusted_device_id": payload.new_device_id,
+            },
+            "$unset": {
+                "device_binding_otp_hash": 1,
+                "device_binding_otp_expiry": 1,
+                "device_binding_new_device_id": 1,
+                "device_binding_otp_failed_attempts": 1,
+            },
+        },
+    )
+
+    logger.info(
+        "Device successfully bound for user: %s, device: %s",
+        payload.email,
+        payload.new_device_id,
+    )
+    return VerifyDeviceBindingOtpResponse()
+
+
+# ----- Logout endpoint -----
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    """
+    Logout endpoint that tracks logout time for device binding cooldown.
+    
+    When a user logs out, we save the timestamp. If they try to login from
+    a new/untrusted device within 5 hours, they'll need OTP verification.
+    """
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization required")
+
+    try:
+        token = auth_header.split(" ")[1]
+        decoded = decode_jwt(token)
+        user_id = decoded.get("user_id")
+    except (jwt.DecodeError, jwt.ExpiredSignatureError) as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {type(e).__name__}")
+    except Exception as e:
+        logger.error("Unexpected error during token decode: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Update last logout time
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {
+            "$set": {
+                "last_logout_time": datetime.now(UTC),
+            },
+            "$unset": {
+                "current_active_session": 1,
+            },
+        },
+    )
+
+    logger.info("User logged out: %s", user_id)
+    return {"message": "Logged out successfully"}
+

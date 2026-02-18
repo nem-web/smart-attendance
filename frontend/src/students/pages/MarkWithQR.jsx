@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     ArrowLeft,
@@ -9,17 +9,18 @@ import {
     QrCode,
     ShieldCheck,
     Navigation,
-    UserCheck // Newly imported icon
+    UserCheck
 } from "lucide-react";
 import api from "../../api/axiosClient";
 import QRScanner from "../components/QRScanner";
-import LivenessCheck from "../components/LivenessCheck"; // Import new component
+import LivenessCheck from "../components/LivenessCheck";
+import DeviceBindingOTPModal from "../../components/DeviceBindingOTPModal";
 
 export default function MarkWithQR() {
     const navigate = useNavigate();
     const [showScanner, setShowScanner] = useState(false);
-    const [showLiveness, setShowLiveness] = useState(false); // New state for Liveness UI
-    const [qrToken, setQrToken] = useState(null); // Store token while waiting for liveness
+    const [showLiveness, setShowLiveness] = useState(false);
+    const [qrToken, setQrToken] = useState(null);
 
     const [status, setStatus] = useState("idle"); // idle, scanning, liveness, geolocating, submitting, success, error
     const [errorMsg, setErrorMsg] = useState("");
@@ -46,7 +47,6 @@ export default function MarkWithQR() {
     };
 
     const startGeolocation = (token) => {
-        // Step 3: Capture Geolocation
         if (!navigator.geolocation) {
             setStatus("error");
             setErrorMsg("Geolocation is not supported by your browser.");
@@ -88,7 +88,6 @@ export default function MarkWithQR() {
                 longitude: lng,
             });
 
-            // If the request did not throw, treat it as a success based on HTTP status
             setStatus("success");
         } catch (error) {
             setStatus("error");
@@ -108,7 +107,7 @@ export default function MarkWithQR() {
                     <ArrowLeft size={24} />
                 </button>
                 <h1 className="text-xl font-bold text-[var(--text-main)]">Mark Attendance</h1>
-                <div className="w-10"></div> {/* Spacer */}
+                <div className="w-10"></div>
             </header>
 
             <main className="flex-1 p-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
@@ -153,7 +152,7 @@ export default function MarkWithQR() {
 
                         <button
                             onClick={startScanning}
-                            className="w-full bg-[var(--action-info-bg)]  hover:bg-[var(--action-info-hover)] active:scale-95 text-[var(--text-on-primary)] py-4 px-8 rounded-2xl font-bold shadow-xl shadow-black/10 transition-all flex items-center justify-center gap-3 text-lg"
+                            className="w-full bg-[var(--action-info-bg)] hover:bg-[var(--action-info-hover)] active:scale-95 text-[var(--text-on-primary)] py-4 px-8 rounded-2xl font-bold shadow-xl shadow-black/10 transition-all flex items-center justify-center gap-3 text-lg"
                         >
                             <QrCode size={22} />
                             Mark with QR

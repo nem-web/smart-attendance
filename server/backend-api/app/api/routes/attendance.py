@@ -1,75 +1,242 @@
 import base64
 import logging
 from datetime import date
-from typing import Dict, List, Set, Tuple
+from typing import Dict
 
 from bson import ObjectId
 from bson import errors as bson_errors
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from geopy.distance import geodesic
 from app.core.config import ML_CONFIDENT_THRESHOLD, ML_UNCERTAIN_THRESHOLD
 from app.db.mongo import db
 from app.services.attendance_daily import save_daily_summary
 from app.services.ml_client import ml_client
+from app.utils.geo import calculate_distance
+from app.schemas.attendance import QRAttendanceRequest
+from app.core.security import get_current_user
+from app.utils.jwt_token import decode_jwt
+from fastapi import Depends
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
 
 
 def _parse_object_id(value: str, field_name: str) -> ObjectId:
-    if value is None:
+    """
+    Parse a string value to ObjectId, raising HTTPException on failure.
+    
+    Args:
+        value: The string value to parse
+        field_name: The field name for error messages
+        
+    Returns:
+        ObjectId: The parsed ObjectId
+        
+    Raises:
+        HTTPException: If the value is not a valid ObjectId
+    """
+    if not value:
         raise HTTPException(status_code=400, detail=f"{field_name} is required")
-
-    if not isinstance(value, str) or not value.strip():
-        raise HTTPException(
-            status_code=400,
-            detail=f"{field_name} must be a non-empty string",
-        )
     try:
         return ObjectId(value)
-    except (bson_errors.InvalidId, TypeError):
+    except bson_errors.InvalidId:
         raise HTTPException(status_code=400, detail=f"Invalid {field_name}")
 
 
 def _parse_object_id_list(
-    values: List[str], field_name: str
-) -> Tuple[List[ObjectId], Set[str]]:
-    if not isinstance(values, list):
-        raise HTTPException(
-            status_code=400,
-            detail=f"{field_name} must be a list of strings",
-        )
-
-    parsed_ids: List[ObjectId] = []
-    unique_ids: Set[str] = set()
-
-    for idx, value in enumerate(values):
-        if not isinstance(value, str) or not value.strip():
-            raise HTTPException(
-                status_code=400,
-                detail=f"{field_name}[{idx}] must be a non-empty string",
-            )
+    values: list[str], field_name: str
+) -> tuple[list[ObjectId], set[ObjectId]]:
+    """
+    Parse a list of string values to ObjectIds with deduplication.
+    
+    Args:
+        values: List of string values to parse
+        field_name: The field name for error messages
+        
+    Returns:
+        tuple: (list of ObjectIds, set of ObjectIds for deduplication)
+        
+    Raises:
+        HTTPException: If any value is not a valid ObjectId
+    """
+    oid_list = []
+    oid_set = set()
+    
+    for val in values:
         try:
-            oid = ObjectId(value)
-        except (bson_errors.InvalidId, TypeError):
+            oid = ObjectId(val)
+            oid_list.append(oid)
+            oid_set.add(oid)
+        except bson_errors.InvalidId:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid ObjectId in {field_name}: {val}"
+            )
+    
+    return oid_list, oid_set
+
+
+@router.post("/mark-qr")
+async def mark_attendance_qr(
+    payload: QRAttendanceRequest, current_user: dict = Depends(get_current_user)
+):
+    """
+    Mark attendance via QR code with geofencing check and date validation.
+    
+    Validates:
+    - subjectId exists
+    - date is today (prevents scanning old screenshots)
+    - token is valid
+    - student location within allowed radius
+    
+    Updates:
+    - subjects.students.attendance array (adds attendance record)
+    - subjects.students.present_count (increments counter)
+    """
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Only students can mark attendance")
+
+    student_oid = ObjectId(current_user["id"])
+    subject_id = payload.subjectId
+    
+    if not ObjectId.is_valid(subject_id):
+        raise HTTPException(status_code=400, detail="Invalid subject ID")
+         
+    subject_oid = ObjectId(subject_id)
+
+    # Validate date is today
+    from datetime import datetime, UTC
+    try:
+        qr_date = datetime.fromisoformat(payload.date.replace('Z', '+00:00'))
+        today = datetime.now(UTC).date()
+        qr_day = qr_date.date()
+        
+        if qr_day != today:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid ObjectId at {field_name}[{idx}]",
+                detail=(
+                    "Expired Session: QR code is not from today. "
+                    "Please scan a fresh QR code."
+                ),
             )
+    except (ValueError, AttributeError) as e:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {str(e)}")
 
-        oid_str = str(oid)
-        if oid_str in unique_ids:
-            continue
+    # 1. Fetch Subject & Location
+    subject = await db.subjects.find_one({"_id": subject_oid})
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
 
-        unique_ids.add(oid_str)
-        parsed_ids.append(oid)
+    # 2. Geofencing Check
+    is_proxy_suspected = False
+    dist = 0.0
+    
+    location_cfg = subject.get("location")
+    if location_cfg:
+        teacher_lat = float(location_cfg.get("lat", 0.0))
+        teacher_lon = float(location_cfg.get("long", 0.0))
+        radius = float(location_cfg.get("radius", 50.0))
+        
+        dist = calculate_distance(
+            teacher_lat, teacher_lon, payload.latitude, payload.longitude
+        )
+        
+        if dist > radius:
+            is_proxy_suspected = True
+    else:
+        # No location config at all:
+        # Do NOT default to (0.0, 0.0) for geofencing, as that would
+        # incorrectly flag all real-world locations as proxy-suspected.
+        # Instead, skip geofencing and leave is_proxy_suspected = False.
+        dist = 0.0
 
-    return parsed_ids, unique_ids
+    # 3. Mark Attendance (Update Subject)
+    today = date.today().isoformat()
+    
+    # Check if student has already marked attendance today for this subject
+    existing_subject = await db.subjects.find_one(
+        {
+            "_id": subject_oid,
+            "students": {
+                "$elemMatch": {
+                    "student_id": student_oid,
+                    "attendance.lastMarkedAt": today
+                }
+            }
+        }
+    )
+    
+    if existing_subject:
+        raise HTTPException(
+            status_code=409,
+            detail="Attendance already marked for today"
+        )
+    
+    # Update the student's attendance in the subject document
+    # 1. Push attendance record to the attendance array
+    # 2. Increment present counter
+    # 3. Update lastMarkedAt
+    # Note: attendanceRecords array will grow over time. For production use,
+    # consider archiving old records or using a separate collection for
+    # historical data to avoid hitting MongoDB's 16MB document size limit.
+    attendance_record = {
+        "date": today,
+        "status": "Present",
+        "timestamp": datetime.now(UTC).isoformat(),
+        "method": "qr"
+    }
+    
+    result = await db.subjects.update_one(
+        {
+            "_id": subject_oid,
+            "students.student_id": student_oid
+        },
+        {
+            "$push": {"students.$.attendanceRecords": attendance_record},
+            "$inc": {
+                "students.$.attendance.present": 1,
+                "students.$.attendance.total": 1
+            },
+            "$set": {"students.$.attendance.lastMarkedAt": today},
+        }
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Student not enrolled in this subject or already marked"
+        )
+    
+    # 4. Save audit record including is_proxy_suspected
+    # Use a dedicated attendance_logs collection to store audit events,
+    # avoiding unbounded growth and schema changes on the nested students
+    # array in subjects.
+    
+    log_entry = {
+        "student_id": student_oid,
+        "subject_id": subject_oid,
+        "date": today,
+        "timestamp": datetime.now(UTC).isoformat(),
+        "session_id": payload.sessionId,
+        "token": payload.token,
+        "latitude": payload.latitude,
+        "longitude": payload.longitude,
+        "distance_from_teacher": dist,
+        "is_proxy_suspected": is_proxy_suspected,
+        "method": "qr"
+    }
+    
+    await db.attendance_logs.insert_one(log_entry)
+
+    return {
+        "message": "Attendance marked successfully",
+        "proxy_suspected": is_proxy_suspected,
+        "distance": dist
+    }
 
 
 @router.post("/mark")
-async def mark_attendance(payload: Dict):
+async def mark_attendance(request: Request, payload: Dict):
     """
     Mark attendance by detecting faces in classroom image
 
@@ -78,7 +245,70 @@ async def mark_attendance(payload: Dict):
       "image": "data:image/jpeg;base64,...",
       "subject_id": "..."
     }
+
+    headers:
+    {
+      "X-Device-ID": "unique-device-uuid"
+    }
     """
+    # Extract device ID from header
+    device_id = request.headers.get("X-Device-ID")
+    if not device_id:
+        raise HTTPException(
+            status_code=400, detail="X-Device-ID header is required"
+        )
+
+    # Extract user from Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization required")
+
+    try:
+        token = auth_header.split(" ")[1]
+        decoded = decode_jwt(token)
+        user_id = decoded.get("user_id")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Check device binding
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        trusted_device_id = user.get("trusted_device_id")
+
+        # Case A: First time (no trusted device set) - Auto-bind and allow
+        if not trusted_device_id:
+            logger.info(
+                "First-time device detected for user %s: %s. Auto-binding device.",
+                user_id,
+                device_id,
+            )
+            await db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"trusted_device_id": device_id}},
+            )
+        # Case B: Device matches
+        elif trusted_device_id == device_id:
+            logger.debug("Device match for user %s", user_id)
+        # Case C: Device mismatch - Require OTP verification
+        else:
+            logger.warning(
+                "Device mismatch for user %s. Trusted: %s, Current: %s",
+                user_id,
+                trusted_device_id,
+                device_id,
+            )
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "New device detected. "
+                    "Please verify with OTP sent to your email."
+                ),
+            )
+    except bson_errors.InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
 
     image_b64 = payload.get("image")
     subject_id = payload.get("subject_id")

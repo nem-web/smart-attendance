@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getOrCreateDeviceUUID } from "../utils/deviceBinding";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -10,6 +11,11 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Add device UUID to all requests
+  const deviceUUID = getOrCreateDeviceUUID();
+  config.headers["X-Device-ID"] = deviceUUID;
+
   return config;
 });
 
@@ -19,6 +25,28 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // Check for device binding error (403 New Device Detected)
+    if (error.response?.status === 403 && 
+        error.response?.data?.detail?.includes("New device detected")) {
+      // Store device binding state for modal to use
+      sessionStorage.setItem(
+        "deviceBindingRequired",
+        JSON.stringify({
+          error: error.response.data.detail,
+          timestamp: Date.now(),
+        })
+      );
+
+      // Import toast dynamically to avoid circular dependencies
+      const { toast } = await import("react-hot-toast");
+      toast.error("New device detected. Please verify with OTP.", {
+        duration: 5000,
+        position: "top-center",
+      });
+
+      return Promise.reject(error);
+    }
 
     // Check for session conflict error
     if (
@@ -30,6 +58,7 @@ api.interceptors.response.use(
 
       // Clear all session data
       localStorage.clear();
+      sessionStorage.clear();
 
       // Show user-friendly notification
       toast.error(

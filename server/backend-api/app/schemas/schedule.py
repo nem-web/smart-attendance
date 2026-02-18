@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from datetime import date
+from uuid import uuid4
 
 
 class ClassMetadata(BaseModel):
@@ -9,6 +10,7 @@ class ClassMetadata(BaseModel):
     room: Optional[str] = None
     teacher_id: Optional[str] = None
     tracked: bool = True
+    slot_id: Optional[str] = None
 
 
 class Period(BaseModel):
@@ -48,3 +50,20 @@ class Schedule(BaseModel):
     holidays: Optional[List[Holiday]] = []
     exams: Optional[List[ExamOverride]] = []
     meta: Optional[Dict[str, str]] = None
+
+
+class ScheduleSlot(BaseModel):
+    slot_id: str = Field(default_factory=lambda: str(uuid4()))
+    day: str
+    slot: int
+    start_time: str
+    end_time: str
+    room: Optional[str] = None
+    tracked: bool = True
+
+
+class SubjectSchedule(BaseModel):
+    subject_id: str
+    teacher_id: str
+    subject_name: Optional[str] = None
+    weekly_schedule: List[ScheduleSlot] = []

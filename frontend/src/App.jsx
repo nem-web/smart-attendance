@@ -22,6 +22,8 @@ import MarkWithQR from "./students/pages/MarkWithQR.jsx"
 import OAuthCallback from "./pages/OAuthCallback.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
+import DeviceBindingOtpModal from "./components/DeviceBindingOtpModal";
+import { useDeviceBinding } from "./hooks/useDeviceBinding";
 //import ThemeToggle from "./components/ThemeToggle";
 
 
@@ -62,6 +64,8 @@ const hideNavbarRoutes = [
 export default function App() {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
+  const { isModalOpen, closeModal, userEmail, handleSuccess } =
+    useDeviceBinding();
 
   const hideNavbar = hideNavbarRoutes.includes(location.pathname);
 
@@ -69,6 +73,14 @@ export default function App() {
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <Toaster position="top-right" />
       {!hideNavbar && <Header theme={theme} setTheme={setTheme} />}
+
+      {/* Device Binding OTP Modal */}
+      <DeviceBindingOtpModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        userEmail={userEmail}
+        onSuccess={handleSuccess}
+      />
 
       <main>
         <Routes>

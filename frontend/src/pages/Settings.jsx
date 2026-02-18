@@ -21,6 +21,7 @@ import {
   TreePine,
 } from "lucide-react";
 import SettingsSidebar from "../components/SettingsSidebar";
+import LogoutConfirmDialog from "../components/LogoutConfirmDialog";
 import { useTheme } from "../theme/ThemeContext";
 import {
   getSettings,
@@ -29,8 +30,10 @@ import {
   addSubject,
   sendLowAttendanceNotice,
 } from "../api/settings";
+import { logout as apiLogout } from "../api/auth";
 import AddSubjectModal from "../components/AddSubjectModal";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -172,11 +175,28 @@ export default function Settings() {
       .join("");
   }
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
+    setShowLogoutConfirm(true);
+  }
+
+  async function confirmLogout() {
+    try {
+      await apiLogout();
+    } catch (error) {
+      // Log error for debugging but continue with logout
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Logout API call failed:", error);
+      }
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("refresh_token");
+      setShowLogoutConfirm(false);
+      toast.success("Logged out successfully");
+      navigate("/login");
+    }
   }
 
 
@@ -1051,6 +1071,13 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }

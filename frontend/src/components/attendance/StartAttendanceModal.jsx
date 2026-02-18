@@ -3,7 +3,7 @@ import RotatingQR from "./RotatingQR";
 import { X } from "lucide-react";
 import PropTypes from 'prop-types';
 
-export default function StartAttendanceModal({ sessionId, onClose }) {
+export default function StartAttendanceModal({ sessionId, subjectId, onClose }) {
   const [showQR, setShowQR] = useState(false);
   // Use the provided sessionId or generate a fallback (using useState to ensure purity)
   const [actualSessionId] = useState(() => sessionId || "session-" + Date.now());
@@ -37,6 +37,7 @@ export default function StartAttendanceModal({ sessionId, onClose }) {
           <div className="flex justify-center">
             <RotatingQR
               sessionId={actualSessionId}
+              subjectId={subjectId}
               onClose={onClose}
             />
           </div>
@@ -48,5 +49,6 @@ export default function StartAttendanceModal({ sessionId, onClose }) {
 
 StartAttendanceModal.propTypes = {
   sessionId: PropTypes.string,
+  subjectId: PropTypes.string,
   onClose: PropTypes.func.isRequired,
 };
