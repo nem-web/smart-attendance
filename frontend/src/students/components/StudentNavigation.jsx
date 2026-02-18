@@ -98,21 +98,21 @@ export default function StudentNavigation({ activePage = "home" }) {
         </nav>
 
         {/* THEME TOGGLE AND USER INFO */}
-        <div className="p-4 border-t border-[var(--border-color)] space-y-4">
+        <div className="p-4 border-t border-[var(--border-color)] space-y-4 bg-[var(--bg-card)]">
           <EnhancedThemeToggle />
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--bg-secondary)] transition">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] flex items-center justify-center flex-shrink-0">
                 <CircleUser size={24} strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-sm font-bold text-[var(--text-main)]">{username}</p>
-                <p className="text-xs text-[var(--text-body)]/80">{t('student_dashboard.nav.student_role')}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-[var(--text-main)] truncate">{username}</p>
+                <p className="text-xs text-[var(--text-body)] truncate">{t('student_dashboard.nav.student_role')}</p>
               </div>
             </div>
-            <div className="logout">
-              <LogOut className="cursor-pointer text-[var(--text-body)]/80 hover:text-[var(--danger)] transition-colors" onClick={()=>{
+            <div className="logout flex-shrink-0">
+              <LogOut className="cursor-pointer text-[var(--text-body)] hover:text-[var(--danger)] transition-colors" size={20} onClick={()=>{
                 localStorage.setItem("user", null);
                 navigate("/");
               }}/>
