@@ -15,3 +15,9 @@ class AttendanceCreate(BaseModel):
 class AttendanceOut(AttendanceCreate):
     id: str = Field(..., alias="_id")
     created_at: Optional[str]
+
+
+class QRAttendanceRequest(BaseModel):
+    token: str
+    latitude: float
+    longitude: float
