@@ -39,9 +39,11 @@
     "no_subjects": "अभी तक कोई विषय नामांकित नहीं है।",
     "attendance_label": "उपस्थिति",
     "attended_stats": "उपस्थित: {{attended}}/{{total}} कक्षाएं ({{percentage}}%)",
+    "classes": "कक्षाएं",
     "status": {
       "on_track": "सही रास्ते पर",
       "at_risk": "जोखिम में",
+      "low_attendance": "कम उपस्थिति",
       "near_threshold": "सीमा के पास",
       "critical": "उपस्थिति महत्वपूर्ण है",
       "stay_regular": "75%+ बनाए रखने के लिए नियमित रहें",
@@ -114,7 +116,8 @@
       "overall": "कुल प्रतिशत",
       "attended": "उपस्थित कक्षाएं",
       "total": "कुल आयोजित",
-      "on_track": "फाइनल के लिए सही रास्ते पर"
+      "on_track": "फाइनल के लिए सही रास्ते पर",
+      "off_track": "ध्यान दें"
     },
     "subjects_card": {
       "title": "विषय",

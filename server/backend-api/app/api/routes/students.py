@@ -140,7 +140,7 @@ async def get_my_subjects(current_user: dict = Depends(get_current_user)):
             (
                 s
                 for s in sub.get("students", [])
-                if str(s.get("student_id")) == str(student.get("_id"))
+                if str(s.get("student_id")) == str(student_oid)
             ),
             None,
         )
