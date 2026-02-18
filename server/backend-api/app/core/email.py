@@ -137,12 +137,12 @@ class BrevoEmailService:
                 to_email=to_email,
                 subject=f"Low Attendance Warning - {subject}",
                 html_content=low_attendance_warning_template(
-                    student_name, 
-                    subject, 
-                    attendance_percentage, 
+                    student_name,
+                    subject,
+                    attendance_percentage,
                     threshold,
                     present_count,
-                    total_count
+                    total_count,
                 ),
             )
             return {"status": "sent", "error": None}

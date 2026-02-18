@@ -30,7 +30,7 @@ class TodayScheduleResponse(BaseModel):
 @router.get("/today", response_model=TodayScheduleResponse)
 async def get_today_schedule(current: dict = Depends(get_current_teacher)):
     """
-    Get today's schedule for the authenticated teacher using the 
+    Get today's schedule for the authenticated teacher using the
     dedicated schedule service.
     Returns all classes
     scheduled for the current day of the week.
@@ -39,10 +39,9 @@ async def get_today_schedule(current: dict = Depends(get_current_teacher)):
     # Teacher ID is stored as ObjectId in 'userId' (reference to users collection)
     if not teacher:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Teacher profile not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Teacher profile not found"
         )
-    
+
     teacher_id = str(teacher.get("userId"))
 
     # Get current day of week with timezone awareness
@@ -66,14 +65,14 @@ async def get_today_schedule(current: dict = Depends(get_current_teacher)):
 
     # Use the service to fetch schedule entries
     entries = await schedule_service.get_today_schedule_entries(teacher_id, current_day)
-    
+
     today_classes = []
     for entry in entries:
-        # Validate time format (HH:MM) - though service handles storage, 
+        # Validate time format (HH:MM) - though service handles storage,
         # extra check doesn't hurt
         start_time = entry.get("start_time", "")
         end_time = entry.get("end_time", "")
-        
+
         if not start_time or not end_time:
             continue
 
@@ -84,7 +83,7 @@ async def get_today_schedule(current: dict = Depends(get_current_teacher)):
             start_time=start_time,
             end_time=end_time,
             slot=entry.get("slot", 0),
-            attendance_status=None, # TODO: integrate with attendance check
+            attendance_status=None,  # TODO: integrate with attendance check
         )
         today_classes.append(class_period)
 

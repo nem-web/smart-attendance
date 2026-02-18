@@ -20,20 +20,23 @@ export default function Header() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "Dark";
 
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => {
+    const storedData = localStorage.getItem("user");
+    if (storedData) {
+        try {
+            return JSON.parse(storedData);
+        } catch {
+            return null;
+        }
+    }
+    return null;
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
+  // Close menu on route change
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem("user");
-      setUser(storedData ? JSON.parse(storedData) : null);
-    } catch {
-      setUser(null);
-    }
-  }, []);
-
-  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMenuOpen(false);
   }, [location.pathname]);
 

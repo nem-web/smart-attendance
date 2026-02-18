@@ -78,9 +78,7 @@ async def test_send_low_attendance_for_teacher_sends_email():
 
     with (
         patch("app.services.attendance_alerts.db") as mock_db,
-        patch(
-            "app.services.attendance_alerts.BrevoEmailService"
-        ) as mock_email,
+        patch("app.services.attendance_alerts.BrevoEmailService") as mock_email,
     ):
         mock_db.subjects.find.return_value = mock_cursor
         mock_db.users.find_one = AsyncMock(return_value=student_user)

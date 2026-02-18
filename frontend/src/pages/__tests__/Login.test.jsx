@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import Login from '../Login';
+import { ThemeProvider } from '../../theme/ThemeContext';
 
 // Mock useNavigate
 vi.mock('react-router-dom', async () => {
@@ -44,7 +45,9 @@ describe('Login Page', () => {
     it('renders login form', () => {
         render(
             <BrowserRouter>
-                <Login />
+                <ThemeProvider>
+                    <Login />
+                </ThemeProvider>
             </BrowserRouter>
         );
 
@@ -67,7 +70,9 @@ describe('Login Page', () => {
 
         render(
             <BrowserRouter>
-                <Login />
+                <ThemeProvider>
+                    <Login />
+                </ThemeProvider>
             </BrowserRouter>
         );
 
@@ -108,7 +113,9 @@ describe('Login Page', () => {
 
         render(
             <BrowserRouter>
-                <Login />
+                <ThemeProvider>
+                    <Login />
+                </ThemeProvider>
             </BrowserRouter>
         );
 
