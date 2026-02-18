@@ -2,6 +2,64 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* DEFAULT (Light) */
+:root,
+[data-theme="Light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #e5e7eb;
+  --bg-card: #ffffff;
+
+  --text-main: #0f172a;
+  --text-body: #475569;
+
+  --border-color: #e5e7eb;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+}
+
+/* Dark Theme */
+[data-theme="Dark"] {
+  --bg-primary: #020617;
+  --bg-secondary: #020617;
+  --bg-card: #020617;
+
+  --text-main: #f8fafc;
+  --text-body: #cbd5f5;
+
+  --border-color: #334155;
+  --primary: #60a5fa;
+  --primary-hover: #93c5fd;
+}
+
+/* Forest */
+[data-theme="Forest"] {
+  --bg-primary: #022c22;
+  --bg-secondary: #064e3b;
+  --bg-card: #064e3b;
+
+  --text-main: #ecfdf5;
+  --text-body: #a7f3d0;
+
+  --border-color: #047857;
+  --primary: #34d399;
+  --primary-hover: #6ee7b7;
+}
+
+/* Cyber */
+[data-theme="Cyber"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #020617;
+
+  --text-main: #22d3ee;
+  --text-body: #67e8f9;
+
+  --border-color: #164e63;
+  --primary: #06b6d4;
+  --primary-hover: #22d3ee;
+}
+
+
 /* Theme variables (light default) */
 :root {
   /* Backgrounds */

@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Home, BookOpen, TrendingUp, User, CircleUser, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PropTypes from "prop-types";
+import { useTheme } from "../../theme/ThemeContext";
+import { Sun, Moon } from "lucide-react";
+
 
 function DesktopItem({ icon: Icon, label, active, path }) {
   return (
@@ -65,6 +68,8 @@ export default function StudentNavigation({ activePage = "home" }) {
   });
 
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+
 
   const navItems = [
     { id: "home", label: t('student_dashboard.nav.home'), icon: Home, path: "/student-dashboard" },
@@ -94,6 +99,18 @@ export default function StudentNavigation({ activePage = "home" }) {
           ))}
         </nav>
 
+        
+          <div className="p-4 border-t border-gray-100 mb-10 space-y-4">
+  
+  {/* THEME TOGGLE */}
+  <button
+    onClick={() => setTheme(theme === "Dark" ? "Light" : "Dark")}
+    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition text-sm"
+    title="Toggle theme"
+  >
+    {theme === "Dark" ? <Moon size={16} /> : <Sun size={16} />}
+    <span>Theme</span>
+  </button>
         <div className="flex items-center justify-between p-4 border-t border-[var(--border-color)] mb-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--action-info-bg)]/10 text-[var(--action-info-bg)] flex items-center justify-center">
@@ -112,7 +129,30 @@ export default function StudentNavigation({ activePage = "home" }) {
           </div>
         </div>
 
-      </aside>
+  {/* USER INFO */}
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+        <CircleUser size={24} strokeWidth={2} />
+      </div>
+      <div>
+        <p className="text-sm font-bold">{username}</p>
+        <p className="text-xs text-gray-500">
+          {t('student_dashboard.nav.student_role')}
+        </p>
+      </div>
+    </div>
+
+    <LogOut
+      className="cursor-pointer"
+      onClick={() => {
+        localStorage.setItem("user", null);
+        navigate("/");
+      }}
+    />
+  </div>
+</div>
+</aside>
 
       {/* MOBILE BOTTOM NAVBAR */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--bg-card)] border-t border-[var(--border-color)] px-6 py-3 pb-6 flex justify-between items-center z-50">
@@ -130,8 +170,9 @@ export default function StudentNavigation({ activePage = "home" }) {
       <div className="md:hidden h-20"></div>
     </>
   );
-}
+};
 
 StudentNavigation.propTypes = {
   activePage: PropTypes.string,
+
 };

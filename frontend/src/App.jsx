@@ -22,6 +22,7 @@ import MarkWithQR from "./students/pages/MarkWithQR.jsx"
 import OAuthCallback from "./pages/OAuthCallback.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
+//import ThemeToggle from "./components/ThemeToggle";
 
 
 /**
@@ -68,6 +69,19 @@ export default function App() {
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <Toaster position="top-right" />
       {!hideNavbar && <Header theme={theme} setTheme={setTheme} />}
+
+       
+      {/* GLOBAL TOP BAR */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          padding: "10px 20px",
+          borderBottom: "1px solid #ddd",
+        }}
+      >
+       
+      </div>
 
       <main>
         <Routes>

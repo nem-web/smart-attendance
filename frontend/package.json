@@ -20,7 +20,7 @@
     "axios": "^1.13.5",
     "clsx": "^2.1.1",
     "html5-qrcode": "^2.3.8",
-    "i18next": "^25.8.7",
+    "i18next": "^25.8.10",
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-http-backend": "^3.0.2",
     "lucide-react": "^0.555.0",
