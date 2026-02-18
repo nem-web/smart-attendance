@@ -1,0 +1,19 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run AI Reviewer
+        # 👇 FIX: This line must be uncommented and point to a valid action
+        uses: coderabbitai/ai-pr-reviewer@latest 
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }} # You need to add this secret in Repo Settings
+          # system_message: "You are a helpful assistant..."
