@@ -36,9 +36,6 @@ async def save_teacher_schedule(teacher_id: str, schedule_data: dict) -> None:
                 "subject_name": metadata.get("subject_name"),
                 "room": metadata.get("room"),
                 # Optional fields
-                "semester": metadata.get("semester"),
-                "branch": metadata.get("branch"),
-                "batch": metadata.get("batch"),
                 "tracked": metadata.get("tracked", True)
             }
             entries.append(entry)
@@ -80,10 +77,6 @@ async def get_teacher_schedule_blob(teacher_id: str) -> dict:
                     "room": entry.get("room"),
                     "tracked": entry.get("tracked", True), 
                     "teacher_id": teacher_id,
-                     # Add back optional fields if present
-                    "semester": entry.get("semester"),
-                    "branch": entry.get("branch"),
-                    "batch": entry.get("batch")
                 }
             }
             days_map[day].append(period)

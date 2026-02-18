@@ -4,7 +4,7 @@ from datetime import date
 
 
 class ClassMetadata(BaseModel):
-    subject_id: Optional[str] = None
+    subject_id: str
     subject_name: Optional[str] = None
     room: Optional[str] = None
     teacher_id: Optional[str] = None

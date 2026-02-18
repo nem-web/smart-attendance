@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { getSettings, updateSettings } from "../api/schedule";
+import { fetchMySubjects } from "../api/teacher";
 import Spinner from "../components/Spinner";
 
 export default function ManageSchedule() {
@@ -30,6 +31,7 @@ export default function ManageSchedule() {
   const [scheduleEnvelope, setScheduleEnvelope] = useState({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentClass, setCurrentClass] = useState(null);
+  const [subjects, setSubjects] = useState([]);
   const [saveTemplateNotification, setSaveTemplateNotification] =
     useState(null);
   const [previewTemplate, setPreviewTemplate] = useState(null);
@@ -98,6 +100,8 @@ export default function ManageSchedule() {
         setIsLoading(true);
 
         const data = await getSettings();
+        const subjectsData = await fetchMySubjects();
+        setSubjects(subjectsData);
 
         const scheduleData = data.schedule || {
           timetable: [],
@@ -130,6 +134,7 @@ export default function ManageSchedule() {
       periods.map((period) => ({
         id: `${day}-${period.slot}`,
         title: period.metadata?.subject_name || "Untitled",
+        subject_id: period.metadata?.subject_id || "", 
         startTime: period.start || "00:00",
         endTime: period.end || "00:00",
         room: period.metadata?.room || "TBD",
@@ -158,6 +163,7 @@ export default function ManageSchedule() {
         start: cls.startTime,
         end: cls.endTime,
         metadata: {
+          subject_id: cls.subject_id,
           subject_name: cls.title,
           room: cls.room,
           teacher: cls.teacher,
@@ -195,7 +201,8 @@ export default function ManageSchedule() {
   const handleAddClass = () => {
     const newClass = {
       id: Date.now(),
-      title: t('manage_schedule.new_subject', "New Subject"),
+      title: subjects.length > 0 ? subjects[0].name : t('manage_schedule.new_subject', "New Subject"),
+      subject_id: subjects.length > 0 ? subjects[0]._id : "",
       startTime: "12:00",
       endTime: "13:00",
       room: "TBD",
@@ -323,14 +330,25 @@ export default function ManageSchedule() {
                 <label className="block text-sm font-medium mb-1">
                   {t('manage_schedule.subject_name', "Subject Name")}
                 </label>
-                <input
-                  type="text"
-                  value={currentClass.title}
-                  onChange={(e) =>
-                    setCurrentClass({ ...currentClass, title: e.target.value })
-                  }
+                <select
+                  value={currentClass.subject_id || ""}
+                  onChange={(e) => {
+                    const selectedSubject = subjects.find(s => s._id === e.target.value);
+                    setCurrentClass({ 
+                      ...currentClass, 
+                      subject_id: e.target.value,
+                      title: selectedSubject ? selectedSubject.name : "" 
+                    });
+                  }}
                   className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg px-3 py-2 outline-none focus:ring-2 ring-[var(--primary)]"
-                />
+                >
+                  <option value="" disabled>Select a subject</option>
+                  {subjects.map((sub) => (
+                    <option key={sub._id} value={sub._id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
