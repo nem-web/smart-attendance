@@ -276,7 +276,7 @@ export default function LivenessCheck({ onSuccess }) {
                             </div>
                             <p className="text-xs text-[var(--text-body)]">We could not verify your liveness. Please try again.</p>
                             <button
-                                onClick={() => window.location.reload()}
+                                onClick={() => onFailure && onFailure()}
                                 className="px-6 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm font-bold hover:bg-[var(--bg-secondary)] transition"
                             >
                                 Retry
