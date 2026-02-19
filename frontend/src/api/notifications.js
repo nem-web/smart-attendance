@@ -61,3 +61,32 @@ export const checkDuplicateEmail = async (notificationType, recipientEmail, with
   });
   return response.data;
 };
+
+// ============================================
+// IN-APP NOTIFICATIONS (NEW)
+// ============================================
+
+/**
+ * Fetch all in-app notifications for the current user
+ */
+export const getInAppNotifications = async () => {
+  const response = await api.get("/notifications/in-app/list");
+  return response.data;
+};
+
+/**
+ * Mark a single notification as read
+ */
+export const markNotificationAsRead = async (notificationId) => {
+  const response = await api.patch(`/notifications/in-app/${notificationId}/read`);
+  return response.data;
+};
+
+/**
+ * Mark all notifications as read
+ */
+export const markAllNotificationsAsRead = async () => {
+  const response = await api.post("/notifications/in-app/mark-all-read");
+  return response.data;
+};
+

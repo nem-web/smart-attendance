@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bell, User, ChevronDown, Menu, X, Sun, Moon } from "lucide-react";
+import { User, ChevronDown, Menu, X, Sun, Moon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../theme/ThemeContext";
+import NotificationDropdown from "./NotificationDropdown";
 
 /** Navigation link definitions for the main header. */
 const navLinks = [
@@ -96,10 +97,8 @@ export default function Header() {
             </button>
           </div>
 
-          {/* Notification */}
-          <button disabled className="bg-[var(--primary)] p-1.5 rounded-full opacity-60">
-            <Bell size={16} className="text-[var(--text-on-primary)]" />
-          </button>
+          {/* Notification Dropdown */}
+          <NotificationDropdown />
 
           {/* Theme Toggle */}
           <button

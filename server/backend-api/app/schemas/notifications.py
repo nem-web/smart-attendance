@@ -89,3 +89,43 @@ class EmailStatsResponse(BaseModel):
     total_failed: int
     sent_by_type: dict
     recent_logs: List[dict]
+
+
+# ============================================
+# IN-APP NOTIFICATION SCHEMAS (NEW)
+# ============================================
+
+
+class InAppNotificationResponse(BaseModel):
+    """In-app notification response model."""
+
+    id: str = Field(..., alias="_id")
+    user_id: str
+    message: str
+    notification_type: Literal["enrollment", "attendance", "alert", "system"]
+    is_read: bool = False
+    created_at: datetime
+    metadata: Optional[dict] = None
+
+    model_config = {"populate_by_name": True}
+
+
+class NotificationListResponse(BaseModel):
+    """Response for list of notifications."""
+
+    notifications: List[InAppNotificationResponse]
+    total: int
+    unread_count: int
+
+
+class MarkAllAsReadRequest(BaseModel):
+    """Request to mark all notifications as read."""
+
+    pass
+
+
+class NotificationResponse(BaseModel):
+    """Generic notification response."""
+
+    message: str
+    status: str = "success"

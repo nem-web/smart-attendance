@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from bson import ObjectId
+from datetime import datetime, timezone
 
 from ...db.mongo import db
 from ...core.security import get_current_user
@@ -252,6 +253,32 @@ async def add_subject(subject_id: str, current_user: dict = Depends(get_current_
             }
         },
     )
+
+    # 5️⃣ CREATE NOTIFICATION FOR TEACHERS
+    # Get all professor IDs for this subject
+    professor_ids = subject.get("professor_ids", [])
+    subject_name = subject.get("name", "Unknown")
+
+    # Create a notification for each teacher
+    if professor_ids:
+        notification_message = f"Student {student_name} has registered for {subject_name}."
+        
+        for teacher_id in professor_ids:
+            await db.notifications.insert_one(
+                {
+                    "user_id": teacher_id,
+                    "message": notification_message,
+                    "notification_type": "enrollment",
+                    "is_read": False,
+                    "created_at": datetime.now(timezone.utc),
+                    "metadata": {
+                        "student_id": str(student_oid),
+                        "student_name": student_name,
+                        "subject_id": str(subject_oid),
+                        "subject_name": subject_name,
+                    },
+                }
+            )
 
     return {"message": "Subject added successfully"}
 
