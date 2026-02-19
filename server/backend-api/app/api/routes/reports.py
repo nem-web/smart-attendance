@@ -40,9 +40,9 @@ def _safe_filename(name: str) -> str:
     Strips non-alphanumeric characters (except underscores and hyphens),
     collapses duplicate underscores, and limits length.
     """
-    sanitized = re.sub(r'[^\w\-]', '_', name)
-    sanitized = re.sub(r'_+', '_', sanitized).strip('_')
-    return sanitized[:100] or 'subject'
+    sanitized = re.sub(r"[^\w\-]", "_", name)
+    sanitized = re.sub(r"_+", "_", sanitized).strip("_")
+    return sanitized[:100] or "subject"
 
 
 def _sanitize_csv_value(value: str) -> str:
@@ -51,7 +51,7 @@ def _sanitize_csv_value(value: str) -> str:
     Spreadsheet applications may interpret cells starting with =, +, -, or @
     as formulas. Prefixing with a single quote neutralises this.
     """
-    if isinstance(value, str) and value and value[0] in ('=', '+', '-', '@'):
+    if isinstance(value, str) and value and value[0] in ("=", "+", "-", "@"):
         return f"'{value}"
     return value
 
@@ -160,9 +160,7 @@ async def _get_attendance_and_students(
         query["date"] = date_filter
 
     attendance_records = await (
-        db.attendance.find(query)
-        .sort("date", -1)
-        .to_list(length=MAX_RECORDS)
+        db.attendance.find(query).sort("date", -1).to_list(length=MAX_RECORDS)
     )
 
     was_truncated = len(attendance_records) >= MAX_RECORDS
@@ -196,7 +194,7 @@ async def _get_attendance_and_students(
 def _add_page_footer(canvas, doc, school_name):
     """Draw page number, timestamp, and confidentiality note on every page."""
     canvas.saveState()
-    canvas.setFont('Helvetica', 9)
+    canvas.setFont("Helvetica", 9)
     canvas.setFillColor(colors.gray)
 
     # Page number on the right
@@ -207,7 +205,7 @@ def _add_page_footer(canvas, doc, school_name):
     canvas.drawString(30, 30, f"{school_name} - Confidential")
 
     # Generated timestamp in the center
-    canvas.setFont('Helvetica', 7)
+    canvas.setFont("Helvetica", 7)
     timestamp = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     canvas.drawCentredString(doc.pagesize[0] / 2, 30, timestamp)
 
@@ -222,7 +220,7 @@ async def export_attendance_pdf(
     current_teacher: dict = Depends(get_current_teacher),
 ):
     """Export attendance report as a professional PDF document.
-    
+
     Generates aggregated statistics for verified students.
     """
     try:
@@ -240,14 +238,14 @@ async def export_attendance_pdf(
 
         # --- Get students with their attendance data from subject ---
         subject_students = subject.get("students", [])
-        
+
         # Get student user IDs
         student_user_ids = [s["student_id"] for s in subject_students]
-        
+
         # Fetch student profiles and users
         students_cursor = db.students.find({"userId": {"$in": student_user_ids}})
         users_cursor = db.users.find({"_id": {"$in": student_user_ids}})
-        
+
         students_map = {str(s["userId"]): s async for s in students_cursor}
         users_map = {str(u["_id"]): u async for u in users_cursor}
 
@@ -270,22 +268,22 @@ async def export_attendance_pdf(
         styles = getSampleStyleSheet()
 
         title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
+            "CustomTitle",
+            parent=styles["Heading1"],
             fontSize=20,
-            textColor=colors.HexColor('#1e40af'),
+            textColor=colors.HexColor("#1e40af"),
             spaceAfter=20,
             alignment=TA_CENTER,
-            fontName='Helvetica-Bold',
+            fontName="Helvetica-Bold",
         )
 
         header_style = ParagraphStyle(
-            'HeaderStyle',
-            parent=styles['Normal'],
+            "HeaderStyle",
+            parent=styles["Normal"],
             fontSize=10,
-            textColor=colors.HexColor('#374151'),
+            textColor=colors.HexColor("#374151"),
             spaceAfter=6,
-            fontName='Helvetica',
+            fontName="Helvetica",
         )
 
         # --- Header Section ---
@@ -295,8 +293,8 @@ async def export_attendance_pdf(
         # Report metadata (2-column layout)
         date_range_str = f"{start_date or 'All Time'} to {end_date or 'Present'}"
         safe_teacher = html.escape(teacher_name)
-        safe_subject = html.escape(subject.get('name', 'Unknown'))
-        safe_code = html.escape(subject.get('code', 'N/A'))
+        safe_subject = html.escape(subject.get("name", "Unknown"))
+        safe_code = html.escape(subject.get("code", "N/A"))
 
         metadata_data = [
             [
@@ -324,54 +322,66 @@ async def export_attendance_pdf(
         ]
 
         metadata_table = Table(metadata_data, colWidths=[doc.width / 2.0] * 2)
-        metadata_table.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
+        metadata_table.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ]
+            )
+        )
         elements.append(metadata_table)
         elements.append(Spacer(1, 20))
 
         # --- Attendance Statistics Table ---
-        table_data = [[
-            "Student Name", "Roll No", "Total Classes",
-            "Attended", "Percentage", "Status"
-        ]]
+        table_data = [
+            [
+                "Student Name",
+                "Roll No",
+                "Total Classes",
+                "Attended",
+                "Percentage",
+                "Status",
+            ]
+        ]
 
         for s in subject_students:
             # Only include verified students
             if not s.get("verified", False):
                 continue
-                
+
             student_id_str = str(s["student_id"])
             student_profile = students_map.get(student_id_str, {})
             user = users_map.get(student_id_str, {})
-            
+
             # Get attendance counts and calculate stats
             attendance = s.get("attendance", {})
             present = attendance.get("present", 0)
             absent = attendance.get("absent", 0)
-            
+
             total, percentage, status, status_color = _calculate_attendance_stats(
                 present, absent
             )
-            
+
             # Get student info
             name = html.escape(user.get("name", "Unknown"))
             roll_no = html.escape(str(student_profile.get("roll_number", "N/A")))
 
-            table_data.append([
-                name,
-                roll_no,
-                str(total),
-                str(present),
-                f"{percentage}%",
-                Paragraph(
-                    f"<font color='{status_color}'>"
-                    f"<b>{html.escape(status)}</b></font>",
-                    styles['Normal'],
-                ),
-            ])
+            table_data.append(
+                [
+                    name,
+                    roll_no,
+                    str(total),
+                    str(present),
+                    f"{percentage}%",
+                    Paragraph(
+                        f"<font color='{status_color}'>"
+                        f"<b>{html.escape(status)}</b></font>",
+                        styles["Normal"],
+                    ),
+                ]
+            )
 
         if len(table_data) > 1:
             # Calculate column widths proportionally
@@ -384,45 +394,47 @@ async def export_attendance_pdf(
                 doc.width * 0.13,  # Status
             ]
 
-            attendance_table = Table(
-                table_data, colWidths=col_widths, repeatRows=1
+            attendance_table = Table(table_data, colWidths=col_widths, repeatRows=1)
+            attendance_table.setStyle(
+                TableStyle(
+                    [
+                        # Header row
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e40af")),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, 0), 11),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                        ("TOPPADDING", (0, 0), (-1, 0), 10),
+                        # Body rows
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+                        ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                        ("ALIGN", (0, 1), (-1, -1), "CENTER"),
+                        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                        ("FONTSIZE", (0, 1), (-1, -1), 10),
+                        ("BOTTOMPADDING", (0, 1), (-1, -1), 8),
+                        ("TOPPADDING", (0, 1), (-1, -1), 6),
+                        # Grid
+                        ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#e5e7eb")),
+                        ("LINEBELOW", (0, 0), (-1, 0), 2, colors.HexColor("#1e40af")),
+                        # Alternating row backgrounds
+                        (
+                            "ROWBACKGROUNDS",
+                            (0, 1),
+                            (-1, -1),
+                            [colors.white, colors.HexColor("#f9fafb")],
+                        ),
+                        # Column alignments
+                        ("ALIGN", (0, 1), (0, -1), "LEFT"),  # Name left-aligned
+                    ]
+                )
             )
-            attendance_table.setStyle(TableStyle([
-                # Header row
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 11),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, 0), 10),
-
-                # Body rows
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-                ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 10),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-                ('TOPPADDING', (0, 1), (-1, -1), 6),
-
-                # Grid
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
-                ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#1e40af')),
-
-                # Alternating row backgrounds
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1),
-                 [colors.white, colors.HexColor('#f9fafb')]),
-
-                # Column alignments
-                ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Name left-aligned
-            ]))
 
             elements.append(attendance_table)
         else:
             no_data_style = ParagraphStyle(
-                'NoData',
-                parent=styles['Normal'],
+                "NoData",
+                parent=styles["Normal"],
                 fontSize=12,
                 alignment=TA_CENTER,
                 textColor=colors.gray,
@@ -444,10 +456,9 @@ async def export_attendance_pdf(
 
         buffer.seek(0)
 
-        safe_name = _safe_filename(subject.get('name', 'subject'))
+        safe_name = _safe_filename(subject.get("name", "subject"))
         filename = (
-            f"attendance_report_{safe_name}_"
-            f"{datetime.now().strftime('%Y%m%d')}.pdf"
+            f"attendance_report_{safe_name}_{datetime.now().strftime('%Y%m%d')}.pdf"
         )
 
         return StreamingResponse(
@@ -460,9 +471,7 @@ async def export_attendance_pdf(
         raise
     except Exception:
         logger.exception("Failed to generate PDF report")
-        raise HTTPException(
-            status_code=500, detail="Failed to generate PDF report"
-        )
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
 
 
 @router.get("/export/csv")
@@ -473,7 +482,7 @@ async def export_attendance_csv(
     current_teacher: dict = Depends(get_current_teacher),
 ):
     """Export attendance report as a CSV file.
-    
+
     Generates aggregated attendance statistics per student.
     """
     try:
@@ -484,14 +493,14 @@ async def export_attendance_csv(
 
         # --- Get students with their attendance data from subject ---
         subject_students = subject.get("students", [])
-        
+
         # Get student user IDs
         student_user_ids = [s["student_id"] for s in subject_students]
-        
+
         # Fetch student profiles and users
         students_cursor = db.students.find({"userId": {"$in": student_user_ids}})
         users_cursor = db.users.find({"_id": {"$in": student_user_ids}})
-        
+
         students_map = {str(s["userId"]): s async for s in students_cursor}
         users_map = {str(u["_id"]): u async for u in users_cursor}
 
@@ -500,50 +509,55 @@ async def export_attendance_csv(
         writer = csv.writer(string_buffer)
 
         # Header row matching what the frontend displays
-        writer.writerow([
-            "Student Name", "Roll No", "Total Classes",
-            "Attended", "Percentage", "Status"
-        ])
+        writer.writerow(
+            [
+                "Student Name",
+                "Roll No",
+                "Total Classes",
+                "Attended",
+                "Percentage",
+                "Status",
+            ]
+        )
 
         for s in subject_students:
             # Only include verified students
             if not s.get("verified", False):
                 continue
-                
+
             student_id_str = str(s["student_id"])
             student_profile = students_map.get(student_id_str, {})
             user = users_map.get(student_id_str, {})
-            
+
             # Get attendance counts and calculate stats
             attendance = s.get("attendance", {})
             present = attendance.get("present", 0)
             absent = attendance.get("absent", 0)
-            
-            total, percentage, status, _ = _calculate_attendance_stats(
-                present, absent
-            )
-            
+
+            total, percentage, status, _ = _calculate_attendance_stats(present, absent)
+
             # Get student info
             name = user.get("name", "Unknown")
             roll_no = student_profile.get("roll_number", "N/A")
-            
-            writer.writerow([
-                _sanitize_csv_value(name),
-                _sanitize_csv_value(str(roll_no)),
-                _sanitize_csv_value(str(total)),
-                _sanitize_csv_value(str(present)),
-                _sanitize_csv_value(f"{percentage}%"),
-                _sanitize_csv_value(status),
-            ])
+
+            writer.writerow(
+                [
+                    _sanitize_csv_value(name),
+                    _sanitize_csv_value(str(roll_no)),
+                    _sanitize_csv_value(str(total)),
+                    _sanitize_csv_value(str(present)),
+                    _sanitize_csv_value(f"{percentage}%"),
+                    _sanitize_csv_value(status),
+                ]
+            )
 
         # Convert to bytes for streaming
         csv_bytes = io.BytesIO(string_buffer.getvalue().encode("utf-8"))
         csv_bytes.seek(0)
 
-        safe_name = _safe_filename(subject.get('name', 'subject'))
+        safe_name = _safe_filename(subject.get("name", "subject"))
         filename = (
-            f"attendance_report_{safe_name}_"
-            f"{datetime.now().strftime('%Y%m%d')}.csv"
+            f"attendance_report_{safe_name}_{datetime.now().strftime('%Y%m%d')}.csv"
         )
 
         return StreamingResponse(
@@ -556,6 +570,4 @@ async def export_attendance_csv(
         raise
     except Exception:
         logger.exception("Failed to generate CSV report")
-        raise HTTPException(
-            status_code=500, detail="Failed to generate CSV report"
-        )
+        raise HTTPException(status_code=500, detail="Failed to generate CSV report")

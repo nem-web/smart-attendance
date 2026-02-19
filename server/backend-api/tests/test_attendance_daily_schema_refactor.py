@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from bson import ObjectId
 from app.services.attendance_daily import save_daily_summary
 
+
 @pytest.mark.asyncio
 async def test_save_daily_summary_schema_refactor():
     # Setup Mocks
@@ -35,10 +36,10 @@ async def test_save_daily_summary_schema_refactor():
         # Verify update_one arguments
         args, kwargs = mock_collection.update_one.call_args
         filter_q, update_doc = args
-        
+
         # 1. Verify Filter: Should be by subject/class only, NOT date
         assert filter_q["subjectId"] == subject_id
-        assert "date" not in filter_q # Ensure date is NOT in filter
+        assert "date" not in filter_q  # Ensure date is NOT in filter
 
         # 2. Verify Update: Should set daily.{date}
         assert f"daily.{record_date}" in update_doc["$set"]
@@ -49,14 +50,16 @@ async def test_save_daily_summary_schema_refactor():
         assert daily_summary["late"] == late
         assert daily_summary["total"] == present + absent + late
         assert daily_summary["percentage"] == round(10 / 13 * 100, 2)
-        
+
         # Verify classId is NOT in $set (it is redundant)
         assert "classId" not in update_doc["$set"]
 
         # 3. Verify Upsert
         assert kwargs["upsert"] is True
 
+
 if __name__ == "__main__":
     # helper to run with python directly
     import asyncio
+
     asyncio.run(test_save_daily_summary_schema_refactor())

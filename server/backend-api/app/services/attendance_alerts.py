@@ -77,14 +77,16 @@ async def process_monthly_low_attendance_alerts():
         "Starting monthly low attendance alert processing via automatic scheduler..."
     )
 
-    teachers_cursor = db.teachers.find({
-        "settings.emailPreferences": {
-            "$elemMatch": {
-                "key": "settings.general.email_low_attendance_automated",
-                "enabled": True,
+    teachers_cursor = db.teachers.find(
+        {
+            "settings.emailPreferences": {
+                "$elemMatch": {
+                    "key": "settings.general.email_low_attendance_automated",
+                    "enabled": True,
+                }
             }
         }
-    })
+    )
 
     teachers = await teachers_cursor.to_list(length=None)
 
@@ -102,6 +104,5 @@ async def process_monthly_low_attendance_alerts():
         total_emails += count
 
     logger.info(
-        f"Completed low attendance alert processing. "
-        f"Total emails sent: {total_emails}"
+        f"Completed low attendance alert processing. Total emails sent: {total_emails}"
     )

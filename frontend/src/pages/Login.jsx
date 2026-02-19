@@ -109,8 +109,13 @@ export default function Login() {
 
             {/* Social Login Buttons */}
             <div className="w-full">
-              <button onClick={googleLogin} className="w-full flex items-center justify-center gap-2 py-2.5 border border-[var(--border-color)] rounded-xl hover:bg-[var(--bg-secondary)] transition">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              <button 
+                onClick={googleLogin} 
+                type="button"
+                className="w-full flex items-center justify-center gap-2 py-2.5 border border-[var(--border-color)] rounded-xl hover:bg-[var(--bg-secondary)] transition"
+                aria-label="Sign in with Google"
+              >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="" className="w-5 h-5" aria-hidden="true" />
                 <span className="text-sm font-medium text-[var(--text-body)]">{t('login.google')}</span>
               </button>
             </div>
@@ -130,35 +135,42 @@ export default function Login() {
 
                 {/* Email Input */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-body)]">{t('auth.emailLabel')}</label>
+                  <label htmlFor="email-input" className="text-sm font-semibold text-[var(--text-body)]">{t('auth.emailLabel')}</label>
                   <div className="relative">
                     <input
+                      id="email-input"
                       type="email"
                       placeholder={t('login.email_placeholder')}
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
                     />
-                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70" />
+                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70" aria-hidden="true" />
                   </div>
                 </div>
 
                 {/* Password Input */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-body)]">{t('login.password_label')}</label>
+                  <label htmlFor="password-input" className="text-sm font-semibold text-[var(--text-body)]">{t('login.password_label')}</label>
                   <div className="relative">
                     <input
+                      id="password-input"
                       type={showPassword ? "text" : "password"}
                       placeholder={t('login.password_placeholder')}
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10 pr-10"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
                     />
-                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70" />
+                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70" aria-hidden="true" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-body)]/70 hover:text-[var(--text-body)] focus:outline-none"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -167,11 +179,14 @@ export default function Login() {
 
                 {/* Additional Options */}
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox"
+                  <label htmlFor="remember-checkbox" className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      id="remember-checkbox"
+                      type="checkbox"
                       checked={remember}
                       onChange={(e) => setRemeber(e.target.checked)}
-                      className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary)] focus:ring-[var(--primary)]" />
+                      className="w-4 h-4 rounded border-[var(--border-color)] text-[var(--primary)] focus:ring-[var(--primary)]" 
+                    />
                     <span className="text-sm text-[var(--text-body)] select-none">{t('login.remember_me')}</span>
                   </label>
                   <Link to="/forgot-password" className="text-sm font-medium text-[var(--primary)]/80 hover:text-[var(--primary)] hover:underline">
@@ -185,7 +200,11 @@ export default function Login() {
                 <p className="text-[var(--danger)] text-sm font-medium text-center">{error}</p>
               )}
 
-              <button className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] hover:text-[var(--text-main)] hover:opacity-95 shadow-md transition-all active:scale-[0.98]">
+              <button 
+                type="submit"
+                className="w-full py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] hover:text-[var(--text-main)] hover:opacity-95 shadow-md transition-all active:scale-[0.98]"
+                aria-label="Submit login form"
+              >
                 {t('login.submit')}
               </button>
             </form>

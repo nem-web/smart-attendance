@@ -216,7 +216,7 @@ async def test_get_my_subjects_returns_correct_attendance_data(
             "professor_ids": [teacher_id],
             "students": [
                 {
-                    "student_id": student_id,
+                    "student_id": student_user_id,  # Fixed: should be userId, not student._id
                     "name": "Test Student",
                     "verified": True,
                     "attendance": {
@@ -236,7 +236,7 @@ async def test_get_my_subjects_returns_correct_attendance_data(
             "/api/attendance/confirm",
             json={
                 "subject_id": str(subject_id),
-                "present_students": [str(student_id)],
+                "present_students": [str(student_user_id)],  # Fixed: use userId
                 "absent_students": [],
             },
         )
@@ -244,9 +244,9 @@ async def test_get_my_subjects_returns_correct_attendance_data(
         
         # Reset lastMarkedAt to allow marking again
         await db.subjects.update_one(
-            {"_id": subject_id, "students.student_id": student_id},
+            {"_id": subject_id, "students.student_id": student_user_id},  # Fixed: use userId
             {"$set": {"students.$[s].attendance.lastMarkedAt": "1970-01-01"}},
-            array_filters=[{"s.student_id": student_id}]
+            array_filters=[{"s.student_id": student_user_id}]  # Fixed: use userId
         )
     
     # Mark absent once
@@ -255,7 +255,7 @@ async def test_get_my_subjects_returns_correct_attendance_data(
         json={
             "subject_id": str(subject_id),
             "present_students": [],
-            "absent_students": [str(student_id)],
+            "absent_students": [str(student_user_id)],  # Fixed: use userId
         },
     )
     assert response.status_code == 200

@@ -308,7 +308,7 @@ async def replace_settings(user_id_str: str, payload: dict) -> dict:
                 Schedule.parse_obj(payload["schedule"])
             except Exception:
                 raise HTTPException(status_code=400, detail="Invalid schedule format")
-            
+
             # Save to separate collection
             await schedule_service.save_teacher_schedule(
                 str(user_id), payload["schedule"]

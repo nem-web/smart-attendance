@@ -1,8 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const SubjectAttendanceCard = ({ subject, onDelete }) => {
+  const { t } = useTranslation();
   const { name, code, attended, total, id, _id } = subject;
   // Handle both id formats just in case
   const subjectId = id || _id;
@@ -32,7 +34,7 @@ const SubjectAttendanceCard = ({ subject, onDelete }) => {
 
       <div className="space-y-3">
         <div className="flex justify-between items-end">
-           <span className="text-[var(--text-body)] text-sm font-medium">{attended} / {total} Classes</span>
+           <span className="text-[var(--text-body)] text-sm font-medium">{attended} / {total} {t('subjects.classes')}</span>
            <span className={`text-lg font-bold ${isSafe ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
              {percentage.toFixed(1)}%
            </span>
@@ -53,7 +55,7 @@ const SubjectAttendanceCard = ({ subject, onDelete }) => {
                 ? 'bg-[var(--success)]/15 text-[var(--success)] border border-[var(--success)]/20'
                 : 'bg-[var(--danger)]/15 text-[var(--danger)] border border-[var(--danger)]/20'
             }`}>
-            {isSafe ? 'On Track' : 'Low Attendance'}
+            {isSafe ? t('subjects.status.on_track') : t('subjects.status.low_attendance')}
             </span>
         </div>
       </div>

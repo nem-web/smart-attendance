@@ -148,6 +148,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Download required MediaPipe models
+python3 download_models.py
+
 # Copy environment file
 cp .env.example .env
 
@@ -156,6 +159,21 @@ python -m app.main
 ```
 
 The service will be available at `http://localhost:8001`
+
+### MediaPipe Model Setup
+
+The service requires the MediaPipe BlazeFace Short Range model for face detection.
+
+**Automatic Download (Recommended):**
+```bash
+python3 download_models.py
+```
+
+**Manual Download:**
+If automatic download fails (network restrictions), see [MODEL_README.md](MODEL_README.md) for alternative download methods.
+
+**Docker Deployment:**
+The model is automatically downloaded during container startup via the `entrypoint.sh` script.
 
 ### Testing
 
@@ -171,11 +189,17 @@ curl -X POST http://localhost:8001/api/ml/encode-face \
 
 ## Docker Deployment
 
+### Prerequisites
+
+The ML service requires the MediaPipe BlazeFace model, which is automatically downloaded during container startup.
+
 ### Build Image
 
 ```bash
 docker build -t ml-service:latest .
 ```
+
+The Dockerfile includes an entrypoint script that will download the model if it's not present.
 
 ### Run Container
 
@@ -183,6 +207,15 @@ docker build -t ml-service:latest .
 docker run -p 8001:8001 \
   -e LOG_LEVEL=info \
   ml-service:latest
+```
+
+On first run, you'll see:
+```
+Starting ML Service initialization...
+Model file not found. Attempting to download...
+Downloading MediaPipe BlazeFace model from...
+✓ Successfully downloaded blaze_face_short_range.tflite
+Starting uvicorn server...
 ```
 
 ### Docker Compose
@@ -329,25 +362,39 @@ Logs are output to stdout in JSON format:
 
 ### Common Issues
 
-**1. "No face detected" errors**
+**1. "Unable to open file at /app/app/ml/blaze_face_short_range.tflite"**
+- **Cause**: MediaPipe model file is missing
+- **Solution**: 
+  - Local: Run `python3 download_models.py`
+  - Docker: Ensure the entrypoint script runs (check Docker logs)
+  - Manual: Download from MediaPipe and place in `app/ml/` directory
+- **See**: [MODEL_README.md](MODEL_README.md) for detailed instructions
+
+**2. "No face detected" errors**
 - Ensure image contains a clear, frontal face
 - Check image quality and lighting
 - Adjust `min_face_area_ratio` parameter
 
-**2. Slow performance**
+**3. Slow performance**
 - Use HOG model instead of CNN
 - Reduce `num_jitters` parameter
 - Scale horizontally
 
-**3. High memory usage**
+**4. High memory usage**
 - Limit concurrent requests
 - Use connection pooling
 - Monitor for memory leaks
 
-**4. Build failures**
+**5. Build failures**
 - Ensure CMake and build tools are installed
 - Check dlib installation logs
 - Try using pre-built wheel packages
+
+**6. Model download failures in Docker**
+- Check network connectivity from container
+- Verify no firewall blocking Google Cloud Storage
+- If persistent, manually download model and rebuild image
+- See [MODEL_README.md](MODEL_README.md) for manual download
 
 ## API Documentation
 

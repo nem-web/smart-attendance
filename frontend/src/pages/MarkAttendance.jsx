@@ -273,6 +273,7 @@ export default function MarkAttendance() {
         {showQRModal && selectedSubject && (
           <StartAttendanceModal 
             sessionId={sessionId}
+            subjectId={selectedSubject}
             onClose={() => setShowQRModal(false)} 
           />
         )}

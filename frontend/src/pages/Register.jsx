@@ -173,33 +173,39 @@ export default function Register() {
 
                 {/* Common: Full Name */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('register.full_name')}</label>
+                  <label htmlFor="name-input" className="text-sm font-semibold text-[var(--text-main)]">{t('register.full_name')}</label>
                   <div className="relative">
                     <input
+                      id="name-input"
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="John Doe"
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
+                      required
+                      autoComplete="name"
                     />
-                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
+                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" aria-hidden="true" />
                   </div>
                 </div>
 
                 {/* Common: Email */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-[var(--text-main)]">{t('auth.emailLabel')}</label>
+                  <label htmlFor="email-input-register" className="text-sm font-semibold text-[var(--text-main)]">{t('auth.emailLabel')}</label>
                   <div className="relative">
                     <input
+                      id="email-input-register"
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="john@university.edu"
                       className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-[var(--bg-card)] transition-all pl-10"
+                      required
+                      autoComplete="email"
                     />
-                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" />
+                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" aria-hidden="true" />
                   </div>
                 </div>
                 {/* Common: College Name */}

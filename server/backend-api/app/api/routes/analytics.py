@@ -56,6 +56,7 @@ async def _verify_teacher_class_access(
 # ENDPOINTS
 # -------------------------------------------------------------------------
 
+
 @router.get("/subject/{subject_id}", response_model=SubjectStatsResponse)
 async def get_subject_analytics(
     subject_id: str,
@@ -254,15 +255,16 @@ async def get_monthly_summary(
     # Build match filter
     # Use 'subjectId' for DB match (from main schema), but check auth using 304 logic
     match_filter = {"subjectId": {"$in": subject_ids}}
-    
+
     if classId:
         try:
             class_oid = ObjectId(classId)
-            # Verify explicit access if specific class requested (from 304)
-            await _verify_teacher_class_access(teacher_oid, class_oid)
-            match_filter["subjectId"] = class_oid
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid classId format")
+            
+        # Verify explicit access if specific class requested (from 304)
+        await _verify_teacher_class_access(teacher_oid, class_oid)
+        match_filter["subjectId"] = class_oid
 
     # 2. Aggregate Pipeline (from main - handles 'daily' map unwinding)
     pipeline = [
@@ -272,8 +274,8 @@ async def get_monthly_summary(
         # Convert daily map to array of k,v
         {
             "$project": {
-                "classId": "$subjectId", 
-                "dailyArray": {"$objectToArray": "$daily"}
+                "classId": "$subjectId",
+                "dailyArray": {"$objectToArray": "$daily"},
             }
         },
         {"$unwind": "$dailyArray"},
@@ -281,7 +283,7 @@ async def get_monthly_summary(
             "$addFields": {
                 "date": "$dailyArray.k",
                 "summary": "$dailyArray.v",
-                "yearMonth": {"$substr": ["$dailyArray.k", 0, 7]}  # Extract YYYY-MM
+                "yearMonth": {"$substr": ["$dailyArray.k", 0, 7]},  # Extract YYYY-MM
             }
         },
         {
@@ -369,8 +371,8 @@ async def get_class_risk(
         # Convert daily map to array
         {
             "$project": {
-                "classId": "$subjectId", 
-                "dailyArray": {"$objectToArray": "$daily"}
+                "classId": "$subjectId",
+                "dailyArray": {"$objectToArray": "$daily"},
             }
         },
         {"$unwind": "$dailyArray"},
@@ -476,11 +478,11 @@ async def get_global_stats(
     # Aggregate attendance data for all teacher's subjects
     pipeline = [
         {"$match": {"subjectId": {"$in": subject_ids}}},
-         # Convert daily map to array
+        # Convert daily map to array
         {
             "$project": {
-                "classId": "$subjectId", 
-                "dailyArray": {"$objectToArray": "$daily"}
+                "classId": "$subjectId",
+                "dailyArray": {"$objectToArray": "$daily"},
             }
         },
         {"$unwind": "$dailyArray"},
@@ -554,7 +556,6 @@ async def get_global_stats(
         total_percentage += attendance_pct
         if attendance_pct < 75:
             risk_count += 1
-
 
     # Re-sort by attendancePercentage descending
     subject_stats.sort(key=lambda x: x["attendancePercentage"], reverse=True)

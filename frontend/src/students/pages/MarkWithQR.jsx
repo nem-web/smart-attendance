@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     ArrowLeft,
@@ -12,12 +12,33 @@ import {
 } from "lucide-react";
 import api from "../../api/axiosClient";
 import QRScanner from "../components/QRScanner";
+import DeviceBindingOTPModal from "../../components/DeviceBindingOTPModal";
 
 export default function MarkWithQR() {
     const navigate = useNavigate();
     const [showScanner, setShowScanner] = useState(false);
     const [status, setStatus] = useState("idle"); // idle, scanning, geolocating, submitting, success, error
     const [errorMsg, setErrorMsg] = useState("");
+    const [showDeviceBindingModal, setShowDeviceBindingModal] = useState(false);
+    const [userEmail, setUserEmail] = useState("");
+    const [pendingAttendanceData, setPendingAttendanceData] = useState(null);
+
+    // Device binding state validity: 5 minutes in milliseconds
+    const DEVICE_BINDING_STATE_VALIDITY_MS = 5 * 60 * 1000;
+
+    // Check if device binding is required on mount
+    useEffect(() => {
+        const deviceBindingState = sessionStorage.getItem("deviceBindingRequired");
+        if (deviceBindingState) {
+            const { timestamp } = JSON.parse(deviceBindingState);
+            // Show modal if the error was recent (within last 5 minutes)
+            if (Date.now() - timestamp < DEVICE_BINDING_STATE_VALIDITY_MS) {
+                const user = JSON.parse(localStorage.getItem("user") || "{}");
+                setUserEmail(user.email || "");
+                setShowDeviceBindingModal(true);
+            }
+        }
+    }, []);
 
     const startScanning = () => {
         setShowScanner(true);
@@ -29,6 +50,22 @@ export default function MarkWithQR() {
         setShowScanner(false);
         setStatus("geolocating");
 
+        // Parse QR code JSON
+        let qrData;
+        try {
+            qrData = JSON.parse(decodedText);
+            // Validate required fields
+            if (!qrData.subjectId || !qrData.date || !qrData.sessionId || !qrData.token) {
+                setStatus("error");
+                setErrorMsg("Invalid QR code format. Please scan a valid attendance QR code.");
+                return;
+            }
+        } catch {
+            setStatus("error");
+            setErrorMsg("Invalid QR code. Please scan a valid attendance QR code.");
+            return;
+        }
+
         // Step 2: Capture Geolocation
         if (!navigator.geolocation) {
             setStatus("error");
@@ -39,7 +76,7 @@ export default function MarkWithQR() {
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
-                await submitAttendance(decodedText, latitude, longitude);
+                await submitAttendance(qrData, latitude, longitude);
             },
             (error) => {
                 setStatus("error");
@@ -62,20 +99,51 @@ export default function MarkWithQR() {
         );
     };
 
-    const submitAttendance = async (token, lat, lng) => {
+    const submitAttendance = async (qrData, lat, lng) => {
         setStatus("submitting");
         try {
             await api.post("/api/attendance/mark-qr", {
-                token,
+                subjectId: qrData.subjectId,
+                date: qrData.date,
+                sessionId: qrData.sessionId,
+                token: qrData.token,
                 latitude: lat,
                 longitude: lng,
             });
 
             // If the request did not throw, treat it as a success based on HTTP status
             setStatus("success");
+            sessionStorage.removeItem("deviceBindingRequired");
         } catch (error) {
-            setStatus("error");
-            setErrorMsg(error.response?.data?.detail || "An error occurred while submitting attendance.");
+            // Check if it's a device binding error
+            if (error.response?.status === 403 && 
+                error.response?.data?.detail?.includes("New device detected")) {
+                // Store pending attendance data
+                setPendingAttendanceData({ qrData, lat, lng });
+                
+                // Get user email
+                const user = JSON.parse(localStorage.getItem("user") || "{}");
+                setUserEmail(user.email || "");
+                
+                // Show device binding modal
+                setShowDeviceBindingModal(true);
+                setStatus("idle");
+            } else {
+                setStatus("error");
+                setErrorMsg(error.response?.data?.detail || "An error occurred while submitting attendance.");
+            }
+        }
+    };
+
+    const handleDeviceBindingSuccess = async () => {
+        setShowDeviceBindingModal(false);
+        sessionStorage.removeItem("deviceBindingRequired");
+        
+        // Retry attendance if we have pending data
+        if (pendingAttendanceData) {
+            const { qrData, lat, lng } = pendingAttendanceData;
+            setPendingAttendanceData(null);
+            await submitAttendance(qrData, lat, lng);
         }
     };
 
@@ -220,6 +288,16 @@ export default function MarkWithQR() {
                             setShowScanner(false);
                             setStatus("idle");
                         }}
+                    />
+                )}
+
+                {/* Device Binding OTP Modal */}
+                {showDeviceBindingModal && (
+                    <DeviceBindingOTPModal
+                        isOpen={showDeviceBindingModal}
+                        onClose={() => setShowDeviceBindingModal(false)}
+                        onSuccess={handleDeviceBindingSuccess}
+                        email={userEmail}
                     />
                 )}
             </main>

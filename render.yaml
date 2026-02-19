@@ -1,0 +1,14 @@
+services:
+  # Backend API Service
+  - type: web
+    name: smart-attendance-backend
+    runtime: python
+    region: oregon
+    plan: starter
+    rootDir: server/backend-api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10

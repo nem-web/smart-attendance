@@ -9,7 +9,9 @@ MIN_FACE_AREA_RATIO = 0.04
 NUM_JITTERS = 3
 
 # Setup MediaPipe Tasks FaceDetector
-model_path = os.path.join(os.path.dirname(__file__), "blaze_face_short_range.tflite")
+# Use absolute path resolution to ensure it works in Docker and all environments
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, "blaze_face_short_range.tflite")
 
 base_options = python.BaseOptions(model_asset_path=model_path)
 options = vision.FaceDetectorOptions(

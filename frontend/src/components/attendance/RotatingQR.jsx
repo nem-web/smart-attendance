@@ -4,21 +4,26 @@ import PropTypes from 'prop-types';
 
 const REFRESH_TIME = 5;
 
-export default function RotatingQR({ sessionId, onClose }) {
-  const [token, setToken] = useState(() => `${sessionId}-${Date.now()}`);
-  const [secondsLeft, setSecondsLeft] = useState(REFRESH_TIME);
-
+export default function RotatingQR({ sessionId, subjectId, onClose }) {
   // Generate token (replace with backend call later)
   const generateToken = useCallback(() => {
-    const newToken = `${sessionId}-${Date.now()}`;
-    setToken(newToken);
-  }, [sessionId]);
+    const qrData = {
+      subjectId,
+      date: new Date().toISOString(),
+      sessionId,
+      token: `${sessionId}-${Date.now()}`
+    };
+    return JSON.stringify(qrData);
+  }, [sessionId, subjectId]);
+
+  const [token, setToken] = useState(() => generateToken());
+  const [secondsLeft, setSecondsLeft] = useState(REFRESH_TIME);
 
   useEffect(() => {
     const countdown = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev === 1) {
-          generateToken();
+          setToken(generateToken());
           return REFRESH_TIME;
         }
         return prev - 1;
@@ -48,5 +53,6 @@ export default function RotatingQR({ sessionId, onClose }) {
 
 RotatingQR.propTypes = {
   sessionId: PropTypes.string.isRequired,
+  subjectId: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
 };

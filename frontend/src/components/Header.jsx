@@ -21,20 +21,23 @@ export default function Header() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "Dark";
 
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => {
+    const storedData = localStorage.getItem("user");
+    if (storedData) {
+        try {
+            return JSON.parse(storedData);
+        } catch {
+            return null;
+        }
+    }
+    return null;
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
+  // Close menu on route change
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem("user");
-      setUser(storedData ? JSON.parse(storedData) : null);
-    } catch {
-      setUser(null);
-    }
-  }, []);
-
-  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMenuOpen(false);
   }, [location.pathname]);
 
@@ -49,6 +52,9 @@ export default function Header() {
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="lg:hidden p-2 rounded-lg text-[var(--text-body)] hover:bg-[var(--bg-secondary)]"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -81,17 +87,21 @@ export default function Header() {
         {/* Right */}
         <div className="flex items-center gap-3">
           {/* Language */}
-          <div className="flex items-center gap-2 mr-2">
+          <div className="flex items-center gap-2 mr-2" role="group" aria-label="Language selection">
             <button
               onClick={() => i18n.changeLanguage("en")}
               className={i18n.language === "en" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}
+              aria-label="Switch to English"
+              aria-pressed={i18n.language === "en"}
             >
               English
             </button>
-            <span className="text-[var(--border-color)]">|</span>
+            <span className="text-[var(--border-color)]" aria-hidden="true">|</span>
             <button
               onClick={() => i18n.changeLanguage("hi")}
               className={i18n.language === "hi" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}
+              aria-label="Switch to Hindi"
+              aria-pressed={i18n.language === "hi"}
             >
               हिंदी
             </button>
@@ -104,6 +114,7 @@ export default function Header() {
           <button
             onClick={() => toggle(isDark ? "Light" : "Dark")}
             className="p-2 rounded-full hover:bg-[var(--bg-secondary)]"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDark ? <Sun size={18} className="text-slate-400" /> : <Moon size={18} className="text-slate-400" />}
           </button>
@@ -122,7 +133,12 @@ export default function Header() {
 
       {/* Mobile nav */}
       {menuOpen && (
-        <nav className="lg:hidden bg-[var(--bg-card)] px-4 pb-4 pt-2 space-y-1">
+        <nav 
+          id="mobile-menu"
+          className="lg:hidden bg-[var(--bg-card)] px-4 pb-4 pt-2 space-y-1"
+          role="navigation"
+          aria-label="Mobile navigation"
+        >
           {navLinks.map((link) => (
             <Link
               key={link.to}

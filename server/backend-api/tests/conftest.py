@@ -68,6 +68,7 @@ async def db(db_client):
     modules_to_patch = [
         "app.api.routes.analytics.db",
         "app.api.routes.attendance.db",
+        "app.api.routes.auth.db",
         "app.api.routes.teacher_settings.db",
         "app.api.deps.db",
         "app.services.attendance.db",

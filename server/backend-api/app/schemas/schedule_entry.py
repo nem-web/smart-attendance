@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, Field
 
+
 class ScheduleEntry(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
     teacher_id: str
@@ -15,6 +16,6 @@ class ScheduleEntry(BaseModel):
     branch: Optional[str] = None
     batch: Optional[str] = None
     tracked: bool = True
-    
+
     class Config:
         populate_by_name = True

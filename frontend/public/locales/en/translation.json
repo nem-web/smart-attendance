@@ -39,9 +39,11 @@
     "no_subjects": "No subjects enrolled yet.",
     "attendance_label": "Attendance",
     "attended_stats": "Attended: {{attended}}/{{total}} classes ({{percentage}}%)",
+    "classes": "Classes",
     "status": {
       "on_track": "On track",
       "at_risk": "At risk",
+      "low_attendance": "Low Attendance",
       "near_threshold": "Near threshold",
       "critical": "Attendance is critical",
       "stay_regular": "Stay regular to keep 75%+",
@@ -114,7 +116,8 @@
       "overall": "Overall percentage",
       "attended": "Classes attended",
       "total": "Total conducted",
-      "on_track": "On track for finals"
+      "on_track": "On track for finals",
+      "off_track": "Needs improvement"
     },
     "subjects_card": {
       "title": "Subjects",

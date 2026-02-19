@@ -13,7 +13,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 def generate_session_id() -> str:
     """
     Generate a unique session identifier using UUID4.
-    
+
     Returns:
         A unique session ID string.
     """
@@ -23,10 +23,10 @@ def generate_session_id() -> str:
 def hash_session_id(session_id: str) -> str:
     """
     Hash a session ID for secure storage in the database.
-    
+
     Args:
         session_id: The session ID to hash.
-    
+
     Returns:
         SHA256 hash of the session ID.
     """
@@ -36,10 +36,10 @@ def hash_session_id(session_id: str) -> str:
 def extract_session_id(token: str) -> str | None:
     """
     Extract session ID from a JWT token without full validation.
-    
+
     Args:
         token: The JWT token string.
-    
+
     Returns:
         The session ID if present, None otherwise.
     """
@@ -55,13 +55,13 @@ def create_access_token(
 ):
     """
     Create an access token with optional session ID.
-    
+
     Args:
         user_id: The user's ID.
         role: The user's role.
         email: The user's email (optional).
         session_id: The session ID to embed in the token (optional).
-    
+
     Returns:
         Encoded JWT access token.
     """
@@ -81,11 +81,11 @@ def create_access_token(
 def create_refresh_token(user_id: str, session_id: str = None):
     """
     Create a refresh token with optional session ID.
-    
+
     Args:
         user_id: The user's ID.
         session_id: The session ID to embed in the token (optional).
-    
+
     Returns:
         Encoded JWT refresh token.
     """

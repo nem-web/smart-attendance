@@ -10,6 +10,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.api.routes import teacher_settings as settings_router
 from .api.routes.schedule import router as schedule_router
+from .api.routes.holidays import router as holidays_router
 from .api.routes.attendance import router as attendance_router
 from .api.routes.auth import router as auth_router
 from .api.routes.analytics import router as analytics_router
@@ -21,6 +22,7 @@ from .core.config import APP_NAME, ORIGINS
 from app.services.attendance_daily import (
     ensure_indexes as ensure_attendance_daily_indexes,
 )
+from app.services.schedule_service import ensure_indexes as ensure_schedule_indexes
 from app.services.ml_client import ml_client
 from app.db.nonce_store import close_redis
 from app.core.scheduler import start_scheduler, shutdown_scheduler
@@ -55,16 +57,20 @@ if SENTRY_DSN := os.getenv("SENTRY_DSN"):
         integrations=[FastApiIntegration()],
     )
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         await ensure_attendance_daily_indexes()
         logger.info("attendance_daily indexes ensured")
-        
+
+        await ensure_schedule_indexes()
+        logger.info("schedule indexes ensured")
+
         start_scheduler()
     except Exception as e:
         logger.warning(
-            f"Could not connect to MongoDB. Application will continue, but DB features will fail. Error: {e}" # noqa: E501
+            f"Could not connect to MongoDB. Application will continue, but DB features will fail. Error: {e}"  # noqa: E501
         )
         logger.warning("Please check your MONGO_URI in .env")
 
@@ -73,6 +79,7 @@ async def lifespan(app: FastAPI):
     logger.info("ML client closed")
     await close_redis()
     shutdown_scheduler()
+
 
 def create_app() -> FastAPI:
     app = FastAPI(title=APP_NAME, lifespan=lifespan)
@@ -117,6 +124,7 @@ def create_app() -> FastAPI:
     app.include_router(students_router)
     app.include_router(attendance_router)
     app.include_router(schedule_router)
+    app.include_router(holidays_router)                              # ← NEW
     app.include_router(settings_router.router)
     app.include_router(notifications_router)
     app.include_router(analytics_router)
@@ -124,6 +132,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router, tags=["Health"])
 
     return app
+
 
 app = create_app()
 
@@ -134,4 +143,4 @@ Instrumentator().instrument(app).expose(app)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True) # nosec
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)  # nosec

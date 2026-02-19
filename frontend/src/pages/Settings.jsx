@@ -21,6 +21,7 @@ import {
   TreePine,
 } from "lucide-react";
 import SettingsSidebar from "../components/SettingsSidebar";
+import LogoutConfirmDialog from "../components/LogoutConfirmDialog";
 import { useTheme } from "../theme/ThemeContext";
 import {
   getSettings,
@@ -29,8 +30,10 @@ import {
   addSubject,
   sendLowAttendanceNotice,
 } from "../api/settings";
+import { logout as apiLogout } from "../api/auth";
 import AddSubjectModal from "../components/AddSubjectModal";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -92,6 +95,7 @@ export default function Settings() {
   // State for Face Settings
   const [liveness, setLiveness] = useState(true);
   const [sensitivity, setSensitivity] = useState(80);
+  const sensitivityTimeoutRef = useRef(null);
 
   // State for email preff
   const [_emailPreferences, setEmailPreferences] = useState(false);
@@ -172,11 +176,28 @@ export default function Settings() {
       .join("");
   }
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
+    setShowLogoutConfirm(true);
+  }
+
+  async function confirmLogout() {
+    try {
+      await apiLogout();
+    } catch (error) {
+      // Log error for debugging but continue with logout
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Logout API call failed:", error);
+      }
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("refresh_token");
+      setShowLogoutConfirm(false);
+      toast.success("Logged out successfully");
+      navigate("/login");
+    }
   }
 
 
@@ -339,6 +360,22 @@ export default function Settings() {
       setSaveError(t('settings.alerts.avatar_failed'));
     }
   }
+
+  // Debounced sensitivity handler
+  const handleSensitivityChange = (value) => {
+    setSensitivity(value);
+    
+    // Clear previous timeout
+    if (sensitivityTimeoutRef.current) {
+      clearTimeout(sensitivityTimeoutRef.current);
+    }
+    
+    // Set new timeout to update after user stops dragging
+    sensitivityTimeoutRef.current = setTimeout(() => {
+      // Auto-save could be triggered here if needed
+      // For now, it will be saved when user clicks "Apply Changes"
+    }, 500);
+  };
 
   // UI: show a simple loading state until data is loaded
   if (!loaded) {
@@ -864,27 +901,7 @@ export default function Settings() {
                   </p>
                 </div>
 
-                {/* 1. Enrolment Status */}
-                <div className="p-6 border border-[var(--border-color)] rounded-xl bg-[var(--bg-secondary)] flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-[var(--success)]/10 text-[var(--success)] rounded-full flex items-center justify-center">
-                      <Camera size={28} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-[var(--text-main)]">
-                        {t('settings.face_settings.face_data')}
-                      </h4>
-                      <p className="text-sm text-[var(--text-body)] opacity-70">
-                        {t('settings.face_settings.last_updated')}
-                      </p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-secondary)] shadow-sm flex items-center gap-2 cursor-pointer">
-                    <RefreshCw size={16} /> {t('settings.face_settings.recalibrate')}
-                  </button>
-                </div>
-
-                {/* 2. Recognition Sensitivity Slider */}
+                {/* Recognition Sensitivity Slider */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <label className="text-sm font-semibold text-[var(--text-main)]">
@@ -899,7 +916,7 @@ export default function Settings() {
                     min="50"
                     max="99"
                     value={sensitivity}
-                    onChange={(e) => setSensitivity(e.target.value)}
+                    onChange={(e) => handleSensitivityChange(e.target.value)}
                     className="w-full h-2 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--primary)]"
                   />
                   <p className="text-xs text-[var(--text-body)] opacity-90">
@@ -934,26 +951,6 @@ export default function Settings() {
                       <div
                         className={`w-4 h-4 bg-[var(--bg-card)] rounded-full absolute top-1 transition-transform ${liveness ? "left-7" : "left-1"}`}
                       ></div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 4. Danger Zone */}
-                <div className="pt-6 border-t border-[var(--border-color)]">
-                  <h4 className="text-sm font-bold text-[var(--danger)] mb-4">
-                    {t('settings.face_settings.danger_zone')}
-                  </h4>
-                  <div className="flex items-center justify-between p-4 bg-[var(--danger)]/10 border border-[var(--danger)]/20 rounded-xl">
-                    <div>
-                      <h5 className="text-sm font-semibold text-[var(--danger)]">
-                        {t('settings.face_settings.reset_model')}
-                      </h5>
-                      <p className="text-xs text-[var(--danger)] mt-1">
-                        {t('settings.face_settings.reset_desc')}
-                      </p>
-                    </div>
-                    <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--danger)]/20 text-[var(--danger)] rounded-lg text-sm font-medium hover:bg-[var(--danger)]/20 transition shadow-sm flex items-center gap-2 cursor-pointer">
-                      <Trash2 size={16} /> {t('settings.face_settings.reset_data')}
                     </button>
                   </div>
                 </div>
@@ -1051,6 +1048,20 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+      />
+
+      {showSubjectModal && (
+        <AddSubjectModal
+          onClose={() => setShowSubjectModal(false)}
+          onSave={handleAddSubject}
+        />
+      )}
     </div>
   );
 }

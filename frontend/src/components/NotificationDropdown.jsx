@@ -29,23 +29,26 @@ export default function NotificationDropdown() {
     }
   };
 
-  // Fetch notifications on component mount and when dropdown opens
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  // Fetch notifications when dropdown opens
   useEffect(() => {
     if (isOpen) {
       fetchNotifications();
     }
   }, [isOpen]);
 
-  // Periodic refresh of notifications every 30 seconds when dropdown is open
+  // Periodic refresh of notifications every 30 seconds
   useEffect(() => {
-    if (!isOpen) return;
-
     const interval = setInterval(() => {
       fetchNotifications();
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, []);
 
   // Click outside handler
   useEffect(() => {
@@ -145,6 +148,7 @@ export default function NotificationDropdown() {
             <button
               onClick={() => setIsOpen(false)}
               className="p-1 hover:bg-[var(--bg-secondary)] rounded transition-colors"
+              aria-label={t("notifications.close", "Close notifications")}
             >
               <X size={18} className="text-[var(--text-body)]" />
             </button>

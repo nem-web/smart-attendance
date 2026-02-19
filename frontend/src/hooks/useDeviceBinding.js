@@ -10,15 +10,28 @@ export const useDeviceBinding = () => {
 
   // Check if device binding is required from sessionStorage
   useEffect(() => {
-    const deviceBindingRequired = sessionStorage.getItem(
-      "deviceBindingRequired"
-    );
-    if (deviceBindingRequired) {
-      const data = JSON.parse(deviceBindingRequired);
-      setIsModalOpen(true);
-      // Clean up after setting
-      sessionStorage.removeItem("deviceBindingRequired");
-    }
+    const checkDeviceBinding = () => {
+      const deviceBindingRequired = sessionStorage.getItem(
+        "deviceBindingRequired"
+      );
+      if (deviceBindingRequired) {
+        const data = JSON.parse(deviceBindingRequired);
+        setIsModalOpen(true);
+        // Clean up after setting
+        sessionStorage.removeItem("deviceBindingRequired");
+      }
+    };
+
+    // Initial check on mount
+    checkDeviceBinding();
+
+    // Poll sessionStorage periodically to detect changes after mount
+    const intervalId = window.setInterval(checkDeviceBinding, 1000);
+
+    // Cleanup interval on unmount
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, []);
 
   const openModal = useCallback((email) => {

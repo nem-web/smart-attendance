@@ -8,7 +8,7 @@ from datetime import datetime, UTC
 async def test_single_device_enforcement(client: AsyncClient, db):
     """
     Test that logging in on a second device invalidates the first device's session.
-    
+
     Scenario:
     1. Register and verify a user
     2. Login to get token_A
@@ -89,7 +89,7 @@ async def test_single_device_enforcement(client: AsyncClient, db):
 async def test_refresh_token_invalidation(client: AsyncClient, db):
     """
     Test that refresh tokens are invalidated when a new session is created.
-    
+
     Scenario:
     1. Login to get access and refresh tokens
     2. Login again (new session)
@@ -197,10 +197,10 @@ async def test_oauth_session_management(client: AsyncClient, db):
     # This test would require mocking the entire OAuth flow
     # For now, we verify that the OAuth callback endpoint exists
     # and would handle session management similarly
-    
+
     # Create a pre-existing user for OAuth
     from app.core.security import hash_password
-    
+
     user_doc = {
         "name": "OAuth Test User",
         "email": "oauth@test.com",
@@ -210,13 +210,13 @@ async def test_oauth_session_management(client: AsyncClient, db):
         "is_verified": False,
         "created_at": datetime.now(UTC),
     }
-    
+
     result = await db.users.insert_one(user_doc)
     user_id = result.inserted_id
-    
+
     # Manually simulate what OAuth callback would do
     from app.utils.jwt_token import generate_session_id, hash_session_id
-    
+
     session_id = generate_session_id()
     await db.users.update_one(
         {"_id": user_id},
@@ -228,7 +228,7 @@ async def test_oauth_session_management(client: AsyncClient, db):
             }
         },
     )
-    
+
     # Verify session fields were set
     user = await db.users.find_one({"_id": user_id})
     assert "current_active_session" in user
