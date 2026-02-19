@@ -15,6 +15,32 @@ from app.schemas.analytics import SubjectStatsResponse, StudentStat
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 
 
+from bson import ObjectId
+
+def pydantic_dict(obj):
+    """Recursively convert ObjectId to str in any nested dict/list."""
+    if isinstance(obj, list):
+        return [pydantic_dict(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: pydantic_dict(v) for k, v in obj.items()}
+    elif isinstance(obj, ObjectId):
+        return str(obj)
+    return obj
+
+@router.get('/g')
+async def doRandom():
+
+  
+    
+    cursor = db.attendance_daily.find({"teacherId": ObjectId("6995dd6cff125079099be9af")})
+    result = await cursor.to_list(length=None)  # Convert all documents to a list
+
+    data = pydantic_dict(result)
+    return {
+    "data": data
+}
+
+
 # -------------------------------------------------------------------------
 # HELPER FUNCTIONS (From Branch 304 - Security & Auth)
 # -------------------------------------------------------------------------
@@ -79,8 +105,9 @@ async def get_subject_analytics(
 
     # Fetch Subject
     subject = await db.subjects.find_one({"_id": subject_oid})
-    if not subject:
-        raise HTTPException(status_code=404, detail="Subject not found")
+    print(f"this my a subject{subject}")
+   # if not subject:
+     #   raise HTTPException(status_code=404, detail="Subject not found")
 
     # Verify Ownership
     if teacher_oid not in subject.get("professor_ids", []):
@@ -89,6 +116,7 @@ async def get_subject_analytics(
         )
 
     # Process Student Stats
+
     students_info = subject.get("students", [])
     if not students_info:
         return SubjectStatsResponse(
@@ -99,7 +127,7 @@ async def get_subject_analytics(
             bestPerforming=[],
             needsSupport=[],
         )
-
+      
     # Fetch Student Names
     student_uids = [s["student_id"] for s in students_info if "student_id" in s]
     users_cursor = db.users.find({"_id": {"$in": student_uids}}, {"_id": 1, "name": 1})
@@ -171,13 +199,12 @@ async def get_attendance_trend(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Get attendance trend for a specific class within a date range.
-    Returns daily attendance data including present, absent, late counts and percentage.
+    Get attendance trend for a specific class or all classes.
     """
-    # 1. Auth Check (from 304)
+
     teacher_oid = _get_teacher_oid(current_user)
 
-    # Validate dates
+    # 🔹 Date Validation
     try:
         start_date = datetime.fromisoformat(dateFrom)
         end_date = datetime.fromisoformat(dateTo)
@@ -189,49 +216,104 @@ async def get_attendance_trend(
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="dateFrom must be before dateTo")
 
-    # Validate classId
-    try:
-        class_oid = ObjectId(classId)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid classId format")
+    # 🔹 Fetch Documents
+    if classId == "all":
+        docs_cursor = db.attendance_daily.find({"teacherId": teacher_oid})
+        docs = await docs_cursor.to_list(length=None)
+    else:
+        try:
+            class_oid = ObjectId(classId)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid classId format")
 
-    # 2. Ownership Check (from 304)
-    await _verify_teacher_class_access(teacher_oid, class_oid)
+        await _verify_teacher_class_access(teacher_oid, class_oid)
 
-    # 3. Data Retrieval (from main - assumes single doc with 'daily' map schema)
-    doc = await db.attendance_daily.find_one({"subjectId": class_oid})
+        doc = await db.attendance_daily.find_one({"subjectId": class_oid})
+        docs = [doc] if doc else []
 
-    trend_data = []
+    # 🔹 Merge Data Date Wise
+    combined_data = {}
 
-    if doc and "daily" in doc:
-        daily_map = doc["daily"]
-        for date_str, summary in daily_map.items():
+    for doc in docs:
+        if not doc or "daily" not in doc:
+            continue
+
+        for date_str, summary in doc["daily"].items():
             try:
                 record_date = datetime.fromisoformat(date_str)
-                if start_date <= record_date <= end_date:
-                    trend_data.append(
-                        {
-                            "date": date_str,
-                            "present": summary.get("present", 0),
-                            "absent": summary.get("absent", 0),
-                            "late": summary.get("late", 0),
-                            "total": summary.get("total", 0),
-                            "percentage": summary.get("percentage", 0.0),
-                        }
-                    )
+                if not (start_date <= record_date <= end_date):
+                    continue
             except ValueError:
                 continue
 
-    # Sort by date
+            if date_str not in combined_data:
+                combined_data[date_str] = {
+                    "present": 0,
+                    "absent": 0,
+                    "late": 0,
+                    "total": 0,
+                }
+
+            combined_data[date_str]["present"] += summary.get("present", 0)
+            combined_data[date_str]["absent"] += summary.get("absent", 0)
+            combined_data[date_str]["late"] += summary.get("late", 0)
+            combined_data[date_str]["total"] += summary.get("total", 0)
+
+    # 🔹 Build Trend Data
+    trend_data = []
+
+    for date_str, summary in combined_data.items():
+        total = summary["total"]
+
+        percentage = (
+            (summary["present"] / total) * 100 if total > 0 else 0
+        )
+
+        trend_data.append(
+            {
+                "date": date_str,
+                "present": summary["present"],
+                "absent": summary["absent"],
+                "late": summary["late"],
+                "total": total,
+                "percentage": round(percentage, 2),
+            }
+        )
+
     trend_data.sort(key=lambda x: x["date"])
+
+    # 🔹 Distribution (Last Day Data)
+    distribution_data = []
+
+    if trend_data:
+        last_day = trend_data[-1]
+        total = last_day["total"]
+
+        distribution_data = [
+            {
+                "value": (last_day["present"] / total) * 100 if total > 0 else 0,
+                "name": "Present",
+                "color": "var(--success)",
+            },
+            {
+                "value": (last_day["absent"] / total) * 100 if total > 0 else 0,
+                "name": "Absent",
+                "color": "var(--danger)",
+            },
+            {
+                "value": (last_day["late"] / total) * 100 if total > 0 else 0,
+                "name": "Late",
+                "color": "var(--warning)",
+            },
+        ]
 
     return {
         "classId": classId,
         "dateFrom": dateFrom,
         "dateTo": dateTo,
         "data": trend_data,
+        "distribution_data": distribution_data,
     }
-
 
 @router.get("/monthly-summary")
 async def get_monthly_summary(
@@ -455,6 +537,84 @@ async def get_class_risk(
     return {"data": at_risk_classes}
 
 
+@router.get("/top-performers")
+async def get_top_best_classes(current_user: dict = Depends(get_current_user)):
+    """
+    Get TOP 5 best performing classes (highest attendance percentage).
+    """
+    # 1️⃣ Get teacher subjects
+    teacher_oid = _get_teacher_oid(current_user)
+    subjects = await _get_teacher_subjects(teacher_oid)
+    subject_ids = [subject["_id"] for subject in subjects]
+
+    if not subject_ids:
+        return {"data": []}
+
+    # 2️⃣ Aggregation pipeline
+    pipeline = [
+        {"$match": {"subjectId": {"$in": subject_ids}}},
+        {"$project": {"classId": "$subjectId", "dailyArray": {"$objectToArray": "$daily"}}},
+        {"$unwind": "$dailyArray"},
+        {"$addFields": {"recordDate": "$dailyArray.k", "summary": "$dailyArray.v"}},
+        {
+            "$group": {
+                "_id": "$classId",
+                "totalPresent": {"$sum": "$summary.present"},
+                "totalAbsent": {"$sum": "$summary.absent"},
+                "totalLate": {"$sum": "$summary.late"},
+                "totalStudents": {"$sum": "$summary.total"},
+                "lastRecorded": {"$max": "$recordDate"},
+            }
+        },
+        {
+            "$addFields": {
+                "attendancePercentage": {
+                    "$cond": {
+                        "if": {"$gt": ["$totalStudents", 0]},
+                        "then": {
+                            "$round": [
+                                {"$multiply": [{"$divide": ["$totalPresent", "$totalStudents"]}, 100]},
+                                2
+                            ]
+                        },
+                        "else": 0
+                    }
+                }
+            }
+        },
+        {"$sort": {"attendancePercentage": -1}},  # Highest attendance first
+        {"$limit": 5}  # TOP 5 best performing classes
+    ]
+
+    results = await db.attendance_daily.aggregate(pipeline).to_list(length=5)
+
+    # 3️⃣ Get class names
+    class_ids = [result["_id"] for result in results]
+    subjects_cursor = db.subjects.find({"_id": {"$in": class_ids}}, {"name": 1, "code": 1})
+    subjects_list = await subjects_cursor.to_list(length=5)
+    subject_map = {str(s["_id"]): s for s in subjects_list}
+
+    # 4️⃣ Format response
+    top_best_classes = []
+    for result in results:
+        class_id_str = str(result["_id"])
+        subject = subject_map.get(class_id_str, {})
+        top_best_classes.append({
+            "classId": class_id_str,
+            "className": subject.get("name", "Unknown"),
+            "classCode": subject.get("code", "N/A"),
+            "attendancePercentage": result["attendancePercentage"],
+            "totalPresent": result["totalPresent"],
+            "totalAbsent": result["totalAbsent"],
+            "totalLate": result["totalLate"],
+            "totalStudents": result["totalStudents"],
+            "lastRecorded": result["lastRecorded"]
+        })
+
+    return {"data": top_best_classes}
+
+
+
 @router.get("/global")
 async def get_global_stats(
     current_user: dict = Depends(get_current_user),
@@ -570,3 +730,4 @@ async def get_global_stats(
         "risk_count": risk_count,
         "top_subjects": subject_stats,
     }
+
