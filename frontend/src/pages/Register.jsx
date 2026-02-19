@@ -43,7 +43,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const apiUrl = import.meta.env.VITE_API_URL;
+  // Use VITE_API_URL if set, otherwise use /api prefix that goes through Vite proxy
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,8 +79,22 @@ export default function Register() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || t('register.alerts.failed'));
+        // Try to parse error response, but handle empty/invalid responses gracefully
+        let errorMessage = t('register.alerts.failed');
+        try {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            errorMessage = data.detail || errorMessage;
+          } else {
+            // Response is not JSON, use status text
+            errorMessage = `Registration failed: ${res.status} ${res.statusText}`;
+          }
+        } catch (parseError) {
+          // If parsing fails, use a generic error message
+          errorMessage = t('register.alerts.failed');
+        }
+        throw new Error(errorMessage);
       }
 
       alert(t('register.alerts.account_created'));
