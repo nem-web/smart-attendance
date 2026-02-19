@@ -85,17 +85,19 @@ export default function Register() {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
             const data = await res.json();
-            errorMessage = data.detail || errorMessage;
+            errorMessage = data.detail || data.message || errorMessage;
           } else {
             // Response is not JSON, use status text
-            errorMessage = `Registration failed: ${res.status} ${res.statusText}`;
+            const text = await res.text();
+            errorMessage = text || `Registration failed: ${res.status} ${res.statusText}`;
           }
         } catch (parseError) {
-          // If parsing fails, use a generic error message
-          errorMessage = t('register.alerts.failed');
+          // If parsing fails, use status text
+          errorMessage = `Registration failed: ${res.status} ${res.statusText}`;
         }
         throw new Error(errorMessage);
       }
+
 
       alert(t('register.alerts.account_created'));
       navigate("/login");

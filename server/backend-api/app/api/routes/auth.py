@@ -49,6 +49,21 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 oauth = OAuth()
 
 
+def send_verification_email_safe(email: str, name: str, verify_link: str) -> None:
+    """
+    Wrapper to safely send verification email in background tasks.
+    Catches and logs exceptions to prevent them from affecting the HTTP response.
+    """
+    try:
+        # Run the async function using asyncio
+        import asyncio
+        asyncio.run(BrevoEmailService.send_verification_email(email, name, verify_link))
+    except Exception as e:
+        logger.error(f"Failed to send verification email to {email}: {e}")
+        # Don't re-raise - background task failures shouldn't fail the registration
+
+
+
 @router.post("/register", response_model=RegisterResponse)
 @limiter.limit("5/hour")
 async def register(
@@ -158,14 +173,16 @@ async def register(
     #     to_email=payload.email,
     #     verification_link=verify_link,
     # )
+    # Use the safe wrapper to prevent email failures from affecting the response
     background_tasks.add_task(
-        BrevoEmailService.send_verification_email,
+        send_verification_email_safe,
         payload.email,
         payload.name,
         verify_link,
     )
 
     logger.info(f"User registered successfully: {payload.email}")
+
 
     return {
         "user_id": str(result.inserted_id),
@@ -879,4 +896,3 @@ async def logout(request: Request):
 
     logger.info("User logged out: %s", user_id)
     return {"message": "Logged out successfully"}
-
