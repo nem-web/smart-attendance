@@ -8,18 +8,26 @@ from mediapipe.tasks.python import vision
 MIN_FACE_AREA_RATIO = 0.04
 NUM_JITTERS = 3
 
-# Setup MediaPipe Tasks FaceDetector
 # Use absolute path resolution to ensure it works in Docker and all environments
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "blaze_face_short_range.tflite")
 
-base_options = python.BaseOptions(model_asset_path=model_path)
-options = vision.FaceDetectorOptions(
-    base_options=base_options,
-    running_mode=vision.RunningMode.IMAGE,
-    min_detection_confidence=0.6,
-)
-_detector = vision.FaceDetector.create_from_options(options)
+# Lazy-initialized detector — created on first use to avoid import-time crash
+# if the model file has not yet been downloaded.
+_detector = None
+
+
+def _get_detector():
+    global _detector
+    if _detector is None:
+        base_options = python.BaseOptions(model_asset_path=model_path)
+        options = vision.FaceDetectorOptions(
+            base_options=base_options,
+            running_mode=vision.RunningMode.IMAGE,
+            min_detection_confidence=0.6,
+        )
+        _detector = vision.FaceDetector.create_from_options(options)
+    return _detector
 
 
 def detect_faces(image: np.ndarray) -> list[tuple[int, int, int, int]]:
@@ -32,7 +40,7 @@ def detect_faces(image: np.ndarray) -> list[tuple[int, int, int, int]]:
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
 
     # Detect faces
-    result = _detector.detect(mp_image)
+    result = _get_detector().detect(mp_image)
 
     if not result.detections:
         return []
