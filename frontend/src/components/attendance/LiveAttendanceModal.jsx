@@ -14,7 +14,7 @@ import toast from 'react-hot-toast';
 
 // Helper for distance calculation (Haversine formula)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
   const R = 6371e3; // metres
   const φ1 = lat1 * Math.PI/180;
   const φ2 = lat2 * Math.PI/180;
@@ -29,8 +29,20 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c; // in metres
 };
 
+const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    const diff = Date.now() - new Date(timestamp).getTime();
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(timestamp).toLocaleDateString();
+};
+
 export default function LiveAttendanceModal({ sessionId, subjectId, onClose, subjectName = "Attendance Session" }) {
-  const [socket, setSocket] = useState(null);
+  const socketRef = React.useRef(null);
   const [scannedStudents, setScannedStudents] = useState([]);
   const [teacherLocation, setTeacherLocation] = useState(null);
   const [activeTab, setActiveTab] = useState("Present");
@@ -118,7 +130,7 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    setSocket(newSocket);
+    socketRef.current = newSocket;
 
     return () => {
       newSocket.disconnect();
@@ -129,8 +141,8 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
   const handleStopAndSave = async () => {
     // In a real implementation: API call to finalize session
     // For MVP: we just close and assume backend auto-saved or we trigger a save event
-    if (socket) {
-        socket.emit("end_session", { sessionId });
+    if (socketRef.current) {
+        socketRef.current.emit("end_session", { sessionId });
     }
     
     // Simulate API call delay
@@ -326,14 +338,14 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
                                         <div className="flex flex-col">
                                             <h4 className="font-bold text-[var(--text-main)] text-sm leading-tight">{scan.student.name}</h4>
                                             <p className="text-[10px] text-[var(--text-body)] font-medium flex items-center gap-1">
-                                                Roll {scan.student.roll} • <span className="text-[var(--text-body)]/40">•</span> <span className="text-[var(--text-body)]/60">Scanned just now</span>
+                                                Roll {scan.student.roll} • <span className="text-[var(--text-body)]/40">•</span> <span className="text-[var(--text-body)]/60">{formatTimeAgo(scan.timestamp)}</span>
                                             </p>
                                         </div>
                                     </div>
                                     
                                     <div className="">
                                         {isProxy ? (
-                                            <span className="px-3 py-1 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg text-xs font-bold">
+                                            <span className="px-3 py-1 bg-[var(--danger)]/10 text-[var(--danger)] rounded-lg text-xs font-bold">
                                                 Pending
                                             </span>
                                         ) : (
