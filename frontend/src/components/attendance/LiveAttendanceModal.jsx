@@ -291,19 +291,23 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
                         scannedStudents.map((scan) => {
                             let isProxy = false;
                             
-                            if (teacherLocation && scan.location) {
+                            // Check for location data (supports {lat, lon} or {lat, lng} or {latitude, longitude})
+                            const lat = scan.location?.lat || scan.location?.latitude;
+                            const lon = scan.location?.lon || scan.location?.lng || scan.location?.longitude;
+
+                            if (teacherLocation && lat && lon) {
                                 const distance = calculateDistance(
                                     teacherLocation.latitude, 
                                     teacherLocation.longitude,
-                                    scan.location.latitude,
-                                    scan.location.longitude
+                                    lat,
+                                    lon
                                 );
                                 if (distance > 50) isProxy = true; 
                             }
     
                             return (
                                 <div 
-                                    key={scan.student.roll || scan.student.id || Math.random()} 
+                                    key={scan.student.roll || scan.student.id || scan.timestamp} 
                                     className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 animate-in slide-in-from-top-2 border ${
                                         isProxy ? 'bg-[var(--danger)]/10 border-[var(--danger)]/10' : 'bg-[var(--success)]/10 border-[var(--success)]/10'
                                     }`}
@@ -351,7 +355,7 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
         <div className="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-card)] flex justify-between items-center z-20">
             <div>
                  <p className="font-bold text-[var(--text-main)] text-sm">Stop & save to lock this session.</p>
-                 <p className="text-xs text-[var(--text-body)] font-medium">Students who haven't scanned will remain marked absent until updated manually.</p>
+                 <p className="text-xs text-[var(--text-body)] font-medium">Students who haven&apos;t scanned will remain marked absent until updated manually.</p>
             </div>
             <div className="flex gap-3">
                 <button 
@@ -377,4 +381,5 @@ LiveAttendanceModal.propTypes = {
   sessionId: PropTypes.string.isRequired,
   subjectId: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
+  subjectName: PropTypes.string,
 };
