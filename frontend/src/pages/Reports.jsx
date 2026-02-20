@@ -41,7 +41,7 @@ const { t: _t } = useTranslation();
   useEffect(() => {
     if (!selectedSubject) return;
     fetchSubjectStudents(selectedSubject).then(setStudents);
-  }, [selectedSubject, startDate]);
+  }, [selectedSubject]);
 
   const verifiedStudents = students.filter((s) => s.verified === true);
 
