@@ -113,20 +113,31 @@ const filteredStudents = enhancedStudents;
   ...(endDate && { end_date: endDate.toISOString().split('T')[0] }),
 });
 
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/reports/export/${format}?${params}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+     const res = await fetch(
+  `${import.meta.env.VITE_API_URL}/api/reports/export/${format}?${params}`,
+  {
+    headers: { Authorization: `Bearer ${token}` }
+  }
+);
 
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
+// ✅ check response
+if (!res.ok) {
+  throw new Error("Download failed");
+}
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `report.${format}`;
-      a.click();
+const blob = await res.blob();
+const url = window.URL.createObjectURL(blob);
+
+// ✅ proper anchor handling
+const a = document.createElement("a");
+a.href = url;
+a.download = `report.${format}`;
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+
+// ✅ cleanup memory
+window.URL.revokeObjectURL(url);
 
       toast.success(`${format.toUpperCase()} downloaded`);
     } catch (err) {
