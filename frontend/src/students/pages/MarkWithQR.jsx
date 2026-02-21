@@ -41,68 +41,113 @@ export default function MarkWithQR() {
     }, []);
 
     const startScanning = () => {
-        setShowScanner(true);
-        setStatus("scanning");
-        setErrorMsg("");
-    };
-
-    const handleScanSuccess = async (decodedText) => {
-        setShowScanner(false);
-        setStatus("geolocating");
-
-        // Parse QR code JSON
-        let qrData;
-        try {
-            qrData = JSON.parse(decodedText);
-            // Validate required fields
-            if (!qrData.subjectId || !qrData.date || !qrData.sessionId || !qrData.token) {
-                setStatus("error");
-                setErrorMsg("Invalid QR code format. Please scan a valid attendance QR code.");
-                return;
-            }
-        } catch {
-            setStatus("error");
-            setErrorMsg("Invalid QR code. Please scan a valid attendance QR code.");
-            return;
-        }
-
-        // Step 2: Capture Geolocation
         if (!navigator.geolocation) {
             setStatus("error");
             setErrorMsg("Geolocation is not supported by your browser.");
             return;
         }
-
+        
+        // Request location permission upfront
+        setStatus("geolocating");
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                await submitAttendance(qrData, latitude, longitude);
+            (position) => {
+                // Permission granted and location found
+                setStatus("scanning");
+                setShowScanner(true);
+                setErrorMsg("");
             },
             (error) => {
                 setStatus("error");
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
-                        setErrorMsg("User denied the request for Geolocation.");
+                        setErrorMsg("Location access is required to verify you are in class.");
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        setErrorMsg("Location information is unavailable.");
+                        setErrorMsg("Location information is unavailable. Please try again.");
                         break;
                     case error.TIMEOUT:
-                        setErrorMsg("The request to get user location timed out.");
-                        break;
+                        setErrorMsg("Location request timed out. Retrying with lower accuracy...");
+                        // Fallback to low accuracy
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                setStatus("scanning");
+                                setShowScanner(true);
+                                setErrorMsg("");
+                            },
+                            (err) => {
+                                setStatus("error");
+                                setErrorMsg("Location request timed out. Please check your GPS settings.");
+                            },
+                            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                        );
+                        return;
                     default:
+                        setStatus("error"); // Ensure status is error even for default case
                         setErrorMsg("An unknown error occurred while getting location.");
                         break;
                 }
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
+        );
+    };
+
+    const handleScanSuccess = async (decodedText) => {
+        // Stop scanning immediately
+        setShowScanner(false);
+        
+        let qrData;
+        try {
+            qrData = JSON.parse(decodedText);
+            // Basic validation of QR structure
+            if (!qrData.subjectId || !qrData.date || !qrData.sessionId || !qrData.token) {
+                 setStatus("error");
+                 setErrorMsg("Invalid QR code format.");
+                 return;
+            }
+        } catch (e) {
+            setStatus("error");
+            setErrorMsg("Failed to parse QR code.");
+            return;
+        }
+
+        setStatus("submitting");
+
+        // Use the location we hopefully already have, or get it again
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                // Log for debugging
+                console.log("Submitting attendance with location:", latitude, longitude);
+                submitAttendance(qrData, latitude, longitude);
+            },
+            (err) => {
+                console.error("Location error during submission:", err);
+                if (err.code === err.TIMEOUT) {
+                    // Fallback to low accuracy
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            const { latitude, longitude } = pos.coords;
+                            submitAttendance(qrData, latitude, longitude);
+                        },
+                        (fallbackErr) => {
+                            setStatus("error");
+                            setErrorMsg("Could not retrieve location for verification.");
+                        },
+                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                    );
+                    return;
+                }
+                setStatus("error");
+                setErrorMsg("Could not retrieve location for verification.");
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 20000 } // Allow slightly older cached position
         );
     };
 
     const submitAttendance = async (qrData, lat, lng) => {
         setStatus("submitting");
         try {
-            await api.post("/api/attendance/mark-qr", {
+            const response = await api.post("/api/attendance/mark-qr", {
                 subjectId: qrData.subjectId,
                 date: qrData.date,
                 sessionId: qrData.sessionId,
@@ -112,7 +157,11 @@ export default function MarkWithQR() {
             });
 
             // If the request did not throw, treat it as a success based on HTTP status
-            setStatus("success");
+            if (response.data.proxy_suspected) {
+                setStatus("proxy");
+            } else {
+                setStatus("success");
+            }
             sessionStorage.removeItem("deviceBindingRequired");
         } catch (error) {
             // Check if it's a device binding error
@@ -128,6 +177,8 @@ export default function MarkWithQR() {
                 // Show device binding modal
                 setShowDeviceBindingModal(true);
                 setStatus("idle");
+            } else if (error.response?.status === 409) {
+                setStatus("already-marked");
             } else {
                 setStatus("error");
                 setErrorMsg(error.response?.data?.detail || "An error occurred while submitting attendance.");
@@ -207,7 +258,7 @@ export default function MarkWithQR() {
                             className="w-full bg-[var(--action-info-bg)]  hover:bg-[var(--action-info-hover)] active:scale-95 text-[var(--text-on-primary)] py-4 px-8 rounded-2xl font-bold shadow-xl shadow-black/10 transition-all flex items-center justify-center gap-3 text-lg"
                         >
                             <QrCode size={22} />
-                            Mark with QR
+                            Allow Location & Scan
                         </button>
                     </div>
                 )}
@@ -250,6 +301,46 @@ export default function MarkWithQR() {
                         >
                             Back to Dashboard
                         </button>
+                    </div>
+                )}
+
+                {status === "proxy" && (
+                    <div className="text-center space-y-8 animate-in zoom-in duration-300">
+                        <div className="w-24 h-24 bg-[var(--danger)]/15 text-[var(--danger)] rounded-full flex items-center justify-center mx-auto shadow-lg shadow-black/10">
+                            <XCircle size={56} strokeWidth={2.5} />
+                        </div>
+                        <div className="space-y-4">
+                            <h2 className="text-3xl font-black text-[var(--text-main)]">Proxy Detected!</h2>
+                            <p className="text-[var(--text-body)]">
+                                You are too far from the classroom. Your attendance has been marked as proxy.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => navigate("/student-dashboard")}
+                            className="w-full bg-[var(--danger)] hover:bg-[var(--danger)]/80 text-white py-4 px-8 rounded-2xl font-bold transition-all shadow-xl"
+                        >
+                            Back to Dashboard
+                        </button>
+                    </div>
+                )}
+
+                {status === "already-marked" && (
+                    <div className="text-center space-y-8 animate-in zoom-in duration-300">
+                         <div className="w-24 h-24 bg-[var(--action-info-bg)]/15 text-[var(--action-info-bg)] rounded-full flex items-center justify-center mx-auto shadow-lg shadow-black/10">
+                             <CheckCircle2 size={56} strokeWidth={2.5} />
+                         </div>
+                         <div className="space-y-4">
+                             <h2 className="text-3xl font-black text-[var(--text-main)]">Already Marked!</h2>
+                             <p className="text-[var(--text-body)]">
+                                 You have already marked your attendance for this session.
+                             </p>
+                         </div>
+                         <button
+                             onClick={() => navigate("/student-dashboard")}
+                             className="w-full bg-[var(--action-info-bg)] hover:bg-[var(--action-info-hover)] text-[var(--text-on-primary)] py-4 px-8 rounded-2xl font-bold transition-all shadow-xl"
+                         >
+                             Back to Dashboard
+                         </button>
                     </div>
                 )}
 

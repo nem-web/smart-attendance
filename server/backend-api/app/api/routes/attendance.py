@@ -18,8 +18,21 @@ from app.core.security import get_current_user
 from app.utils.jwt_token import decode_jwt
 from fastapi import Depends
 
+from app.services.attendance_socket_service import stop_and_save_session, sio
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
+
+
+@router.post("/stop-session/{session_id}")
+async def stop_session(session_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Manually stop session, flush buffer, and close.
+    """
+    if current_user["role"] not in ["teacher", "admin"]:
+         raise HTTPException(status_code=403, detail="Unauthorized")
+         
+    return await stop_and_save_session(session_id)
 
 
 def _parse_object_id(value: str, field_name: str) -> ObjectId:
@@ -132,24 +145,46 @@ async def mark_attendance_qr(
     is_proxy_suspected = False
     dist = 0.0
 
+    # Try to get live session location first from socket service
+    # This allows for dynamic location updates per session
+    from app.services.attendance_socket_service import session_locations
+    session_loc = session_locations.get(payload.sessionId)
+    
+    print(f"DEBUG: payload.sessionId={payload.sessionId}")
+    print(f"DEBUG: session_locations={session_locations}")
+    print(f"DEBUG: session_loc={session_loc}")
+    
+    teacher_lat = 0.0
+    teacher_lon = 0.0
+    radius = 50.0 # Default radius
+
     location_cfg = subject.get("location")
     if location_cfg:
-        teacher_lat = float(location_cfg.get("lat", 0.0))
-        teacher_lon = float(location_cfg.get("long", 0.0))
         radius = float(location_cfg.get("radius", 50.0))
 
+    if session_loc and "lat" in session_loc and "lon" in session_loc:
+        teacher_lat = float(session_loc["lat"])
+        teacher_lon = float(session_loc["lon"])
+        # If static location has radius configured, use it, else default 50
+    elif location_cfg:
+        # Fallback to static subject location
+        teacher_lat = float(location_cfg.get("lat", 0.0))
+        # Note: field name inconsistency possible: 'long' vs 'lon' vs 'lng'
+        teacher_lon = float(location_cfg.get("long") or location_cfg.get("lon") or location_cfg.get("lng") or 0.0)
+    
+    print(f"DEBUG: teacher_lat={teacher_lat}, teacher_lon={teacher_lon}, student_lat={payload.latitude}, student_lon={payload.longitude}")
+    
+    if teacher_lat != 0.0 and teacher_lon != 0.0:
         dist = calculate_distance(
             teacher_lat, teacher_lon, payload.latitude, payload.longitude
         )
+        print(f"DEBUG: calculated distance={dist}, radius={radius}")
 
         if dist > radius:
             is_proxy_suspected = True
+            print("DEBUG: Proxy suspected!")
     else:
-        # No location config at all:
-        # Do NOT default to (0.0, 0.0) for geofencing, as that would
-        # incorrectly flag all real-world locations as proxy-suspected.
-        # Instead, skip geofencing and leave is_proxy_suspected = False.
-        dist = 0.0
+        print("DEBUG: Skipping distance calculation because teacher location is 0.0")
 
     # 3. Mark Attendance (Update Subject)
     today = date.today().isoformat()
@@ -181,21 +216,27 @@ async def mark_attendance_qr(
     # historical data to avoid hitting MongoDB's 16MB document size limit.
     attendance_record = {
         "date": today,
-        "status": "Present",
+        "status": "Proxy" if is_proxy_suspected else "Present",
         "timestamp": datetime.now(UTC).isoformat(),
         "method": "qr",
     }
 
+    update_query = {
+        "$push": {"students.$.attendanceRecords": attendance_record},
+        "$inc": {
+            "students.$.attendance.total": 1,
+        },
+        "$set": {"students.$.attendance.lastMarkedAt": today},
+    }
+    
+    if not is_proxy_suspected:
+        update_query["$inc"]["students.$.attendance.present"] = 1
+    else:
+        update_query["$inc"]["students.$.attendance.absent"] = 1
+
     result = await db.subjects.update_one(
         {"_id": subject_oid, "students.student_id": student_oid},
-        {
-            "$push": {"students.$.attendanceRecords": attendance_record},
-            "$inc": {
-                "students.$.attendance.present": 1,
-                "students.$.attendance.total": 1,
-            },
-            "$set": {"students.$.attendance.lastMarkedAt": today},
-        },
+        update_query,
     )
 
     if result.modified_count == 0:
@@ -224,6 +265,31 @@ async def mark_attendance_qr(
     }
 
     await db.attendance_logs.insert_one(log_entry)
+
+    # Need student info for socket event
+    student_info = await db.students.find_one({"userId": student_oid})
+    student_name = student_info.get("name", "Unknown") if student_info else "Unknown"
+    student_roll = student_info.get("roll", "") if student_info else ""
+
+    # Emit to teacher's room
+    await sio.emit(
+        "student_scanned",
+        {
+            "student": {
+                "name": student_name,
+                "roll": student_roll,
+                "id": str(student_oid),
+            },
+            "timestamp": log_entry["timestamp"],
+            "location": {
+                "lat": payload.latitude,
+                "lon": payload.longitude,
+            },
+            "is_proxy_suspected": is_proxy_suspected,
+            "distance": dist,
+        },
+        room=payload.sessionId,
+    )
 
     return {
         "message": "Attendance marked successfully",
