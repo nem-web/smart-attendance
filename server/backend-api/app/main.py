@@ -139,6 +139,11 @@ app = create_app()
 # Instrumentator
 Instrumentator().instrument(app).expose(app)
 
+# Socket.IO Integration
+from app.services.attendance_socket_service import sio
+import socketio
+app = socketio.ASGIApp(sio, app)
+
 
 if __name__ == "__main__":
     import uvicorn

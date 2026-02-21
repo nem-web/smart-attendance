@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
+import { fetchSubjectStudents } from "../../api/teacher";
 
 // Helper for distance calculation (Haversine formula)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -41,21 +42,39 @@ const formatTimeAgo = (timestamp) => {
     return new Date(timestamp).toLocaleDateString();
 };
 
-export default function LiveAttendanceModal({ sessionId, subjectId, onClose, subjectName = "Attendance Session" }) {
+export default function LiveAttendanceModal({ sessionId, subjectId, onClose, subjectName = "Attendance Session", initialLocation = null }) {
   const socketRef = React.useRef(null);
   const [scannedStudents, setScannedStudents] = useState([]);
-  const [teacherLocation, setTeacherLocation] = useState(null);
+  const [allStudents, setAllStudents] = useState([]);
+  const [teacherLocation, setTeacherLocation] = useState(initialLocation);
   const [activeTab, setActiveTab] = useState("Present");
   const isMounted = React.useRef(true);
 
   // Timer state for QR refresh
-  const [timeLeft, setTimeLeft] = useState(5);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [qrToken, setQrToken] = useState("");
 
-  // Get teacher's location on mount
+  // Fetch all enrolled students
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const students = await fetchSubjectStudents(subjectId);
+        if (isMounted.current) {
+          setAllStudents(students);
+        }
+      } catch (error) {
+        console.error("Failed to load students:", error);
+      }
+    };
+    if (subjectId) {
+      loadStudents();
+    }
+  }, [subjectId]);
+
+  // If no initialLocation provided, try to get it again on mount (fallback)
   useEffect(() => {
     isMounted.current = true;
-    if (navigator.geolocation) {
+    if (!teacherLocation && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           if (isMounted.current) {
@@ -67,12 +86,12 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
         },
         (error) => {
             console.error("Error getting location:", error);
-            // toast.error("Could not get your location for proxy detection.");
-        }
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
       );
     }
     return () => { isMounted.current = false; };
-  }, []);
+  }, [teacherLocation]);
 
   // Generate QR Token
   useEffect(() => {
@@ -92,7 +111,7 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
       setTimeLeft((prev) => {
         if (prev <= 1) {
           generateToken();
-          return 5;
+          return 60;
         }
         return prev - 1;
       });
@@ -111,7 +130,12 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
 
     newSocket.on("connect", () => {
       console.log("Socket connected:", newSocket.id);
-      newSocket.emit("join_session", { sessionId });
+      const payload = { sessionId, subjectId };
+      if (teacherLocation) {
+          payload.latitude = teacherLocation.latitude;
+          payload.longitude = teacherLocation.longitude;
+      }
+      newSocket.emit("join_session", payload);
     });
 
     newSocket.on("student_scanned", (data) => {
@@ -136,25 +160,66 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
       newSocket.disconnect();
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [sessionId]);
+  }, [sessionId, subjectId, teacherLocation]);
 
   const handleStopAndSave = async () => {
-    // In a real implementation: API call to finalize session
-    // For MVP: we just close and assume backend auto-saved or we trigger a save event
     if (socketRef.current) {
         socketRef.current.emit("end_session", { sessionId });
     }
     
-    // Simulate API call delay
     const toastId = toast.loading("Saving attendance data...");
     
-    setTimeout(() => {
+    try {
+        // Calculate present and absent students
+        const presentStudents = [];
+        const absentStudents = [];
+
+        allStudents.forEach((student) => {
+            const studentId = student.student_id || student.id;
+            const scan = scannedStudents.find(s => s.student.roll === student.roll || s.student.id === studentId);
+            let isProxy = false;
+
+            if (scan) {
+                if (scan.is_proxy_suspected !== undefined) {
+                    isProxy = scan.is_proxy_suspected;
+                } else if (teacherLocation && scan.location) {
+                    const lat = scan.location.lat || scan.location.latitude;
+                    const lon = scan.location.lon || scan.location.lng || scan.location.longitude;
+                    if (lat && lon) {
+                        const distance = calculateDistance(
+                            teacherLocation.latitude, 
+                            teacherLocation.longitude,
+                            lat,
+                            lon
+                        );
+                        if (distance > 50) isProxy = true;
+                    }
+                }
+            }
+
+            if (scan && !isProxy) {
+                presentStudents.push(studentId);
+            } else {
+                absentStudents.push(studentId);
+            }
+        });
+
+        // Call API to confirm attendance
+        const api = (await import("../../api/axiosClient")).default;
+        await api.post("/api/attendance/confirm", {
+            subject_id: subjectId,
+            present_students: presentStudents,
+            absent_students: absentStudents
+        });
+
         if (isMounted.current) {
             toast.success("Session saved successfully!", { id: toastId });
-            // Generate summary data to pass back if needed, or just close
             onClose();
         }
-    }, 1000);
+    } catch (error) {
+        console.error("Failed to save session:", error);
+        toast.error("Failed to save session. Please try again.", { id: toastId });
+    }
   };
   
   const handleMinimize = () => {
@@ -248,7 +313,7 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
                     </div>
                     <p className="leading-tight text-[var(--text-body)] font-medium">Ask students to scan from the Student app</p>
                 </div>
-                <span className="opacity-40 font-bold text-[10px]">Auto-rotate every 5s</span>
+                <span className="opacity-40 font-bold text-[10px]">Auto-rotate every 60s</span>
             </div>
             
             {/* Decorative background blur */}
@@ -287,10 +352,84 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
 
             <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2 custom-scrollbar">
                 {activeTab === 'All' ? (
-                     <div className="h-full flex flex-col items-center justify-center text-[var(--text-body)] gap-3 opacity-60">
-                        <Users size={32} strokeWidth={1.5} />
-                        <p className="text-sm font-medium">Full student list not available in live view</p>
-                     </div>
+                     allStudents.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-[var(--text-body)] gap-3">
+                            <Users size={32} strokeWidth={1.5} className="opacity-30" />
+                            <p className="text-sm font-medium opacity-60">No students enrolled</p>
+                        </div>
+                     ) : (
+                        allStudents.map((student) => {
+                            const studentId = student.student_id || student.id;
+                            const scan = scannedStudents.find(s => s.student.roll === student.roll || s.student.id === studentId);
+                            const isPresent = !!scan;
+                            let isProxy = false;
+
+                            if (isPresent) {
+                                if (scan.is_proxy_suspected !== undefined) {
+                                    isProxy = scan.is_proxy_suspected;
+                                } else if (teacherLocation && scan.location) {
+                                    const lat = scan.location.lat || scan.location.latitude;
+                                    const lon = scan.location.lon || scan.location.lng || scan.location.longitude;
+                                    if (lat && lon) {
+                                        const distance = calculateDistance(
+                                            teacherLocation.latitude, 
+                                            teacherLocation.longitude,
+                                            lat,
+                                            lon
+                                        );
+                                        if (distance > 50) isProxy = true;
+                                    }
+                                }
+                            }
+                            
+                            return (
+                                <div 
+                                    key={studentId || student.roll} 
+                                    className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 border ${
+                                        isPresent 
+                                            ? (isProxy ? 'bg-[var(--danger)]/10 border-[var(--danger)]/10' : 'bg-[var(--success)]/10 border-[var(--success)]/10')
+                                            : 'bg-[var(--bg-secondary)] border-[var(--border-color)]'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <div className="w-9 h-9 rounded-full bg-[var(--bg-card)] overflow-hidden border border-[var(--border-color)] shadow-sm">
+                                                 <img 
+                                                    src={`https://api.dicebear.com/7.x/notionists/svg?seed=${student.name}`} 
+                                                    alt="avatar"
+                                                    className="w-full h-full object-cover"
+                                                 />
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <h4 className="font-bold text-[var(--text-main)] text-sm leading-tight">{student.name}</h4>
+                                            <p className="text-[10px] text-[var(--text-body)] font-medium">
+                                                Roll {student.roll}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="">
+                                        {isPresent ? (
+                                            isProxy ? (
+                                                <span className="px-3 py-1 bg-[var(--danger)]/10 text-[var(--danger)] rounded-lg text-xs font-bold">
+                                                    Proxy
+                                                </span>
+                                            ) : (
+                                                <span className="px-3 py-1 bg-[var(--success)]/20 text-[var(--success)] rounded-lg text-xs font-bold">
+                                                    Present
+                                                </span>
+                                            )
+                                        ) : (
+                                            <span className="px-3 py-1 bg-[var(--text-body)]/10 text-[var(--text-body)] rounded-lg text-xs font-bold opacity-60">
+                                                Absent
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })
+                     )
                 ) : (
                     scannedStudents.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-[var(--text-body)] gap-3">
@@ -307,7 +446,9 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
                             const lat = scan.location?.lat || scan.location?.latitude;
                             const lon = scan.location?.lon || scan.location?.lng || scan.location?.longitude;
 
-                            if (teacherLocation && lat && lon) {
+                            if (scan.is_proxy_suspected !== undefined) {
+                                isProxy = scan.is_proxy_suspected;
+                            } else if (teacherLocation && lat && lon) {
                                 const distance = calculateDistance(
                                     teacherLocation.latitude, 
                                     teacherLocation.longitude,
@@ -346,7 +487,7 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
                                     <div className="">
                                         {isProxy ? (
                                             <span className="px-3 py-1 bg-[var(--danger)]/10 text-[var(--danger)] rounded-lg text-xs font-bold">
-                                                Pending
+                                                Proxy
                                             </span>
                                         ) : (
                                             <span className="px-3 py-1 bg-[var(--success)]/20 text-[var(--success)] rounded-lg text-xs font-bold">
