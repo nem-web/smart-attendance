@@ -50,7 +50,7 @@ export default function MarkWithQR() {
         // Request location permission upfront
         setStatus("geolocating");
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            () => {
                 // Permission granted and location found
                 setStatus("scanning");
                 setShowScanner(true);
@@ -69,12 +69,12 @@ export default function MarkWithQR() {
                         setErrorMsg("Location request timed out. Retrying with lower accuracy...");
                         // Fallback to low accuracy
                         navigator.geolocation.getCurrentPosition(
-                            (pos) => {
+                            () => {
                                 setStatus("scanning");
                                 setShowScanner(true);
                                 setErrorMsg("");
                             },
-                            (err) => {
+                            () => {
                                 setStatus("error");
                                 setErrorMsg("Location request timed out. Please check your GPS settings.");
                             },
@@ -104,7 +104,7 @@ export default function MarkWithQR() {
                  setErrorMsg("Invalid QR code format.");
                  return;
             }
-        } catch (e) {
+        } catch {
             setStatus("error");
             setErrorMsg("Failed to parse QR code.");
             return;
@@ -116,8 +116,6 @@ export default function MarkWithQR() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                // Log for debugging
-                console.log("Submitting attendance with location:", latitude, longitude);
                 submitAttendance(qrData, latitude, longitude);
             },
             (err) => {
@@ -129,7 +127,7 @@ export default function MarkWithQR() {
                             const { latitude, longitude } = pos.coords;
                             submitAttendance(qrData, latitude, longitude);
                         },
-                        (fallbackErr) => {
+                        () => {
                             setStatus("error");
                             setErrorMsg("Could not retrieve location for verification.");
                         },

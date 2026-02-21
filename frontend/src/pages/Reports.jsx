@@ -34,7 +34,7 @@ export default function Reports() {
 
   //Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [rowsPerPage] = useState(25);
 
   // Fetch Subjects on Mount
   useEffect(() => {

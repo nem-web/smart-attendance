@@ -52,7 +52,7 @@ export default function StartAttendanceModal({ sessionId, subjectId, onClose }) 
                         setLoadingLocation(false);
                         setShowQR(true);
                     },
-                    (err) => {
+                    () => {
                         toast.error(msg);
                         setLoadingLocation(false);
                         setLocationError(msg);

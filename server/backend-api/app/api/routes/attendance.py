@@ -30,8 +30,8 @@ async def stop_session(session_id: str, current_user: dict = Depends(get_current
     Manually stop session, flush buffer, and close.
     """
     if current_user["role"] not in ["teacher", "admin"]:
-         raise HTTPException(status_code=403, detail="Unauthorized")
-         
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
     return await stop_and_save_session(session_id)
 
 
@@ -148,15 +148,14 @@ async def mark_attendance_qr(
     # Try to get live session location first from socket service
     # This allows for dynamic location updates per session
     from app.services.attendance_socket_service import session_locations
+
     session_loc = session_locations.get(payload.sessionId)
-    
-    print(f"DEBUG: payload.sessionId={payload.sessionId}")
-    print(f"DEBUG: session_locations={session_locations}")
-    print(f"DEBUG: session_loc={session_loc}")
-    
+
+    logger.debug("Session id: %s, session_loc: %s", payload.sessionId, session_loc)
+
     teacher_lat = 0.0
     teacher_lon = 0.0
-    radius = 50.0 # Default radius
+    radius = 50.0  # Default radius
 
     location_cfg = subject.get("location")
     if location_cfg:
@@ -170,21 +169,32 @@ async def mark_attendance_qr(
         # Fallback to static subject location
         teacher_lat = float(location_cfg.get("lat", 0.0))
         # Note: field name inconsistency possible: 'long' vs 'lon' vs 'lng'
-        teacher_lon = float(location_cfg.get("long") or location_cfg.get("lon") or location_cfg.get("lng") or 0.0)
-    
-    print(f"DEBUG: teacher_lat={teacher_lat}, teacher_lon={teacher_lon}, student_lat={payload.latitude}, student_lon={payload.longitude}")
-    
+        teacher_lon = float(
+            location_cfg.get("long")
+            or location_cfg.get("lon")
+            or location_cfg.get("lng")
+            or 0.0
+        )
+
+    logger.debug(
+        "teacher_lat=%s, teacher_lon=%s, student_lat=%s, student_lon=%s",
+        teacher_lat,
+        teacher_lon,
+        payload.latitude,
+        payload.longitude,
+    )
+
     if teacher_lat != 0.0 and teacher_lon != 0.0:
         dist = calculate_distance(
             teacher_lat, teacher_lon, payload.latitude, payload.longitude
         )
-        print(f"DEBUG: calculated distance={dist}, radius={radius}")
+        logger.debug("Calculated distance=%s, radius=%s", dist, radius)
 
         if dist > radius:
             is_proxy_suspected = True
-            print("DEBUG: Proxy suspected!")
+            logger.debug("Proxy suspected for session %s", payload.sessionId)
     else:
-        print("DEBUG: Skipping distance calculation because teacher location is 0.0")
+        logger.debug("Skipping distance calculation: teacher location is 0.0")
 
     # 3. Mark Attendance (Update Subject)
     today = date.today().isoformat()
@@ -228,7 +238,7 @@ async def mark_attendance_qr(
         },
         "$set": {"students.$.attendance.lastMarkedAt": today},
     }
-    
+
     if not is_proxy_suspected:
         update_query["$inc"]["students.$.attendance.present"] = 1
     else:
