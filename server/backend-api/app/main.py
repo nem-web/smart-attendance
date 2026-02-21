@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+import socketio
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
@@ -24,6 +25,7 @@ from app.services.attendance_daily import (
 )
 from app.services.schedule_service import ensure_indexes as ensure_schedule_indexes
 from app.services.ml_client import ml_client
+from app.services.attendance_socket_service import sio
 from app.db.nonce_store import close_redis
 from app.core.scheduler import start_scheduler, shutdown_scheduler
 
@@ -139,9 +141,7 @@ app = create_app()
 # Instrumentator
 Instrumentator().instrument(app).expose(app)
 
-# Socket.IO Integration
-from app.services.attendance_socket_service import sio
-import socketio
+# Wrap FastAPI app with Socket.IO as the outermost ASGI layer
 app = socketio.ASGIApp(sio, app)
 
 

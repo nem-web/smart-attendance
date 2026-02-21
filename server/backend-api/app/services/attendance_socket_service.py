@@ -6,12 +6,13 @@ from datetime import datetime
 from app.utils.geo import calculate_distance
 from app.db.mongo import db
 from bson import ObjectId
+from app.core.config import ORIGINS
 
 logger = logging.getLogger(__name__)
 
 # Initialize Socket.IO server
-sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
-socket_app = socketio.ASGIApp(sio)
+# cors_allowed_origins uses the same whitelist as the FastAPI CORS middleware
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=ORIGINS)
 
 # In-memory storage for active sessions
 # Key: session_id (str)
