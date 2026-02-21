@@ -153,13 +153,13 @@ export default function Settings() {
       const res = await sendLowAttendanceNotice();
       setNoticeResult({
         success: true,
-        message: res.message || "Notices sent successfully",
+        message: res.message || t('settings.notices.sent_successfully'),
       });
     } catch (err) {
       const errorMsg =
         err?.response?.data?.detail ||
         err.message ||
-        "Failed to send notices";
+        t('settings.notices.failed');
       setNoticeResult({ success: false, message: errorMsg });
     } finally {
       setSendingNotice(false);
@@ -195,7 +195,7 @@ export default function Settings() {
       localStorage.removeItem("user");
       localStorage.removeItem("refresh_token");
       setShowLogoutConfirm(false);
-      toast.success("Logged out successfully");
+      toast.success(t('settings.logout_success'));
       navigate("/login");
     }
   }
@@ -562,7 +562,7 @@ export default function Settings() {
                       disabled={sendingNotice}
                       className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[var(--danger,#ef4444)] text-white hover:opacity-90 shadow-md disabled:opacity-50"
                     >
-                      {sendingNotice ? "Sending…" : "Send Low Attendance Notice"}
+                      {sendingNotice ? t('settings.notices.sending') : t('settings.notices.send_low_attendance')}
                     </button>
                     {noticeResult && (
                       <span className={`text-sm ${noticeResult.success ? "text-green-600" : "text-[var(--danger,#ef4444)]"}`}>

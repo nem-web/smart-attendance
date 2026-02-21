@@ -177,7 +177,7 @@ export default function StudentDashboard() {
                       className="inline-flex items-center gap-2 bg-[var(--bg-card)] text-[var(--action-info-bg)] px-6 py-3 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-black/10"
                     >
                       <QrCode size={18} />
-                      Mark with QR
+                      {t('student_dashboard.mark_qr')}
                     </Link>
                   </div>
                 </div>
@@ -207,11 +207,11 @@ export default function StudentDashboard() {
 
               <div className="space-y-3">
                 {loading ? (
-                  <div className="text-center py-8 text-[var(--text-body)]/60 text-sm">Loading schedule...</div>
+                  <div className="text-center py-8 text-[var(--text-body)]/60 text-sm">{t('student_dashboard.schedule.loading')}</div>
                 ) : error ? (
-                   <div className="text-center py-8 text-[var(--danger)] text-sm">{error}</div>
+                   <div className="text-center py-8 text-[var(--danger)] text-sm">{t('student_dashboard.schedule.error')}</div>
                 ) : schedule.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--text-body)]/60 text-sm">No classes scheduled for today</div>
+                  <div className="text-center py-8 text-[var(--text-body)]/60 text-sm">{t('student_dashboard.schedule.no_classes')}</div>
                 ) : (
                   schedule.map((item) => {
                     const status = getStatus(item.start_time, item.end_time);
@@ -237,17 +237,17 @@ export default function StudentDashboard() {
                               {timeRange}
                             </div>
                             <h4 className="text-sm font-bold text-[var(--text-main)] mt-0.5">{item.subject_name}</h4>
-                            {item.room && <span className="text-xs text-[var(--text-body)]/60 block mt-0.5 flex items-center gap-1"><Home size={10}/> Room {item.room}</span>}
+                            {item.room && <span className="text-xs text-[var(--text-body)]/60 block mt-0.5 flex items-center gap-1"><Home size={10}/> {t('student_dashboard.schedule.room', { room: item.room })}</span>}
                           </div>
                         </div>
 
                         {/* Status Pill */}
                         <div>
                           {status === "Completed" && (
-                            <span className="px-3 py-1 rounded-full bg-[var(--success)]/15 text-[var(--success)] text-xs font-bold">Completed</span>
+                            <span className="px-3 py-1 rounded-full bg-[var(--success)]/15 text-[var(--success)] text-xs font-bold">{t('student_dashboard.schedule.status_completed')}</span>
                           )}
                           {status === "Live" && (
-                            <span className="px-3 py-1 rounded-full bg-[var(--warning)]/15 text-[var(--warning)] text-xs font-bold">Live Now</span>
+                            <span className="px-3 py-1 rounded-full bg-[var(--warning)]/15 text-[var(--warning)] text-xs font-bold">{t('student_dashboard.schedule.status_live')}</span>
                           )}
                           {status === "Upcoming" && (
                             <span className="px-3 py-1 rounded-full bg-[var(--bg-secondary)] text-[var(--text-body)]/80 text-xs font-bold">{t("student_dashboard.schedule.status_upcoming")}</span>

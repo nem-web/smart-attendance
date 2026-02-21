@@ -7,31 +7,43 @@
     "myAttendance": "My Attendance"
   },
   "student_dashboard": {
+    "welcome": "Hi, {{name}} 👋",
+    "portal_name": "Student portal",
+    "stats": {
+      "overall_attendance": "Overall attendance",
+      "on_track": "On track",
+      "at_risk": "At risk",
+      "keep_attending": "Keep attending regularly to stay above the 75% rule.",
+      "current": "Current",
+      "safe_zone_label": "Safe zone: {{percent}}%",
+      "need_classes_title": "You need {{count}} more classes",
+      "need_classes_desc": "Attend the next {{count}} scheduled classes to reach the safe {{percent}}% attendance zone buffer."
+    },
+    "schedule": {
+      "today": "Today",
+      "present": "Present",
+      "absent": "Absent",
+      "upcoming": "Upcoming",
+      "all_caught_up": "You're all caught up for today!",
+      "status_present": "Present",
+      "status_absent": "Absent",
+      "status_upcoming": "Upcoming",
+      "loading": "Loading schedule...",
+      "no_classes": "No classes scheduled for today",
+      "error": "Failed to load schedule",
+      "status_completed": "Completed",
+      "status_live": "Live Now",
+      "room": "Room {{room}}"
+    },
     "nav": {
       "home": "Home",
       "subjects": "Subjects",
       "forecast": "Forecast",
       "profile": "Profile",
-      "app_name": "Smart Attendance",
+      "app_name": "Smart Attend",
       "student_role": "Student"
     },
-    "portal_name": "Student Portal",
-    "welcome": "Welcome back, {{name}}",
-    "stats": {
-      "on_track": "On Track",
-      "keep_attending": "Keep attending classes to maintain your record.",
-      "current": "Current",
-      "safe_zone_label": "Safe Zone (>{{percent}}%)",
-      "need_classes_title": "Need {{count}} more classes",
-      "need_classes_desc": "Attend next {{count}} classes to reach {{percent}}% target."
-    },
-    "schedule": {
-      "today": "Today's Schedule",
-      "status_present": "Present",
-      "status_absent": "Absent",
-      "status_upcoming": "Upcoming",
-      "all_caught_up": "You're all caught up for today!"
-    }
+    "mark_qr": "Mark with QR"
   },
   "subjects": {
     "title": "Subjects",
@@ -145,7 +157,7 @@
     "hero_title": "Smart Attendance System",
     "hero_subtitle": "Automate your classroom attendance with face recognition. Secure, fast, and reliable.",
     "alerts": {
-       "login_failed": "Login failed. Please check your credentials."
+      "login_failed": "Login failed. Please check your credentials."
     }
   },
   "forgot_password": {
@@ -263,11 +275,15 @@
       "completed": "Completed",
       "upcoming": "Upcoming",
       "pending": "Pending",
-      "starts_in": "Starts in 30 min",
-      "not_started": "Attendance not started"
+      "starts_in": "Starts in {{minutes}} min",
+      "not_started": "Attendance not started",
+      "loading_schedule": "Loading schedule...",
+      "no_classes_today": "No classes scheduled for today",
+      "no_upcoming_today": "No upcoming classes today"
     },
     "next_class": "Next class: {{class}} • {{time}}",
-    "room": "Room {{room}}"
+    "room": "Room {{room}}",
+    "class_default": "Class"
   },
   "mark_attendance": {
     "title": "Start attendance session",
@@ -305,7 +321,9 @@
     "alerts": {
       "already_marked": "Attendance already marked for this session",
       "success": "Attendance saved successfully",
-      "failed": "Failed to save attendance"
+      "failed": "Failed to save attendance",
+      "location_issue_title": "Location Service Issue",
+      "select_subject_first": "Please select a subject first"
     }
   },
   "students": {
@@ -450,53 +468,44 @@
     "footer_note": "Older requests are hidden. Adjust filters above to see all previously verified or deleted students.",
     "bottom_note": "Note: Verified students will start appearing in the attendance marking list for their selected subjects and classes. You can revoke access anytime by deleting their entry from the main Students page."
   },
-  "student_dashboard": {
-    "welcome": "Hi, {{name}} 👋",
-    "portal_name": "Student portal",
-    "stats": {
-      "overall_attendance": "Overall attendance",
-      "on_track": "On track",
-      "at_risk": "At risk",
-      "keep_attending": "Keep attending regularly to stay above the 75% rule.",
-      "current": "Current",
-      "safe_zone_label": "Safe zone: {{percent}}%",
-      "need_classes_title": "You need {{count}} more classes",
-      "need_classes_desc": "Attend the next {{count}} scheduled classes to reach the safe {{percent}}% attendance zone buffer."
-    },
-    "schedule": {
-      "today": "Today",
-      "present": "Present",
-      "absent": "Absent",
-      "upcoming": "Upcoming",
-      "all_caught_up": "You're all caught up for today!",
-      "status_present": "Present",
-      "status_absent": "Absent",
-      "status_upcoming": "Upcoming"
-    },
-    "nav": {
-      "home": "Home",
-      "subjects": "Subjects",
-      "forecast": "Forecast",
-      "profile": "Profile",
-      "app_name": "Smart Attend",
-      "student_role": "Student"
-    }
-  },
   "days": {
     "short": {
-      "sun": "Sun", "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat"
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
     },
     "long": {
-       "monday": "Monday", "tuesday": "Tuesday", "wednesday": "Wednesday", "thursday": "Thursday", "friday": "Friday", "saturday": "Saturday", "sunday": "Sunday"
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
     }
   },
   "months": {
-      "january": "January", "february": "February", "march": "March", "april": "April", "may": "May", "june": "June", "july": "July", "august": "August", "september": "September", "october": "October", "november": "November", "december": "December"
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
   },
   "common": {
-      "cancel": "Cancel",
-      "save_changes": "Save Changes",
-      "close": "Close"
+    "cancel": "Cancel",
+    "save_changes": "Save Changes",
+    "close": "Close"
   },
   "analytics": {
     "title": "Analytics",
@@ -575,36 +584,36 @@
       "showing": "Showing {{count}} students",
       "sorted_by": "Sorted by {{key}} ({{direction}})",
       "sort_keys": {
-          "total": "Total Classes",
-          "attended": "Attended",
-          "percentage": "Attendance %"
+        "total": "Total Classes",
+        "attended": "Attended",
+        "percentage": "Attendance %"
       },
       "sort_dir": {
-          "asc": "Low to High",
-          "desc": "High to Low"
+        "asc": "Low to High",
+        "desc": "High to Low"
       },
       "good": "Good (≥ {{threshold}}%)",
       "warning": "Warning",
       "at_risk": "At Risk"
     },
     "status_labels": {
-        "good": "Good",
-        "warning": "Warning",
-        "at_risk": "At Risk",
-        "unknown": "Unknown"
+      "good": "Good",
+      "warning": "Warning",
+      "at_risk": "At Risk",
+      "unknown": "Unknown"
     }
   },
   "settings": {
     "title": "Settings for {{name}}",
     "subtitle": "Configure attendance thresholds, profile and face recognition preferences",
     "sidebar": {
-        "heading": "Settings",
-        "general": "General",
-        "thresholds": "Thresholds",
-        "profile": "Profile",
-        "face_settings": "Face settings",
-        "credits": "Credits",
-        "logout": "Logout"
+      "heading": "Settings",
+      "general": "General",
+      "thresholds": "Thresholds",
+      "profile": "Profile",
+      "face_settings": "Face settings",
+      "credits": "Credits",
+      "logout": "Logout"
     },
     "general": {
       "title": "General preferences",
@@ -624,70 +633,77 @@
       "saving": "Saving..."
     },
     "thresholds": {
-        "title": "Attendance thresholds",
-        "subtitle": "Define when a student is considered at risk or critical based on attendance percentage.",
-        "ranges": "Warning and critical ranges",
-        "warning": "Warning",
-        "critical": "Critical",
-        "zone_critical": "Critical zone",
-        "zone_warning": "Warning zone",
-        "zone_safe": "Safe zone",
-        "info": "Adjusting these values will update visual alerts across dashboards, student profiles and reports."
+      "title": "Attendance thresholds",
+      "subtitle": "Define when a student is considered at risk or critical based on attendance percentage.",
+      "ranges": "Warning and critical ranges",
+      "warning": "Warning",
+      "critical": "Critical",
+      "zone_critical": "Critical zone",
+      "zone_warning": "Warning zone",
+      "zone_safe": "Safe zone",
+      "info": "Adjusting these values will update visual alerts across dashboards, student profiles and reports."
     },
     "profile": {
-        "title": "Profile details",
-        "subtitle": "Keep your basic information and contact details up to date.",
-        "view_public": "View public profile",
-        "change_photo": "Change photo",
-        "full_name": "Full Name",
-        "role": "Role",
-        "email": "Email Address",
-        "phone": "Phone Number",
-        "subjects": "Subjects Taught",
-        "no_subjects": "No subjects added",
-        "add_subject": "Add subject",
-        "add_subject_modal": {
-            "title": "Add New Subject",
-            "name_label": "Subject Name",
-            "name_placeholder": "e.g. Data Structures",
-            "code_label": "Subject Code",
-            "code_placeholder": "e.g. CS101",
-            "cancel": "Cancel",
-            "add": "Add Subject"
-        }
+      "title": "Profile details",
+      "subtitle": "Keep your basic information and contact details up to date.",
+      "view_public": "View public profile",
+      "change_photo": "Change photo",
+      "full_name": "Full Name",
+      "role": "Role",
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "subjects": "Subjects Taught",
+      "no_subjects": "No subjects added",
+      "add_subject": "Add subject",
+      "add_subject_modal": {
+        "title": "Add New Subject",
+        "name_label": "Subject Name",
+        "name_placeholder": "e.g. Data Structures",
+        "code_label": "Subject Code",
+        "code_placeholder": "e.g. CS101",
+        "cancel": "Cancel",
+        "add": "Add Subject"
+      }
     },
     "face_settings": {
-        "title": "Face recognition configuration",
-        "subtitle": "Manage enrolment data and tune the recognition engine parameters.",
-        "face_data": "Face data enrolled",
-        "last_updated": "Last updated: 3 days ago via Mobile App",
-        "recalibrate": "Re-calibrate",
-        "threshold": "Recognition confidence threshold",
-        "threshold_desc": "Higher values reduce false positives but might require better lighting conditions. Recommended: 80%.",
-        "security": "Security measures",
-        "liveness": "Liveness detection (Anti-spoofing)",
-        "liveness_desc": "Requires subjects to blink or move slightly to prevent photo attacks.",
-        "danger_zone": "Danger Zone",
-        "reset_model": "Reset recognition model",
-        "reset_desc": "This will clear all learned face patterns for this profile.",
-        "reset_data": "Reset data",
-        "discard": "Discard",
-        "apply": "Apply settings"
+      "title": "Face recognition configuration",
+      "subtitle": "Manage enrolment data and tune the recognition engine parameters.",
+      "face_data": "Face data enrolled",
+      "last_updated": "Last updated: 3 days ago via Mobile App",
+      "recalibrate": "Re-calibrate",
+      "threshold": "Recognition confidence threshold",
+      "threshold_desc": "Higher values reduce false positives but might require better lighting conditions. Recommended: 80%.",
+      "security": "Security measures",
+      "liveness": "Liveness detection (Anti-spoofing)",
+      "liveness_desc": "Requires subjects to blink or move slightly to prevent photo attacks.",
+      "danger_zone": "Danger Zone",
+      "reset_model": "Reset recognition model",
+      "reset_desc": "This will clear all learned face patterns for this profile.",
+      "reset_data": "Reset data",
+      "discard": "Discard",
+      "apply": "Apply settings"
     },
     "credits": {
-        "title": "Our Contributors",
-        "badge": "Open Source",
-        "subtitle": "The amazing people who have contributed code to this project.",
-        "send_thanks": "Send thanks",
-        "commits": "commits",
-         "no_contributors": "No contributors found.",
-         "footer": "Thank you to every developer who helped build the Smart Attendance System."
+      "title": "Our Contributors",
+      "badge": "Open Source",
+      "subtitle": "The amazing people who have contributed code to this project.",
+      "send_thanks": "Send thanks",
+      "commits": "commits",
+      "no_contributors": "No contributors found.",
+      "footer": "Thank you to every developer who helped build the Smart Attendance System."
     },
     "alerts": {
       "load_failed": "Failed to load settings: {{error}}",
       "save_failed": "Failed to save profile",
       "avatar_failed": "Avatar Upload Failed"
-    }
+    },
+    "notices": {
+      "sent_successfully": "Notices sent successfully",
+      "failed": "Failed to send notices",
+      "sending": "Sending…",
+      "send_low_attendance": "Send Low Attendance Notice"
+    },
+    "logout_success": "Logged out successfully"
   },
   "messaging": {
     "title": "Student Messaging",
@@ -709,47 +725,47 @@
       "custom": "Custom Message"
     },
     "form": {
-        "subject": "Subject",
-        "date": "Date",
-        "assignment_title": "Assignment Title",
-        "due_date": "Due Date",
-        "exam_name": "Exam Name",
-        "exam_date": "Exam Date",
-        "time": "Time",
-        "venue": "Venue",
-        "message_title": "Message Title",
-        "message_body": "Message Body",
-        "send_absence": "Send Absence Notification",
-        "send_assignment": "Send Assignment Reminder",
-        "send_exam": "Send Exam Alert",
-        "send_custom": "Send Custom Message"
+      "subject": "Subject",
+      "date": "Date",
+      "assignment_title": "Assignment Title",
+      "due_date": "Due Date",
+      "exam_name": "Exam Name",
+      "exam_date": "Exam Date",
+      "time": "Time",
+      "venue": "Venue",
+      "message_title": "Message Title",
+      "message_body": "Message Body",
+      "send_absence": "Send Absence Notification",
+      "send_assignment": "Send Assignment Reminder",
+      "send_exam": "Send Exam Alert",
+      "send_custom": "Send Custom Message"
     },
     "placeholders": {
-        "subject": "e.g., Mathematics 101",
-        "assignment_title": "e.g., Chapter 5 Homework",
-        "exam_name": "e.g., Midterm Examination",
-        "venue": "e.g., Room 101, Main Building",
-        "message_title": "e.g., Important Announcement",
-        "message_placeholder": "Type your message here..."
+      "subject": "e.g., Mathematics 101",
+      "assignment_title": "e.g., Chapter 5 Homework",
+      "exam_name": "e.g., Midterm Examination",
+      "venue": "e.g., Room 101, Main Building",
+      "message_title": "e.g., Important Announcement",
+      "message_placeholder": "Type your message here..."
     },
     "recipients": {
-        "select": "Select Recipients",
-        "select_all": "Select All",
-        "deselect_all": "Deselect All",
-        "students_selected": "Students Selected",
-        "loading": "Loading students...",
-        "no_students": "No students found"
+      "select": "Select Recipients",
+      "select_all": "Select All",
+      "deselect_all": "Deselect All",
+      "students_selected": "Students Selected",
+      "loading": "Loading students...",
+      "no_students": "No students found"
     },
     "summary": {
-        "title": "Email Send Summary",
-        "total": "Total Emails",
-        "success": "Successfully Sent",
-        "failed": "Failed"
+      "title": "Email Send Summary",
+      "total": "Total Emails",
+      "success": "Successfully Sent",
+      "failed": "Failed"
     },
     "alerts": {
-        "fill_all": "Please fill in all fields and select at least one student",
-        "success": "Email Send Summary",
-        "failed_send": "Failed to send message. Please try again."
+      "fill_all": "Please fill in all fields and select at least one student",
+      "success": "Email Send Summary",
+      "failed_send": "Failed to send message. Please try again."
     }
   }
 }

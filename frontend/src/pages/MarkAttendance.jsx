@@ -245,7 +245,7 @@ export default function MarkAttendance() {
             <button
               onClick={() => {
                 if (!selectedSubject) {
-                  alert(t('mark_attendance.alerts.select_subject_first') || 'Please select a subject first');
+                  alert(t('mark_attendance.alerts.select_subject_first'));
                   return;
                 }
                 setSessionId(`${selectedSubject}-${Date.now()}`);
@@ -308,7 +308,7 @@ export default function MarkAttendance() {
             <div className="lg:col-span-12 flex items-center gap-3 p-4 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/25 text-[var(--danger)]">
                <AlertCircle className="w-5 h-5 flex-shrink-0" />
                <div>
-                 <h4 className="font-semibold text-sm">Location Service Issue</h4>
+                 <h4 className="font-semibold text-sm">{t('mark_attendance.alerts.location_issue_title')}</h4>
                  <p className="text-xs">{locationError}</p>
                </div>
             </div>

@@ -124,19 +124,19 @@ export default function Dashboard() {
     if (startMinutes === null || endMinutes === null) {
       console.error("Invalid time format for class", { startTime, endTime });
       // Fallback to a safe default that matches existing status values
-      return { status: "upcoming", color: "primary", label: "Upcoming" };
+      return { status: "upcoming", color: "primary", labelKey: "upcoming" };
     }
 
     if (currentMinutes > endMinutes) {
-      return { status: "completed", color: "success", label: "Completed" };
+      return { status: "completed", color: "success", labelKey: "completed" };
     } else if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
-      return { status: "live", color: "warning", label: "Pending" };
+      return { status: "live", color: "warning", labelKey: "pending" };
     } else {
       const minutesUntil = startMinutes - currentMinutes;
       return {
         status: "upcoming",
         color: "primary",
-        label: "Upcoming",
+        labelKey: "upcoming",
         startsIn: minutesUntil
       };
     }
@@ -233,21 +233,21 @@ export default function Dashboard() {
                   {!loadingSchedule && nextClass ? (
                     <>
                       <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                        Next class: {nextClass.subject || 'Class'} • {nextClass.start_time}
+                        {t('dashboard.next_class', { class: nextClass.subject || t('dashboard.class_default'), time: nextClass.start_time })}
                       </span>
                       {nextClass.room && (
                         <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                          Room {nextClass.room}
+                          {t('dashboard.room', { room: nextClass.room })}
                         </span>
                       )}
                     </>
                   ) : !loadingSchedule ? (
                     <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                      No upcoming classes today
+                      {t('dashboard.classes.no_upcoming_today')}
                     </span>
                   ) : (
                     <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                      Loading schedule...
+                      {t('dashboard.classes.loading_schedule')}
                     </span>
                   )}
                 </div>
@@ -346,12 +346,12 @@ export default function Dashboard() {
               {loadingSchedule ? (
                 <div className="bg-[var(--bg-card)] p-8 rounded-xl text-center border border-[var(--border-color)]">
                   <Loader2 className="mx-auto mb-3 text-[var(--text-body)]/30 animate-spin" size={32} />
-                  <p className="text-[var(--text-body)]">Loading schedule...</p>
+                  <p className="text-[var(--text-body)]">{t('dashboard.classes.loading_schedule')}</p>
                 </div>
               ) : todayClasses.length === 0 ? (
                 <div className="bg-[var(--bg-card)] p-8 rounded-xl text-center border border-[var(--border-color)]">
                   <Calendar className="mx-auto mb-3 text-[var(--text-body)]/30" size={48} />
-                  <p className="text-[var(--text-body)]">No classes scheduled for today</p>
+                  <p className="text-[var(--text-body)]">{t('dashboard.classes.no_classes_today')}</p>
                 </div>
               ) : (
                 todayClasses.map((cls) => {
@@ -374,10 +374,10 @@ export default function Dashboard() {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-semibold text-[var(--text-main)]">
-                          {cls.subject || 'Class'}
+                          {cls.subject || t('dashboard.class_default')}
                         </h4>
                         <span className={`px-2 py-0.5 ${bgColorMap[status.color]} text-[10px] font-bold uppercase tracking-wide rounded-full`}>
-                          {status.label}
+                          {t(`dashboard.classes.${status.labelKey}`)}
                         </span>
                       </div>
                       <div className="flex justify-between items-end">
@@ -385,11 +385,11 @@ export default function Dashboard() {
                           <span className="flex items-center gap-1">
                             <Clock size={12} /> {cls.start_time} - {cls.end_time}
                           </span>
-                          {cls.room && <span>Room {cls.room}</span>}
+                          {cls.room && <span>{t('dashboard.room', { room: cls.room })}</span>}
                         </div>
                         {status.status === 'upcoming' && status.startsIn !== undefined && status.startsIn >= 0 && (
                           <span className="text-xs font-medium text-[var(--primary)]">
-                            Starts in {status.startsIn} min
+                            {t('dashboard.classes.starts_in', { minutes: status.startsIn })}
                           </span>
                         )}
                         {status.status === 'completed' && cls.attendance_status && (
