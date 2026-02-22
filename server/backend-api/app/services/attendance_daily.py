@@ -13,6 +13,13 @@ async def ensure_indexes():
         [("subjectId", 1)],
         unique=True,
     )
+    
+    # Expire documents 86400 seconds (24 hours) after the 'createdAt' time
+    await db.attendance_logs.create_index(
+        "createdAt", 
+        expireAfterSeconds=86400,
+        background=True
+    )
 
 
 async def save_daily_summary(

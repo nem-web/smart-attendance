@@ -3,6 +3,7 @@ from datetime import datetime, date
 from typing import Dict, List, Any
 
 import socketio
+from datetime import datetime, date, UTC
 from bson import ObjectId
 from pymongo import UpdateOne
 
@@ -29,7 +30,6 @@ active_sessions: Dict[str, List[Dict[str, Any]]] = {}
 # Key: session_id
 # Value: { lat: float, lon: float, subjectIdx: str }
 session_locations: Dict[str, Dict[str, Any]] = {}
-
 
 @sio.event
 async def connect(sid, environ):
@@ -236,6 +236,7 @@ async def flush_attendance_data():
                             "subject_id": ObjectId(subject_id),
                             "date": today_str,
                             "timestamp": scan["timestamp"],
+                            "createdAt": datetime.now(UTC),
                             "session_id": session_id,
                             "latitude": scan["location"]["lat"],
                             "longitude": scan["location"]["lon"],
@@ -322,6 +323,7 @@ async def stop_and_save_session(session_id: str):
                                 "subject_id": ObjectId(subject_id),
                                 "date": today_str,
                                 "timestamp": scan["timestamp"],
+                                "createdAt": datetime.now(UTC),
                                 "session_id": session_id,
                                 "latitude": scan["location"]["lat"],
                                 "longitude": scan["location"]["lon"],

@@ -265,6 +265,7 @@ async def mark_attendance_qr(
         "subject_id": subject_oid,
         "date": today,
         "timestamp": datetime.now(UTC).isoformat(),
+        "createdAt": datetime.now(UTC),
         "session_id": payload.sessionId,
         "token": payload.token,
         "latitude": payload.latitude,
