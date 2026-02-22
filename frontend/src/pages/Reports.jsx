@@ -5,12 +5,14 @@ import {
   FileText,
   ChevronDown,
   RotateCcw,
+  Search,
   Filter,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Loader2
 } from "lucide-react";
+
 import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
 import DateRange from '../components/DateRange.jsx';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -18,19 +20,20 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 //import { fetchStudentById } from "../api/teacher";
 
-// Named constant for the default export date range (in days)
 const REPORT_DATE_RANGE_DAYS = 30;
 
-
 export default function Reports() {
-  const { t } = useTranslation();
-  const [threshold, setThreshold] = useState(75);
+  const { t: _t } = useTranslation();
+
+  const [threshold] = useState(75);
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
-  const [startDate, setStartDate] = useState(new Date());
+
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-  const [loadingFormat, setLoadingFormat] = useState(null); // "pdf" | "csv" | null
+  const [loadingFormat, setLoadingFormat] = useState(null);
 
   //Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,7 +44,6 @@ export default function Reports() {
     fetchMySubjects().then(setSubjects);
   }, []);
 
-  // Fetch Students when Subject/Date changes
   useEffect(() => {
     if (!selectedSubject) return;
     //fetchSubjectStudents(selectedSubject).then(setStudents);
@@ -51,25 +53,11 @@ export default function Reports() {
   });
   }, [selectedSubject, startDate]);
 
-  // Filter Verified Students
-  const verifiedStudents = students.filter(
-    (s) => s.verified === true
-  );
+  const verifiedStudents = students.filter((s) => s.verified === true);
 
-  const getStatusColor = (color) => {
-    switch (color) {
-      case "green": return "bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/25";
-      case "amber": return "bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/25";
-      case "red": return "bg-[var(--danger)]/10 text-[var(--danger)] border border-[var(--danger)]/25";
-      default: return "bg-[var(--bg-secondary)] text-[var(--text-body)] border border-[var(--border-color)]";
-    }
-  };
-
-  // Enhance Student Data with Stats
   const enhancedStudents = verifiedStudents.map(s => {
     const present = s.attendance?.present || 0;
     const absent = s.attendance?.absent || 0;
-
     const total = present + absent;
     const percentage = total === 0 ? 0 : Math.round((present / total) * 100);
 
@@ -98,7 +86,8 @@ export default function Reports() {
     };
   });
 
-  // Handle Sort Click
+  const filteredStudents = enhancedStudents;
+
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -107,37 +96,13 @@ export default function Reports() {
     setSortConfig({ key, direction });
   };
 
-  // Sort Logic
   const sortedStudents = useMemo(() => {
-    if (!sortConfig.key || !sortConfig.direction) {
-      return enhancedStudents;
-    }
+    if (!sortConfig.key) return filteredStudents;
 
-    return [...enhancedStudents].sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortConfig.key) {
-        case 'total':
-          aValue = a.total;
-          bValue = b.total;
-          break;
-        case 'attended':
-          aValue = a.present;
-          bValue = b.present;
-          break;
-        case 'percentage':
-          aValue = a.percentage;
-          bValue = b.percentage;
-          break;
-        default:
-          return 0;
-      }
-
-      if (sortConfig.direction === 'asc') {
-        return aValue - bValue;
-      } else {
-        return bValue - aValue;
-      }
+    return [...filteredStudents].sort((a, b) => {
+      return sortConfig.direction === 'asc'
+        ? a[sortConfig.key] - b[sortConfig.key]
+        : b[sortConfig.key] - a[sortConfig.key];
     });
   }, [enhancedStudents, sortConfig]);
 
@@ -173,65 +138,52 @@ const goToPage = (page) => {
     return <ArrowDown size={14} className="text-[var(--primary)]" />;
   };
 
-  // Shared Export Handler (eliminates duplication between PDF & CSV)
   const handleExport = async (format) => {
     if (!selectedSubject) {
-      toast.error(t('reports.errors.select_subject') || "Please select a subject first");
+      toast.error("Select subject first");
       return;
     }
 
     setLoadingFormat(format);
+
     try {
       const token = localStorage.getItem("token");
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + REPORT_DATE_RANGE_DAYS);
 
       const params = new URLSearchParams({
         subject_id: selectedSubject,
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
+        ...(startDate && { start_date: startDate.toISOString().split('T')[0] }),
+        ...(endDate && { end_date: endDate.toISOString().split('T')[0] }),
       });
 
-      const response = await fetch(
+      const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/reports/export/${format}?${params}`,
         {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to generate ${format.toUpperCase()}`);
+      // ✅ check response
+      if (!res.ok) {
+        throw new Error("Download failed");
       }
 
-      const blob = await response.blob();
+      const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
 
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = `attendance_report.${format}`;
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match) filename = match[1];
-      }
+      // ✅ proper anchor handling
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
 
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // ✅ cleanup memory
       window.URL.revokeObjectURL(url);
 
-      toast.success(
-        t(`reports.success.${format}_exported`) ||
-          `${format.toUpperCase()} downloaded successfully!`
-      );
-    } catch (error) {
-      console.error(`Error exporting ${format}:`, error);
-      toast.error(
-        t(`reports.errors.${format}_failed`) ||
-          `Failed to export ${format.toUpperCase()}.`
-      );
+      toast.success(`${format.toUpperCase()} downloaded`);
+    } catch (err) {
+      toast.error("Export failed");
     } finally {
       setLoadingFormat(null);
     }
@@ -240,35 +192,25 @@ const goToPage = (page) => {
   const handleExportPDF = () => handleExport("pdf");
   const handleExportCSV = () => handleExport("csv");
 
-
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="min-h-screen p-6">
+      <h2 className="text-xl font-bold mb-4">Reports</h2>
 
-      {/* --- HEADER --- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('reports.title')}</h2>
-          <p className="text-[var(--text-body)]">{t('reports.subtitle')}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleExportCSV}
-            disabled={loadingFormat !== null || !selectedSubject}
-            className="px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-card)] font-medium flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingFormat === "csv" ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
-            {t('reports.export_csv')}
-          </button>
-          <button 
-            onClick={handleExportPDF}
-            disabled={loadingFormat !== null || !selectedSubject}
-            className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:opacity-90 font-medium flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingFormat === "pdf" ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-             {t('reports.export_pdf')}
-          </button>
-        </div>
+      <DateRange
+        onChange={({ start, end }) => {
+          setStartDate(start);
+          setEndDate(end);
+        }}
+      />
+
+      <div className="flex gap-3 my-4">
+        <button onClick={handleExportCSV}>
+          {loadingFormat === "csv" ? "Loading..." : "Export CSV"}
+        </button>
+
+        <button onClick={handleExportPDF}>
+          {loadingFormat === "pdf" ? "Loading..." : "Export PDF"}
+        </button>
       </div>
 
       {/* --- FILTERS CARD --- */}
