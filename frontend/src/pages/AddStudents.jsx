@@ -24,6 +24,7 @@ export default function AddStudents() {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // track search input
 
 
 
@@ -40,7 +41,13 @@ export default function AddStudents() {
 
   const filteredStudents = students
     .filter((s) => {
-      if (filterType === "Unverified only") return s.verified === false;
+      if (filterType === "Unverified only" && s.verified) return false;
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        const matchName = s.name.toLowerCase().includes(term);
+        const matchRoll = String(s.roll).toLowerCase().includes(term);
+        if (!matchName && !matchRoll) return false;
+      }
       return true;
     })
     .map((s) => ({
@@ -93,7 +100,16 @@ export default function AddStudents() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-secondary)] flex items-center gap-2 transition shadow-sm">
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setFilterType("Unverified only");
+                if (selectedSubject) {
+                  fetchSubjectStudents(selectedSubject).then(setStudents);
+                }
+              }}
+              className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-secondary)] flex items-center gap-2 transition shadow-sm"
+            >
               <RefreshCw size={16} />
               {t('add_students.refresh', "Refresh")}
             </button>
@@ -113,6 +129,8 @@ export default function AddStudents() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-body)] opacity-70" size={18} />
                 <input 
                   type="text" 
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
                   placeholder={t('add_students.search_placeholder', "Search by name or roll number")}
                   className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
                 />
