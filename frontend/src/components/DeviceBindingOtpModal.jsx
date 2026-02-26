@@ -61,14 +61,16 @@ const DeviceBindingOtpModal = ({ isOpen, onClose, userEmail, onSuccess }) => {
 
     try {
       const deviceId = getDeviceUUID();
-      await api.post("/auth/device-binding-otp", {
+      const response = await api.post("/auth/device-binding-otp", {
         email: userEmail,
         new_device_id: deviceId,
       });
 
-      setStep("otp_sent");
-      setResendCountdown(60);
-      toast.success("OTP sent to your registered email");
+      if (response.status === 200) {
+        setStep("otp_sent");
+        setResendCountdown(60);
+        toast.success("OTP sent to your registered email");
+      }
     } catch (err) {
       setError(
         err.response?.data?.detail || "Failed to send OTP. Please try again."
@@ -96,16 +98,20 @@ const DeviceBindingOtpModal = ({ isOpen, onClose, userEmail, onSuccess }) => {
 
     try {
       const deviceId = getDeviceUUID();
-      await api.post("/auth/verify-device-binding-otp", {
+      const response = await api.post("/auth/verify-device-binding-otp", {
         email: userEmail,
         otp: otp,
         new_device_id: deviceId,
       });
 
-      toast.success("Device successfully bound! You can now mark attendance.");
-      handleClose();
-      if (onSuccess) {
-        onSuccess();
+      if (response.status === 200) {
+        toast.success("Device successfully bound! You can now mark attendance.");
+        setOtp("");
+        setStep("initial");
+        onClose();
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to verify OTP.");
@@ -127,7 +133,6 @@ const DeviceBindingOtpModal = ({ isOpen, onClose, userEmail, onSuccess }) => {
     setError("");
     setStep("initial");
     setResendCountdown(0);
-    setLoading(false);
     onClose();
   };
 
@@ -172,13 +177,10 @@ const DeviceBindingOtpModal = ({ isOpen, onClose, userEmail, onSuccess }) => {
                 }
               }}
               placeholder="000000"
-              slotProps={{
-                htmlInput: {
-                  maxLength: 6,
-                  pattern: "[0-9]*",
-                  inputMode: "numeric",
-                  style: { textAlign: "center", letterSpacing: "0.5em" },
-                }
+              inputProps={{
+                maxLength: 6,
+                pattern: "[0-9]*",
+                style: { textAlign: "center", letterSpacing: "0.5em" },
               }}
               fullWidth
               disabled={loading}
