@@ -361,9 +361,11 @@ export default function Analytics() {
             </div>
             {/* Best Performing List */}
             <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm" data-testid="best-performing-list">
-              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.best')}</h3>
+              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">
+                {isGlobal ? t('analytics.lists.best') : t('analytics.lists.best_students')}
+              </h3>
               <div className="space-y-3">
-                {bestPerforming.map((c, i) => (
+                {bestPerforming.filter(item => item.score >= 75).slice(0, 4).map((c, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
@@ -372,13 +374,18 @@ export default function Analytics() {
                       <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
                   </div>
                 ))}
+                {bestPerforming.filter(item => item.score >= 75).length === 0 && (
+                  <p className="text-sm text-[var(--text-body)] opacity-70">{t('analytics.lists.no_data')}</p>
+                )}
               </div>
             </div>
              {/* Needs Support List */}
              <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-color)] shadow-sm" data-testid="needing-support-list">
-              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.needs_support')}</h3>
+              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">
+                {isGlobal ? t('analytics.lists.needs_support') : t('analytics.lists.needs_support_students')}
+              </h3>
               <div className="space-y-3">
-                {needingSupport.map((c, i) => (
+                {needingSupport.filter(item => item.score < 75).slice(0, 4).map((c, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
@@ -387,6 +394,9 @@ export default function Analytics() {
                       <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
                   </div>
                 ))}
+                {needingSupport.filter(item => item.score < 75).length === 0 && (
+                  <p className="text-sm text-[var(--text-body)] opacity-70">{t('analytics.lists.no_data')}</p>
+                )}
               </div>
             </div>
           </div>
