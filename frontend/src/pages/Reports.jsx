@@ -201,16 +201,48 @@ toast.error(t('reports.export_failed'));
   const handleExportCSV = () => handleExport("csv");
 
   return (
-    <div className="min-h-screen p-6">
-     <h2 className="text-xl font-bold mb-4">{t('reports.title')}</h2>
-      <div className="flex gap-3 my-4">
-        <button onClick={handleExportCSV}>
-          {loadingFormat === "csv" ? "Loading..." : "Export CSV"}
-        </button>
+    <div className="min-h-screen p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+      
+      {/* Header Section with Export Buttons */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-[var(--text-main)]">{t('reports.title')}</h2>
+          <p className="text-sm text-[var(--text-body)] opacity-90 mt-1">
+            {t('reports.subtitle')}
+          </p>
+        </div>
 
-        <button onClick={handleExportPDF}>
-          {loadingFormat === "pdf" ? "Loading..." : "Export PDF"}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleExportCSV}
+            disabled={loadingFormat === "csv"}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--bg-secondary)] hover:border-[var(--primary)] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+          >
+            {loadingFormat === "csv" ? (
+              <RotateCcw className="animate-spin text-[var(--primary)]" size={18} />
+            ) : (
+              <FileText size={18} className="text-[var(--primary)] group-hover:scale-110 transition-transform" />
+            )}
+            <span className="font-medium">
+              {loadingFormat === "csv" ? "Generating..." : "Export CSV"}
+            </span>
+          </button>
+
+          <button
+            onClick={handleExportPDF}
+            disabled={loadingFormat === "pdf"}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:bg-[var(--primary-hover)] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed group"
+          >
+            {loadingFormat === "pdf" ? (
+              <RotateCcw className="animate-spin text-white" size={18} />
+            ) : (
+              <Download size={18} className="group-hover:translate-y-1 transition-transform" />
+            )}
+            <span className="font-medium">
+              {loadingFormat === "pdf" ? "Generating..." : "Export PDF"}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* --- FILTERS CARD --- */}
@@ -220,10 +252,7 @@ toast.error(t('reports.export_failed'));
               <h3 className="font-bold text-[var(--text-main)]">{t('reports.filters.title')}</h3>
               <p className="text-sm text-[var(--text-body)]">{t('reports.filters.subtitle')}</p>
             </div>
-            <button className="px-6 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-full font-medium shadow-sm hover:opacity-90 transition flex items-center gap-2 cursor-pointer">
-              <Filter size={16} />
-              {t('reports.filters.generate')}
-            </button>
+            {/* Generate button removed as per #429 */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
