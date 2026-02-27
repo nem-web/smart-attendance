@@ -1,0 +1,57 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  python-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        
+    - name: Install Ruff
+      run: pip install ruff
+      
+    - name: Run Ruff format check on backend-api
+      working-directory: ./server/backend-api
+      run: ruff format --check .
+      
+    - name: Run Ruff on backend-api
+      working-directory: ./server/backend-api
+      run: ruff check .
+      
+    - name: Run Ruff format check on ml-service
+      working-directory: ./server/ml-service
+      run: ruff format --check .
+
+    - name: Run Ruff on ml-service
+      working-directory: ./server/ml-service
+      run: ruff check .
+
+  js-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20.x"
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+      
+    - name: Run ESLint
+      working-directory: ./frontend
+      run: npm run lint

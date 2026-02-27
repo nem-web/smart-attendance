@@ -1249,7 +1249,7 @@ We take security seriously and will respond promptly to all reports.
 
 ## 🗺️ Roadmap
 
-### Version 1.0 (Current)
+### Version 1.0 (Completed)
 
 - [x] Basic facial recognition attendance
 - [x] Teacher and student dashboards
@@ -1257,16 +1257,16 @@ We take security seriously and will respond promptly to all reports.
 - [x] Google OAuth login
 - [x] Subject management
 
-### Version 1.1 (In Progress)
+### Version 1.1 (Current)
 
-- [ ] Attendance analytics
-- [ ] Email notifications
-- [ ] Reports generation
-- [ ] Attendance geofencing
-- [ ] QR code backup attendance
+- [x] Attendance analytics
+- [x] Email notifications
+- [x] Reports generation
+- [x] Attendance geofencing
+- [x] QR code backup attendance
 - [x] Multi-language support
 
-### Version 2.0 (Planned)
+### Version 2.0 (In Progress)
 
 - [ ] Video-based attendance (process video feed)
 - [ ] Biometric integration
@@ -1274,7 +1274,7 @@ We take security seriously and will respond promptly to all reports.
 - [ ] Mobile notifications (Push)
 - [ ] Offline mode support
 
-### Version 3.0 (Future)
+### Version 3.0 (Planned)
 
 - [ ] Multi-institution support
 - [ ] API marketplace for third-party integrations

@@ -113,7 +113,8 @@ export default function StudentNavigation({ activePage = "home" }) {
             </div>
             <div className="logout flex-shrink-0">
               <LogOut className="cursor-pointer text-[var(--text-body)] hover:text-[var(--danger)] transition-colors" size={20} onClick={()=>{
-                localStorage.setItem("user", null);
+                localStorage.removeItem("user");
+                 localStorage.removeItem("token");
                 navigate("/");
               }}/>
             </div>
@@ -133,8 +134,7 @@ export default function StudentNavigation({ activePage = "home" }) {
           />
         ))}
       </div>
-
-      <div className="md:hidden h-20"></div>
+     
     </>
   );
 };

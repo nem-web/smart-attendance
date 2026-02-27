@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,6 +21,7 @@ import {
   getEmailStats,
 } from "../api/notifications";
 import { getStudents } from "../api/students";
+import { fetchMySubjects } from "../api/teacher";
 import Spinner from "../components/Spinner";
 
 export default function Messaging() {
@@ -38,6 +39,7 @@ export default function Messaging() {
 
   const [activeTab, setActiveTab] = useState("absence");
   const [students, setStudents] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(true);
@@ -69,6 +71,11 @@ export default function Messaging() {
     message_body: "",
   });
 
+  // Clear selected students when active tab or subject changes
+  useEffect(() => {
+    setSelectedStudents([]);
+  }, [activeTab, absenceData.subject, assignmentData.subject, examData.subject]);
+
   // Redirect if user is not authenticated
   useEffect(() => {
     if (!user) {
@@ -78,8 +85,26 @@ export default function Messaging() {
 
   useEffect(() => {
     loadStudents();
+    loadSubjects();
     loadStats();
   }, []);
+
+  const loadSubjects = async () => {
+    try {
+      const response = await fetchMySubjects();
+      setSubjects(response || []);
+
+      // Auto-select if only one subject
+      if (response && response.length === 1) {
+        const subjectId = response[0]._id;
+        setAbsenceData((prev) => ({ ...prev, subject: subjectId }));
+        setAssignmentData((prev) => ({ ...prev, subject: subjectId }));
+        setExamData((prev) => ({ ...prev, subject: subjectId }));
+      }
+    } catch (error) {
+      console.error("Failed to load subjects:", error);
+    }
+  };
 
   const loadStudents = async () => {
     try {
@@ -102,11 +127,31 @@ export default function Messaging() {
     }
   };
 
+  const filteredStudents = useMemo(() => {
+    if (activeTab === "custom") {
+      return students;
+    }
+
+    let selectedSubjectId = "";
+    if (activeTab === "absence") selectedSubjectId = absenceData.subject;
+    if (activeTab === "assignment") selectedSubjectId = assignmentData.subject;
+    if (activeTab === "exam") selectedSubjectId = examData.subject;
+
+    if (!selectedSubjectId) return [];
+
+    const subject = subjects.find((s) => s._id === selectedSubjectId);
+    if (!subject || !subject.students) return [];
+
+    return students.filter((student) => subject.students.includes(student.user_id));
+  }, [activeTab, absenceData.subject, assignmentData.subject, examData.subject, students, subjects]);
+
   const handleSelectAll = () => {
-    if (selectedStudents.length === students.length) {
+    const allSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedStudents.includes(s.email));
+    
+    if (allSelected) {
       setSelectedStudents([]);
     } else {
-      setSelectedStudents(students.map((s) => s.email));
+      setSelectedStudents(filteredStudents.map((s) => s.email));
     }
   };
 
@@ -122,13 +167,16 @@ export default function Messaging() {
       return;
     }
 
+    const subjectObj = subjects.find((s) => s._id === absenceData.subject);
+    const subjectName = subjectObj ? subjectObj.name : absenceData.subject;
+
     setLoading(true);
     setResult(null);
 
     try {
       const response = await sendAbsenceNotifications({
         student_emails: selectedStudents,
-        subject: absenceData.subject,
+        subject: subjectName,
         date: absenceData.date,
         teacher_name: user?.name || "Your Teacher",
       });
@@ -156,6 +204,9 @@ export default function Messaging() {
       return;
     }
 
+    const subjectObj = subjects.find((s) => s._id === assignmentData.subject);
+    const subjectName = subjectObj ? subjectObj.name : assignmentData.subject;
+
     setLoading(true);
     setResult(null);
 
@@ -163,7 +214,7 @@ export default function Messaging() {
       const response = await sendAssignmentReminders({
         student_emails: selectedStudents,
         assignment_title: assignmentData.assignment_title,
-        subject: assignmentData.subject,
+        subject: subjectName,
         due_date: assignmentData.due_date,
         teacher_name: user?.name || "Your Teacher",
       });
@@ -193,6 +244,9 @@ export default function Messaging() {
       return;
     }
 
+    const subjectObj = subjects.find((s) => s._id === examData.subject);
+    const subjectName = subjectObj ? subjectObj.name : examData.subject;
+
     setLoading(true);
     setResult(null);
 
@@ -200,7 +254,7 @@ export default function Messaging() {
       const response = await sendExamAlerts({
         student_emails: selectedStudents,
         exam_name: examData.exam_name,
-        subject: examData.subject,
+        subject: subjectName,
         exam_date: examData.exam_date,
         time: examData.time,
         venue: examData.venue,
@@ -317,15 +371,22 @@ export default function Messaging() {
                       <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.subject')}
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={absenceData.subject}
                         onChange={(e) =>
                           setAbsenceData({ ...absenceData, subject: e.target.value })
                         }
-                        placeholder={t('messaging.placeholders.subject')}
                         className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                      />
+                      >
+                        <option value="" disabled>
+                          {t('messaging.placeholders.subject')}
+                        </option>
+                        {subjects.map((subject) => (
+                          <option key={subject._id} value={subject._id}>
+                            {subject.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
@@ -379,15 +440,22 @@ export default function Messaging() {
                       <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.subject')}
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={assignmentData.subject}
                         onChange={(e) =>
                           setAssignmentData({ ...assignmentData, subject: e.target.value })
                         }
-                        placeholder={t('messaging.placeholders.subject')}
                         className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                      />
+                      >
+                        <option value="" disabled>
+                          {t('messaging.placeholders.subject')}
+                        </option>
+                        {subjects.map((subject) => (
+                          <option key={subject._id} value={subject._id}>
+                            {subject.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
@@ -438,15 +506,22 @@ export default function Messaging() {
                       <label className="block text-sm font-medium text-[var(--text-body)] mb-2">
                         {t('messaging.form.subject')}
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={examData.subject}
                         onChange={(e) =>
                           setExamData({ ...examData, subject: e.target.value })
                         }
-                        placeholder={t('messaging.placeholders.subject')}
                         className="w-full px-4 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-                      />
+                      >
+                        <option value="" disabled>
+                          {t('messaging.placeholders.subject')}
+                        </option>
+                        {subjects.map((subject) => (
+                          <option key={subject._id} value={subject._id}>
+                            {subject.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -601,7 +676,7 @@ export default function Messaging() {
                   onClick={handleSelectAll}
                   className="text-sm text-[var(--primary)] hover:opacity-90 font-medium"
                 >
-                  {selectedStudents.length === students.length ? t('messaging.recipients.deselect_all') : t('messaging.recipients.select_all')}
+                  {selectedStudents.length === filteredStudents.length && filteredStudents.length > 0 ? t('messaging.recipients.deselect_all') : t('messaging.recipients.select_all')}
                 </button>
               </div>
 
@@ -617,12 +692,12 @@ export default function Messaging() {
                 </div>
               ) : (
                 <div className="max-h-96 overflow-y-auto space-y-2">
-                  {students.length === 0 ? (
+                  {filteredStudents.length === 0 ? (
                     <div className="text-center py-8 text-[var(--text-body)]/80">
                       {t('messaging.recipients.no_students')}
                     </div>
                   ) : (
-                    students.map((student) => (
+                    filteredStudents.map((student) => (
                       <label
                         key={student.email}
                         className="flex items-center gap-3 p-3 hover:bg-[var(--bg-primary)] rounded-lg cursor-pointer transition-colors"

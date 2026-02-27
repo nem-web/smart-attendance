@@ -6,7 +6,10 @@ export default function LogoutConfirmDialog({ isOpen, onClose, onConfirm }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div 
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    onClick={(e) => e.stopPropagation()}
+    >
       <div className="bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-color)] max-w-md w-full mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[var(--border-color)]">

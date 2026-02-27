@@ -11,7 +11,9 @@ class SendDeviceBindingOtpRequest(BaseModel):
 class SendDeviceBindingOtpResponse(BaseModel):
     """Response for sending device binding OTP."""
 
-    message: str = "OTP has been sent to your registered email. Please verify within 10 minutes."
+    message: str = (
+        "OTP has been sent to your registered email. Please verify within 10 minutes."
+    )
 
 
 class VerifyDeviceBindingOtpRequest(BaseModel):

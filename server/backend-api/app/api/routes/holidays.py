@@ -34,6 +34,7 @@ router = APIRouter(prefix="/schedule/holidays", tags=["holidays"])
 
 # ─── helpers ─────────────────────────────────────────────────────────
 
+
 def _doc_to_response(doc: dict) -> HolidayResponse:
     """Convert a MongoDB document to a HolidayResponse."""
     return HolidayResponse(
@@ -44,6 +45,7 @@ def _doc_to_response(doc: dict) -> HolidayResponse:
 
 
 # ─── GET /schedule/holidays ─────────────────────────────────────────
+
 
 @router.get("", response_model=HolidayListResponse)
 async def get_holidays(current: dict = Depends(get_current_teacher)):
@@ -58,6 +60,7 @@ async def get_holidays(current: dict = Depends(get_current_teacher)):
 
 
 # ─── POST /schedule/holidays ────────────────────────────────────────
+
 
 @router.post(
     "",
@@ -74,9 +77,7 @@ async def add_holiday(
     date_str = payload.date.isoformat()
 
     # Check for duplicate date
-    existing = await db.holidays.find_one(
-        {"teacher_id": teacher_oid, "date": date_str}
-    )
+    existing = await db.holidays.find_one({"teacher_id": teacher_oid, "date": date_str})
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -96,6 +97,7 @@ async def add_holiday(
 
 
 # ─── DELETE /schedule/holidays/:id ──────────────────────────────────
+
 
 @router.delete("/{holiday_id}", response_model=MessageResponse)
 async def delete_holiday(

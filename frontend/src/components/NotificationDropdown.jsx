@@ -3,8 +3,8 @@ import { Bell, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   getInAppNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
+  deleteNotification,
+  deleteAllNotifications,
 } from "../api/notifications";
 
 export default function NotificationDropdown() {
@@ -70,31 +70,25 @@ export default function NotificationDropdown() {
 
   const handleNotificationClick = async (notificationId) => {
     try {
-      await markNotificationAsRead(notificationId);
-      // Update local state
+      await deleteNotification(notificationId);
+      // Update local state - remove the notification
       setNotifications(
-        notifications.map((notif) =>
-          notif._id === notificationId
-            ? { ...notif, is_read: true }
-            : notif
-        )
+        notifications.filter((notif) => notif._id !== notificationId)
       );
       setUnreadCount(Math.max(0, unreadCount - 1));
     } catch (error) {
-      console.error("Failed to mark notification as read:", error);
+      console.error("Failed to delete notification:", error);
     }
   };
 
   const handleMarkAllAsRead = async () => {
     try {
-      await markAllNotificationsAsRead();
-      // Update local state
-      setNotifications(
-        notifications.map((notif) => ({ ...notif, is_read: true }))
-      );
+      await deleteAllNotifications();
+      // Update local state - clear all notifications
+      setNotifications([]);
       setUnreadCount(0);
     } catch (error) {
-      console.error("Failed to mark all notifications as read:", error);
+      console.error("Failed to delete all notifications:", error);
     }
   };
 
@@ -172,10 +166,7 @@ export default function NotificationDropdown() {
                 {notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    onClick={() =>
-                      !notification.is_read &&
-                      handleNotificationClick(notification._id)
-                    }
+                    onClick={() => handleNotificationClick(notification._id)}
                     className={`p-4 cursor-pointer transition-colors ${
                       notification.is_read
                         ? "bg-[var(--bg-card)]"
@@ -204,7 +195,7 @@ export default function NotificationDropdown() {
           </div>
 
           {/* Footer */}
-          {notifications.length > 0 && unreadCount > 0 && (
+          {notifications.length > 0 && (
             <div className="p-4 border-t border-[var(--border-color)]">
               <button
                 onClick={handleMarkAllAsRead}

@@ -16,8 +16,12 @@ import {
   User,
   Loader2,
   AlertTriangle,
-  QrCode
+  QrCode,
+  Wifi,
+  WifiOff
 } from "lucide-react";
+import { saveOfflineAttendance, getOfflineAttendanceCount } from "../utils/offlineStorage";
+import toast from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
 import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
 import { captureAndSend } from "../api/attendance";
@@ -43,6 +47,57 @@ export default function MarkAttendance() {
   
   const [showQRModal, setShowQRModal] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+
+  useEffect(() => {
+    const checkCount = async () => {
+      try {
+        const count = await getOfflineAttendanceCount();
+        setPendingSyncCount(count);
+      } catch (e) {
+        console.error("Error getting offline count:", e);
+      }
+    };
+    
+    checkCount();
+    
+    const handleOnline = () => {
+      setIsOffline(false);
+      toast.success(t('mark_attendance.alerts.online_restored'));
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SYNC_NOW' });
+      }
+    };
+    
+    const handleOffline = () => {
+      setIsOffline(true);
+      toast(t('mark_attendance.alerts.offline_mode'), { icon: '⚠️' });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    const messageHandler = (event) => {
+      if (event.data && event.data.type === 'SYNC_COMPLETED') {
+        toast.success(t('mark_attendance.alerts.synced_success'));
+        checkCount();
+      }
+    };
+
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener('message', messageHandler);
+    }
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.removeEventListener('message', messageHandler);
+      }
+    };
+  }, [t]);
   
   const [locationError, setLocationError] = useState(
     !navigator.geolocation ? "Geolocation is not supported by your browser" : null
@@ -99,6 +154,15 @@ export default function MarkAttendance() {
   }, []);
 
   const getStatusBadge = () => {
+    if (isOffline) {
+      return (
+        <span className="px-2.5 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold uppercase rounded-full flex items-center gap-1.5 border border-gray-200">
+          <WifiOff size={10} />
+          {t('mark_attendance.status.offline')}
+        </span>
+      );
+    }
+
     switch (mlStatus) {
       case "ready":
         return (
@@ -175,21 +239,47 @@ export default function MarkAttendance() {
 
   const handleConfirmAttendance = async () => {
     if (attendanceSubmitted) {
-      alert(t('mark_attendance.alerts.already_marked'));
+      toast.error(t('mark_attendance.alerts.already_marked'));
+      return;
+    }
+
+    const payload = {
+      subject_id: selectedSubject,
+      present_students: presentStudents.map((s) => s.studentId),
+      absent_students: absentStudents.map((s) => s.studentId),
+    };
+
+    if (!navigator.onLine) {
+      try {
+        await saveOfflineAttendance(payload);
+        setAttendanceSubmitted(true);
+        const count = await getOfflineAttendanceCount();
+        setPendingSyncCount(count);
+        
+        // Register sync if possible (modern Chrome)
+        if ('serviceWorker' in navigator && 'SyncManager' in window) {
+           const setupSync = async () => {
+             const reg = await navigator.serviceWorker.ready;
+             return reg.sync.register('sync-attendance');
+           };
+           setupSync().catch(console.error);
+        }
+
+        toast.success(t('mark_attendance.alerts.saved_offline'));
+      } catch (err) {
+        console.error(err);
+        toast.error(t('mark_attendance.alerts.offline_save_failed'));
+      }
       return;
     }
 
     try {
-      await api.post("/api/attendance/confirm", {
-        subject_id: selectedSubject,
-        present_students: presentStudents.map((s) => s.studentId),
-        absent_students: absentStudents.map((s) => s.studentId),
-      });
+      await api.post("/api/attendance/confirm", payload);
 
       setAttendanceSubmitted(true);
-      alert(t('mark_attendance.alerts.success'));
+      toast.success(t('mark_attendance.alerts.success'));
     } catch {
-      alert(t('mark_attendance.alerts.failed'));
+      toast.error(t('mark_attendance.alerts.failed'));
     }
   };
 
@@ -245,7 +335,7 @@ export default function MarkAttendance() {
             <button
               onClick={() => {
                 if (!selectedSubject) {
-                  alert(t('mark_attendance.alerts.select_subject_first') || 'Please select a subject first');
+                  alert(t('mark_attendance.alerts.select_subject_first'));
                   return;
                 }
                 setSessionId(`${selectedSubject}-${Date.now()}`);
@@ -259,7 +349,7 @@ export default function MarkAttendance() {
               }`}
             >
               <QrCode size={16} />
-              <span>{t('mark_attendance.start_qr_session') || 'Start QR Session'}</span>
+              <span>{t('mark_attendance.start_qr_session')}</span>
             </button>
             <button
                onClick={() => navigate("/settings")}
@@ -308,7 +398,7 @@ export default function MarkAttendance() {
             <div className="lg:col-span-12 flex items-center gap-3 p-4 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/25 text-[var(--danger)]">
                <AlertCircle className="w-5 h-5 flex-shrink-0" />
                <div>
-                 <h4 className="font-semibold text-sm">Location Service Issue</h4>
+                 <h4 className="font-semibold text-sm">{t('mark_attendance.alerts.location_issue_title')}</h4>
                  <p className="text-xs">{locationError}</p>
                </div>
             </div>
@@ -429,6 +519,12 @@ export default function MarkAttendance() {
 
             {/* Sticky Footer */}
             <div className="p-4 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              {pendingSyncCount > 0 && (
+                <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-xs flex items-center gap-2 animate-pulse">
+                   <WifiOff size={14} />
+                   <span className="font-semibold">{pendingSyncCount} {t('mark_attendance.alerts.pending_sync_records')}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center text-xs mb-3 text-[var(--text-body)]">
                 <span>{presentStudents.length} {t('mark_attendance.summary.present')}</span>
                 <span>• {absentStudents.length} {t('mark_attendance.summary.absent')}</span>

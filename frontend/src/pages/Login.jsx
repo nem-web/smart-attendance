@@ -77,28 +77,28 @@ export default function Login() {
       {/* Theme Toggle in Top-Right Corner */}
       <EnhancedThemeToggle position="absolute" />
       
-      <div className="max-w-5xl w-full bg-[var(--bg-card)] rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row h-[600px]">
+      <div className="max-w-5xl w-full bg-[var(--bg-card)] rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[500px] md:h-[600px]">
 
         {/* Left Side: Login Form */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-12 flex flex-col justify-center">
           <div className="w-full max-w-md mx-auto space-y-8">
 
             {/* Header */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-[var(--text-main)] text-center">{t('auth.signInTitle')}</h1>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-main)]">{t('auth.signInTitle')}</h1>
                 {/* Language Switcher */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 text-sm">
                   <button 
                     onClick={() => changeLanguage('en')} 
-                    className={`text-sm ${i18n.language === 'en' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)]' : 'text-[var(--text-body)]/80 hover:text-[var(--text-main)]'}`}
+                    className={`${i18n.language === 'en' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)]' : 'text-[var(--text-body)]/80 hover:text-[var(--text-main)]'}`}
                   >
                     English
                   </button>
                   <span className="text-[var(--text-body)]/60">|</span>
                   <button 
                     onClick={() => changeLanguage('hi')} 
-                    className={`text-sm ${i18n.language === 'hi' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)] ' : 'text-[var(--text-body)]/80 hover:text-[var(--text-main)]'}`}
+                    className={`${i18n.language === 'hi' ? 'font-bold text-[var(--primary)] border-b-2 border-[var(--primary)] ' : 'text-[var(--text-body)]/80 hover:text-[var(--text-main)]'}`}
                   >
                     हिंदी
                   </button>

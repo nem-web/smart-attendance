@@ -2,6 +2,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Custom theme extensions for responsive breakpoints */
+@theme {
+  /* Add xs breakpoint for extra small screens (480px) */
+  --breakpoint-xs: 480px;
+}
+
 /* Accessibility: Skip Link */
 .skip-link {
   position: absolute;
@@ -260,4 +266,8 @@ body,
 .card {
   @apply bg-[var(--bg-card)] p-6 rounded-xl shadow-md;
   border: 1px solid var(--border-color);
+}
+
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }

@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from bson import ObjectId
 from app.db.mongo import db
 
@@ -21,7 +21,7 @@ async def create_subject(
         "name": name,
         "code": code,
         "professor_ids": [professor_id],
-        "created_at": datetime.now(UTC),
+        "created_at": datetime.now(timezone.utc),
         "location": location,  # { lat, long, radius }
     }
 

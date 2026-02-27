@@ -1,9 +1,10 @@
-from typing import List, Dict, Optional
+from typing import List, Dict
 from app.db.mongo import db
 from uuid import uuid4
 import pymongo
 
 COLLECTION_NAME = "schedules"
+
 
 async def ensure_indexes():
     """
@@ -12,8 +13,9 @@ async def ensure_indexes():
     """
     await db[COLLECTION_NAME].create_index(
         [("teacher_id", pymongo.ASCENDING), ("subject_id", pymongo.ASCENDING)],
-        unique=True
+        unique=True,
     )
+
 
 def generate_slot_id():
     return str(uuid4())
@@ -21,8 +23,8 @@ def generate_slot_id():
 
 async def save_teacher_schedule(teacher_id: str, schedule_data: dict) -> None:
     """
-    Saves a teacher's schedule by converting the blob format into Subject-based documents.
-    Replaces existing entries for the teacher.
+    Saves a teacher's schedule by converting the blob format
+    into Subject-based documents. Replaces existing entries for the teacher.
     """
     # Delete existing entries for this teacher to ensure clean slate
     await db[COLLECTION_NAME].delete_many({"teacher_id": teacher_id})
@@ -39,7 +41,7 @@ async def save_teacher_schedule(teacher_id: str, schedule_data: dict) -> None:
         for p in periods:
             metadata = p.get("metadata", {}) or {}
             subject_id = metadata.get("subject_id")
-            
+
             if not subject_id:
                 continue
 
@@ -48,9 +50,9 @@ async def save_teacher_schedule(teacher_id: str, schedule_data: dict) -> None:
                     "subject_id": subject_id,
                     "teacher_id": teacher_id,
                     "subject_name": metadata.get("subject_name"),
-                    "weekly_schedule": []
+                    "weekly_schedule": [],
                 }
-            
+
             slot_entry = {
                 "slot_id": generate_slot_id(),
                 "day": day,
@@ -58,7 +60,7 @@ async def save_teacher_schedule(teacher_id: str, schedule_data: dict) -> None:
                 "start_time": p.get("start", ""),
                 "end_time": p.get("end", ""),
                 "room": metadata.get("room"),
-                "tracked": metadata.get("tracked", True)
+                "tracked": metadata.get("tracked", True),
             }
             subjects_map[subject_id]["weekly_schedule"].append(slot_entry)
 
@@ -105,7 +107,7 @@ async def get_teacher_schedule_blob(teacher_id: str) -> dict:
                         "room": slot.get("room"),
                         "tracked": slot.get("tracked", True),
                         "teacher_id": teacher_id,
-                        "slot_id": slot.get("slot_id") 
+                        "slot_id": slot.get("slot_id"),
                     },
                 }
                 days_map[day].append(period)
@@ -131,15 +133,17 @@ async def get_today_schedule_entries(teacher_id: str, day_of_week: str) -> List[
     """
     Get raw schedule entries for a specific teacher and day.
     """
-    cursor = db[COLLECTION_NAME].find({"teacher_id": teacher_id, "weekly_schedule.day": day_of_week})
+    cursor = db[COLLECTION_NAME].find(
+        {"teacher_id": teacher_id, "weekly_schedule.day": day_of_week}
+    )
     subject_docs = await cursor.to_list(length=None)
-    
+
     flattened_entries = []
     for doc in subject_docs:
         weekly = doc.get("weekly_schedule", [])
         # Filter for the specific day
         day_slots = [s for s in weekly if s.get("day") == day_of_week]
-        
+
         for s in day_slots:
             entry = {
                 "teacher_id": teacher_id,
@@ -151,10 +155,10 @@ async def get_today_schedule_entries(teacher_id: str, day_of_week: str) -> List[
                 "subject_name": doc.get("subject_name"),
                 "room": s.get("room"),
                 "tracked": s.get("tracked", True),
-                "slot_id": s.get("slot_id")
+                "slot_id": s.get("slot_id"),
             }
             flattened_entries.append(entry)
-            
+
     # Sort
     flattened_entries.sort(key=lambda x: x.get("slot", 0))
     return flattened_entries
@@ -179,7 +183,7 @@ async def get_student_schedule_for_day(
     for doc in subject_docs:
         weekly = doc.get("weekly_schedule", [])
         day_slots = [s for s in weekly if s.get("day") == day_of_week]
-        
+
         for s in day_slots:
             entry = {
                 "teacher_id": doc.get("teacher_id"),
@@ -191,10 +195,9 @@ async def get_student_schedule_for_day(
                 "subject_name": doc.get("subject_name"),
                 "room": s.get("room"),
                 "tracked": s.get("tracked", True),
-                "slot_id": s.get("slot_id")
+                "slot_id": s.get("slot_id"),
             }
             flattened_entries.append(entry)
 
     flattened_entries.sort(key=lambda x: x.get("start_time", ""))
     return flattened_entries
-

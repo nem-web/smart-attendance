@@ -28,20 +28,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff bandit
 
-      # ---------------- FORMAT FIRST ----------------
-      - name: Auto-format with Ruff
+      # ---------------- FORMAT CHECK ----------------
+      - name: Check formatting with Ruff
         run: |
-          ruff format .
+          ruff format --check .
 
-      # ---------------- LINT AFTER FORMAT ----------------
+      # ---------------- LINT ----------------
       - name: Lint with Ruff
         run: |
           ruff check .
-
-      # ---------------- VERIFY FORMATTING ----------------
-      - name: Verify formatting (must be clean)
-        run: |
-          ruff format --check .
 
       # ---------------- SECURITY SCAN ----------------
       - name: Security scan with Bandit

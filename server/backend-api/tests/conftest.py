@@ -69,6 +69,7 @@ async def db(db_client):
         "app.api.routes.analytics.db",
         "app.api.routes.attendance.db",
         "app.api.routes.auth.db",
+        "app.api.routes.students.db",
         "app.api.routes.teacher_settings.db",
         "app.api.deps.db",
         "app.services.attendance.db",
@@ -116,6 +117,10 @@ async def client(db):
     Async client for API requests.
     """
     from app.main import app
+    from app.core.limiter import limiter
+
+    # Disable rate limiting for tests
+    limiter.enabled = False
 
     # Ensure app uses the correct DB.
     # app.db.mongo.db should point to 'test_smart_attendance' because of env var.
@@ -124,6 +129,9 @@ async def client(db):
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         yield ac
+
+    # Re-enable rate limiting after test
+    limiter.enabled = True
 
 
 @pytest.fixture(autouse=True)

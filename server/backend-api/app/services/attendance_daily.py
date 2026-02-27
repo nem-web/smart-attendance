@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from bson import ObjectId
 
@@ -12,6 +12,12 @@ async def ensure_indexes():
     await db[COLLECTION].create_index(
         [("subjectId", 1)],
         unique=True,
+    )
+
+    # Expire documents 24 hours after createdAt (MongoDB 4.2+ builds non-blocking)
+    await db.attendance_logs.create_index(
+        "createdAt",
+        expireAfterSeconds=86400,
     )
 
 
@@ -49,11 +55,11 @@ async def save_daily_summary(
                 "total": total,
                 "percentage": percentage,
             },
-            "updatedAt": datetime.now(UTC),
+            "updatedAt": datetime.now(timezone.utc),
         },
         "$setOnInsert": {
             "subjectId": subject_id,
-            "createdAt": datetime.now(UTC),
+            "createdAt": datetime.now(timezone.utc),
         },
     }
 

@@ -85,25 +85,25 @@ export default function Header() {
         </nav>
 
         {/* Right */}
-        <div className="flex items-center gap-3">
-          {/* Language */}
-          <div className="flex items-center gap-2 mr-2" role="group" aria-label="Language selection">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language - Hidden on very small screens */}
+          <div className="hidden xs:flex items-center gap-1 sm:gap-2 mr-1 sm:mr-2" role="group" aria-label="Language selection">
             <button
               onClick={() => i18n.changeLanguage("en")}
-              className={i18n.language === "en" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}
+              className={`text-xs sm:text-sm ${i18n.language === "en" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}`}
               aria-label="Switch to English"
               aria-pressed={i18n.language === "en"}
             >
-              English
+              EN
             </button>
-            <span className="text-[var(--border-color)]" aria-hidden="true">|</span>
+            <span className="text-[var(--border-color)]" aria-hidden="true">/</span>
             <button
               onClick={() => i18n.changeLanguage("hi")}
-              className={i18n.language === "hi" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}
+              className={`text-xs sm:text-sm ${i18n.language === "hi" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}`}
               aria-label="Switch to Hindi"
               aria-pressed={i18n.language === "hi"}
             >
-              हिंदी
+              हि
             </button>
           </div>
 
@@ -113,10 +113,10 @@ export default function Header() {
           {/* Theme Toggle */}
           <button
             onClick={() => toggle(isDark ? "Light" : "Dark")}
-            className="p-2 rounded-full hover:bg-[var(--bg-secondary)]"
+            className="p-1.5 sm:p-2 rounded-full hover:bg-[var(--bg-secondary)]"
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {isDark ? <Sun size={18} className="text-slate-400" /> : <Moon size={18} className="text-slate-400" />}
+            {isDark ? <Sun size={16} className="text-slate-400 sm:w-[18px] sm:h-[18px]" /> : <Moon size={16} className="text-slate-400 sm:w-[18px] sm:h-[18px]" />}
           </button>
 
           {/* Profile */}
@@ -125,7 +125,7 @@ export default function Header() {
             className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-secondary)]"
           >
             <User size={20} className="text-[var(--text-body)]" />
-            <span className="text-sm font-medium text-[var(--text-main)]">{displayName}</span>
+            <span className="text-sm font-medium text-[var(--text-main)] max-w-[100px] truncate">{displayName}</span>
             <ChevronDown size={16} className="text-[var(--text-body)]" />
           </Link>
         </div>
@@ -135,7 +135,7 @@ export default function Header() {
       {menuOpen && (
         <nav 
           id="mobile-menu"
-          className="lg:hidden bg-[var(--bg-card)] px-4 pb-4 pt-2 space-y-1"
+          className="lg:hidden bg-[var(--bg-card)] px-4 pb-4 pt-2 space-y-1 border-t border-[var(--border-color)]"
           role="navigation"
           aria-label="Mobile navigation"
         >
@@ -152,6 +152,33 @@ export default function Header() {
               {t(`nav.${link.label}`)}
             </Link>
           ))}
+          
+          {/* Mobile language switcher */}
+          <div className="flex items-center gap-3 px-4 py-2.5 xs:hidden">
+            <span className="text-sm text-[var(--text-body)]">Language:</span>
+            <button
+              onClick={() => i18n.changeLanguage("en")}
+              className={`text-sm ${i18n.language === "en" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}`}
+            >
+              English
+            </button>
+            <span className="text-[var(--border-color)]">/</span>
+            <button
+              onClick={() => i18n.changeLanguage("hi")}
+              className={`text-sm ${i18n.language === "hi" ? "font-bold text-[var(--primary)]" : "text-[var(--text-body)]"}`}
+            >
+              हिंदी
+            </button>
+          </div>
+          
+          {/* Mobile profile link */}
+          <Link
+            to="/settings"
+            className="sm:hidden flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-body)] hover:text-[var(--primary)] hover:bg-[var(--bg-secondary)]"
+          >
+            <User size={18} />
+            <span>{displayName}</span>
+          </Link>
         </nav>
       )}
     </header>
