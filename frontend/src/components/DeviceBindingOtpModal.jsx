@@ -86,20 +86,22 @@ export default function DeviceBindingOTPModal({ isOpen, onClose, onSuccess, emai
           </div>
 
           {/* Send OTP Button */}
-          <button
-            onClick={handleSendOTP}
-            disabled={isSendingOTP}
-            className="w-full px-4 py-3 rounded-lg font-medium text-sm bg-[var(--action-info-bg)] text-white hover:bg-[var(--action-info-bg)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {isSendingOTP ? (
-              <>
-                <Loader2 className="animate-spin" size={18} />
-                Sending OTP...
-              </>
-            ) : (
-              "Send OTP to Email"
-            )}
-          </button>
+          <div>
+            <button
+              onClick={handleSendOTP}
+              disabled={isSendingOTP}
+              className="w-full px-4 py-3 rounded-lg font-medium text-sm bg-[var(--action-info-bg)] text-white hover:bg-[var(--action-info-bg)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {isSendingOTP ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Sending OTP...
+                </>
+              ) : (
+                "Send OTP to Email"
+              )}
+            </button>
+          </div>
 
           {/* OTP Input Form */}
           <form onSubmit={handleVerifyOTP} className="space-y-4">
