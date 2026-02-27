@@ -86,7 +86,6 @@ export default function DeviceBindingOTPModal({ isOpen, onClose, onSuccess, emai
           </div>
 
           {/* Send OTP Button */}
-          <div>
           <button
             onClick={handleSendOTP}
             disabled={isSendingOTP}
@@ -101,7 +100,6 @@ export default function DeviceBindingOTPModal({ isOpen, onClose, onSuccess, emai
               "Send OTP to Email"
             )}
           </button>
-          </div>
 
           {/* OTP Input Form */}
           <form onSubmit={handleVerifyOTP} className="space-y-4">
