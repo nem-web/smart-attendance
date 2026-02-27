@@ -2,7 +2,7 @@ import os
 import jwt
 import uuid
 import hashlib
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
@@ -70,8 +70,9 @@ def create_access_token(
         "role": role,
         "email": email,
         "type": "access",
-        "iat": datetime.now(UTC),
-        "exp": datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc)
+        + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     }
     if session_id:
         payload["session_id"] = session_id
@@ -92,8 +93,8 @@ def create_refresh_token(user_id: str, session_id: str = None):
     payload = {
         "user_id": user_id,
         "type": "refresh",
-        "iat": datetime.now(UTC),
-        "exp": datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     }
     if session_id:
         payload["session_id"] = session_id

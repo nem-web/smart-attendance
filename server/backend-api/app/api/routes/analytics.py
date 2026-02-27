@@ -2,7 +2,7 @@
 Analytics API routes for attendance data.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from bson import ObjectId
@@ -57,7 +57,110 @@ async def _verify_teacher_class_access(
 # -------------------------------------------------------------------------
 
 
-@router.get("/subject/{subject_id}", response_model=SubjectStatsResponse)
+@router.get("/dashboard-stats")
+async def get_dashboard_stats(
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get aggregated statistics for Today.
+    If today's data is empty, fallback to This Week.
+    """
+    # Verify teacher
+    if current_user["role"] != "teacher":
+        raise HTTPException(
+            status_code=403, detail="Only teachers can access dashboard stats"
+        )
+
+    teacher_oid = ObjectId(current_user["id"])
+    subjects = await _get_teacher_subjects(teacher_oid)
+
+    if not subjects:
+        return {
+            "timeframe": "today",
+            "attendanceRate": 0,
+            "absent": 0,
+            "late": 0,
+            "increase": True,
+        }
+
+    subject_ids = [s["_id"] for s in subjects]
+
+    now = datetime.now()
+    today_str = now.strftime("%Y-%m-%d")
+
+    # 1. Try Fetching Today's Stats
+    pipeline_today = [
+        {"$match": {"subjectId": {"$in": subject_ids}}},
+        {"$project": {"todaydata": f"$daily.{today_str}"}},
+        {"$match": {"todaydata": {"$exists": True, "$ne": None}}},
+        {
+            "$group": {
+                "_id": None,
+                "present": {"$sum": "$todaydata.present"},
+                "absent": {"$sum": "$todaydata.absent"},
+                "late": {"$sum": "$todaydata.late"},
+                "total": {"$sum": "$todaydata.total"},
+            }
+        },
+    ]
+
+    today_result = await db.attendance_daily.aggregate(pipeline_today).to_list(length=1)
+
+    if today_result and today_result[0]["total"] > 0:
+        res = today_result[0]
+        rate = int((res["present"] / res["total"]) * 100)
+        return {
+            "timeframe": "today",
+            "attendanceRate": rate,
+            "absent": res["absent"],
+            "late": res["late"],
+            "increase": True,  # TODO: calculate against yesterday if needed
+        }
+
+    # 2. Fallback to This Week
+    start_of_week = now - timedelta(days=now.weekday())
+    start_of_week_str = start_of_week.strftime("%Y-%m-%d")
+
+    pipeline_week = [
+        {"$match": {"subjectId": {"$in": subject_ids}}},
+        {"$project": {"dailyArray": {"$objectToArray": "$daily"}}},
+        {"$unwind": "$dailyArray"},
+        {"$match": {"dailyArray.k": {"$gte": start_of_week_str, "$lte": today_str}}},
+        {
+            "$group": {
+                "_id": None,
+                "present": {"$sum": "$dailyArray.v.present"},
+                "absent": {"$sum": "$dailyArray.v.absent"},
+                "late": {"$sum": "$dailyArray.v.late"},
+                "total": {"$sum": "$dailyArray.v.total"},
+            }
+        },
+    ]
+
+    week_result = await db.attendance_daily.aggregate(pipeline_week).to_list(length=1)
+
+    if week_result and week_result[0]["total"] > 0:
+        res = week_result[0]
+        rate = int((res["present"] / res["total"]) * 100)
+        return {
+            "timeframe": "week",
+            "attendanceRate": rate,
+            "absent": res["absent"],
+            "late": res["late"],
+            "increase": True,
+        }
+
+    # No data for the week either
+    return {
+        "timeframe": "today",
+        "attendanceRate": 0,
+        "absent": 0,
+        "late": 0,
+        "increase": True,
+    }
+
+
+@router.get("/subject/{subject_id}")
 async def get_subject_analytics(
     subject_id: str,
     current_user: dict = Depends(get_current_user),
@@ -153,28 +256,42 @@ async def get_subject_analytics(
     # Needs Support: Low score asc
     needs_support = sorted(stats_list, key=lambda x: x.score)[:5]
 
-    return SubjectStatsResponse(
-        attendance=class_average,
-        avgLate=0,  # Placeholder
-        riskCount=risk_count,
-        lateTime="09:00 AM",  # Placeholder
-        bestPerforming=best_performing,
-        needsSupport=needs_support,
-    )
+    # Calculate Subject Totals for Pie Chart
+    # We iterate over students_info again or stats_list?
+    # Actually request says "Subject Specific Stats (Pie Chart) GET /api/analytics/subject/{subject_id}"  # noqa: E501
+    # The existing response model SubjectStatsResponse doesn't seem to have totals.
+    # I should add totals to the response.
+    # But for now, I'll calculate totals from students_info.
+    subj_present = sum(s.get("attendance", {}).get("present", 0) for s in students_info)
+    subj_absent = sum(s.get("attendance", {}).get("absent", 0) for s in students_info)
+    subj_late = sum(s.get("attendance", {}).get("late", 0) for s in students_info)
+
+    return {
+        "attendance": class_average,
+        "avgLate": 0,
+        "riskCount": risk_count,
+        "lateTime": "09:00 AM",
+        "bestPerforming": best_performing,
+        "needsSupport": needs_support,
+        "totalPresent": subj_present,
+        "totalAbsent": subj_absent,
+        "totalLate": subj_late,
+    }
 
 
 @router.get("/attendance-trend")
 async def get_attendance_trend(
-    classId: str = Query(..., description="Class/Subject ID"),
+    classId: Optional[str] = Query(None, description="Class/Subject ID (Optional)"),
     dateFrom: str = Query(..., description="Start date (YYYY-MM-DD)"),
     dateTo: str = Query(..., description="End date (YYYY-MM-DD)"),
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Get attendance trend for a specific class within a date range.
-    Returns daily attendance data including present, absent, late counts and percentage.
+    Get attendance trend within a date range.
+    If classId provided, returns trend for that class.
+    If no classId, returns aggregated trend across all teacher's classes.
     """
-    # 1. Auth Check (from 304)
+    # 1. Auth & Get Subjects
     teacher_oid = _get_teacher_oid(current_user)
 
     # Validate dates
@@ -189,41 +306,66 @@ async def get_attendance_trend(
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="dateFrom must be before dateTo")
 
-    # Validate classId
-    try:
-        class_oid = ObjectId(classId)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid classId format")
+    subjects = await _get_teacher_subjects(teacher_oid)
+    subject_ids = [s["_id"] for s in subjects]
 
-    # 2. Ownership Check (from 304)
-    await _verify_teacher_class_access(teacher_oid, class_oid)
+    if not subject_ids:
+        return {
+            "classId": classId,
+            "dateFrom": dateFrom,
+            "dateTo": dateTo,
+            "data": [],
+        }
 
-    # 3. Data Retrieval (from main - assumes single doc with 'daily' map schema)
-    doc = await db.attendance_daily.find_one({"subjectId": class_oid})
+    match_filter = {"subjectId": {"$in": subject_ids}}
+
+    if classId:
+        try:
+            class_oid = ObjectId(classId)
+            if class_oid not in subject_ids:
+                raise HTTPException(
+                    status_code=403, detail="You do not have access to this class"
+                )
+            match_filter["subjectId"] = class_oid
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid classId format")
+
+    # Aggregate by date
+    pipeline = [
+        {"$match": match_filter},
+        {"$project": {"dailyArray": {"$objectToArray": "$daily"}}},
+        {"$unwind": "$dailyArray"},
+        {"$addFields": {"dateStr": "$dailyArray.k", "stats": "$dailyArray.v"}},
+        # Filter by date range (string comparison works for ISO dates YYYY-MM-DD)
+        {"$match": {"dateStr": {"$gte": dateFrom, "$lte": dateTo}}},
+        {
+            "$group": {
+                "_id": "$dateStr",
+                "present": {"$sum": "$stats.present"},
+                "absent": {"$sum": "$stats.absent"},
+                "late": {"$sum": "$stats.late"},
+                "total": {"$sum": "$stats.total"},
+            }
+        },
+        {"$sort": {"_id": 1}},
+    ]
+
+    results = await db.attendance_daily.aggregate(pipeline).to_list(length=1000)
 
     trend_data = []
-
-    if doc and "daily" in doc:
-        daily_map = doc["daily"]
-        for date_str, summary in daily_map.items():
-            try:
-                record_date = datetime.fromisoformat(date_str)
-                if start_date <= record_date <= end_date:
-                    trend_data.append(
-                        {
-                            "date": date_str,
-                            "present": summary.get("present", 0),
-                            "absent": summary.get("absent", 0),
-                            "late": summary.get("late", 0),
-                            "total": summary.get("total", 0),
-                            "percentage": summary.get("percentage", 0.0),
-                        }
-                    )
-            except ValueError:
-                continue
-
-    # Sort by date
-    trend_data.sort(key=lambda x: x["date"])
+    for r in results:
+        total = r["total"]
+        percentage = (r["present"] / total * 100) if total > 0 else 0.0
+        trend_data.append(
+            {
+                "date": r["_id"],
+                "present": r["present"],
+                "absent": r["absent"],
+                "late": r["late"],
+                "total": total,
+                "percentage": round(percentage, 1),
+            }
+        )
 
     return {
         "classId": classId,
@@ -261,7 +403,7 @@ async def get_monthly_summary(
             class_oid = ObjectId(classId)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid classId format")
-            
+
         # Verify explicit access if specific class requested (from 304)
         await _verify_teacher_class_access(teacher_oid, class_oid)
         match_filter["subjectId"] = class_oid
@@ -565,8 +707,113 @@ async def get_global_stats(
         round(total_percentage / len(subject_stats), 2) if subject_stats else 0.0
     )
 
+    # Calculate avgLate, totalPresent, totalAbsent across all subjects
+    total_present = 0
+    total_absent = 0
+    total_late = 0
+
+    for s in subject_stats:
+        total_present += s.get("totalPresent", 0)
+        total_absent += s.get("totalAbsent", 0)
+        total_late += s.get("totalLate", 0)
+
+    avg_late = round(total_late / len(subject_stats), 1) if subject_stats else 0.0
+
     return {
-        "overall_attendance": overall_attendance,
-        "risk_count": risk_count,
-        "top_subjects": subject_stats,
+        "attendance": overall_attendance,
+        "riskCount": risk_count,
+        "avgLate": avg_late,
+        "lateTime": "09:00 AM",
+        "totalPresent": total_present,
+        "totalAbsent": total_absent,
+        "totalLate": total_late,
+        "topSubjects": subject_stats,
     }
+
+
+@router.get("/top-performers")
+async def get_top_performers(
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get top performing classes based on attendance percentage.
+    """
+    # 1. Auth & Get Subjects (from 304)
+    teacher_oid = _get_teacher_oid(current_user)
+    subjects = await _get_teacher_subjects(teacher_oid)
+
+    if not subjects:
+        return {"data": []}
+
+    subject_ids = [s["_id"] for s in subjects]
+    subject_map = {str(s["_id"]): s for s in subjects}
+
+    # Aggregate attendance data
+    pipeline = [
+        {"$match": {"subjectId": {"$in": subject_ids}}},
+        {
+            "$project": {
+                "classId": "$subjectId",
+                "dailyArray": {"$objectToArray": "$daily"},
+            }
+        },
+        {"$unwind": "$dailyArray"},
+        {
+            "$addFields": {
+                "summary": "$dailyArray.v",
+            }
+        },
+        {
+            "$group": {
+                "_id": "$classId",
+                "totalPresent": {"$sum": "$summary.present"},
+                "totalAbsent": {"$sum": "$summary.absent"},
+                "totalLate": {"$sum": "$summary.late"},
+                "totalStudents": {"$sum": "$summary.total"},
+            }
+        },
+        {
+            "$addFields": {
+                "attendancePercentage": {
+                    "$cond": {
+                        "if": {"$gt": ["$totalStudents", 0]},
+                        "then": {
+                            "$round": [
+                                {
+                                    "$multiply": [
+                                        {
+                                            "$divide": [
+                                                "$totalPresent",
+                                                "$totalStudents",
+                                            ]
+                                        },
+                                        100,
+                                    ]
+                                },
+                                2,
+                            ]
+                        },
+                        "else": 0,
+                    }
+                }
+            }
+        },
+        {"$sort": {"attendancePercentage": -1}},
+        {"$limit": 5},
+    ]
+
+    results = await db.attendance_daily.aggregate(pipeline).to_list(length=5)
+
+    top_performers = []
+    for result in results:
+        class_id_str = str(result["_id"])
+        subject_info = subject_map.get(class_id_str, {})
+        top_performers.append(
+            {
+                "id": class_id_str,
+                "name": subject_info.get("name", "Unknown"),
+                "score": result["attendancePercentage"],
+            }
+        )
+
+    return {"data": top_performers}

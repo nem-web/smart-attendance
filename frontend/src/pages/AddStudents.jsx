@@ -14,9 +14,11 @@ import {
   ChevronDown,
   Check,
   X,
-  User
+  User,
+  Loader2
 } from "lucide-react";
 import { fetchMySubjects, fetchSubjectStudents, verifyStudent, deleteStudent } from "../api/teacher";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 export default function AddStudents() {
   const { t } = useTranslation();
@@ -24,6 +26,9 @@ export default function AddStudents() {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isVerifyAllModalOpen, setIsVerifyAllModalOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
 
 
@@ -57,6 +62,39 @@ export default function AddStudents() {
   }));
 
   const unverifiedCount = filteredStudents.filter(s => s.status === t('add_students.status_unverified', "Unverified")).length;
+
+  const handleRefresh = async () => {
+    if(!selectedSubject) return;
+    setIsRefreshing(true);
+    try {
+      await fetchSubjectStudents(selectedSubject).then(setStudents);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleVerifyAllVisible = () => {
+    const studentsToVerify = filteredStudents.filter(s => s.actionType === 'verify');
+    if (studentsToVerify.length === 0) return;
+    setIsVerifyAllModalOpen(true);
+  };
+
+  const confirmVerifyAll = async () => {
+    const studentsToVerify = filteredStudents
+      .filter(s => s.actionType === 'verify')
+      .map(s => s.id);
+    
+    setIsVerifying(true);
+    try {
+      await Promise.all(studentsToVerify.map(id => verifyStudent(selectedSubject, id)));
+      await fetchSubjectStudents(selectedSubject).then(setStudents);
+      setIsVerifyAllModalOpen(false);
+    } catch (error) {
+      console.error("Batch verify failed", error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleVerify = async (studentId) => {
     if (!confirm(t('add_students.confirm_verify', "Verify this student for attendance?"))) return;
@@ -93,11 +131,19 @@ export default function AddStudents() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-secondary)] flex items-center gap-2 transition shadow-sm">
-              <RefreshCw size={16} />
+            <button 
+              onClick={handleRefresh}
+              disabled={!selectedSubject || isRefreshing}
+              className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-body)] rounded-lg text-sm font-medium hover:bg-[var(--bg-secondary)] flex items-center gap-2 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
               {t('add_students.refresh', "Refresh")}
             </button>
-            <button className="px-4 py-2 bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-lg text-sm font-medium hover:bg-[var(--primary-hover)] flex items-center gap-2 shadow-md transition">
+            <button 
+              onClick={handleVerifyAllVisible}
+              disabled={!selectedSubject}
+              className="px-4 py-2 bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-lg text-sm font-medium hover:bg-[var(--primary-hover)] flex items-center gap-2 shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <CheckCircle size={16} />
               {t('add_students.verify_all', "Verify all visible")}
             </button>
@@ -259,6 +305,23 @@ export default function AddStudents() {
         <p className="mt-6 text-xs text-[var(--text-body)] opacity-80 text-center">
           {t('add_students.bottom_note', "Note: Verified students will start appearing in the attendance marking list for their selected subjects and classes. You can revoke access anytime by deleting their entry from the main Students page.")}
         </p>
+
+        <ConfirmationModal 
+          isOpen={isVerifyAllModalOpen}
+          onClose={() => setIsVerifyAllModalOpen(false)}
+          onConfirm={confirmVerifyAll}
+          title={t('add_students.verify_all_title', "Verify all visible students?")}
+          message={t('add_students.verify_all_message', "This will verify all currently visible unverified students for attendance. This action cannot be undone efficiently (you'd need to delete them individually).")}
+          confirmText={isVerifying ? t('common.processing', "Processing...") : t('common.verify_all', "Yes, Verify All")}
+          type="info"
+        >
+          {isVerifying && (
+             <div className="mt-2 flex items-center justify-center text-[var(--primary)]">
+               <Loader2 className="animate-spin mr-2" size={20} />
+               <span className="text-sm font-medium">{t('add_students.verifying_progress', "Verifying students...")}</span>
+             </div>
+          )}
+        </ConfirmationModal>
 
       </main>
     </div>

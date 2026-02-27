@@ -11,8 +11,20 @@ import {
   Loader2,
   AlertTriangle
 } from "lucide-react"; 
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer
+} from "recharts";
 import { getTodaySchedule } from "../api/schedule";
+import { fetchDashboardStats, fetchAttendanceTrend } from "../api/analytics";
 import StartAttendanceModal from "../components/attendance/StartAttendanceModal";
+import { exportCombinedReport } from "../api/teacher";
+import { toast } from "react-hot-toast";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -24,7 +36,29 @@ export default function Dashboard() {
   const [mlStatus, setMlStatus] = useState("checking"); // checking, ready, waking-up
   const [todayClasses, setTodayClasses] = useState([]);
   const [loadingSchedule, setLoadingSchedule] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [tick, setTick] = useState(0); // Periodic tick for real-time status updates
+
+  const [trendData, setTrendData] = useState([]);
+  const [loadingTrend, setLoadingTrend] = useState(true);
+
+  // Fetch dashboard stats
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const stats = await fetchDashboardStats();
+        setDashboardStats(stats);
+      } catch (error) {
+        console.error("Failed to load dashboard stats", error);
+        // Fallback or leave as null (will show 0 or -)
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    loadStats();
+  }, []);
 
   useEffect(() => {
     const checkMlService = async () => {
@@ -76,6 +110,49 @@ export default function Dashboard() {
     fetchSchedule();
   }, []);
 
+  // Fetch Attendance Trend Data (This Week)
+  useEffect(() => {
+    const loadTrendData = async () => {
+      try {
+        const today = new Date();
+        const firstDay = new Date(today);
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+        firstDay.setDate(diff); // Monday
+        
+        const lastDay = new Date(firstDay);
+        lastDay.setDate(firstDay.getDate() + 6); // Sunday
+
+        const trend = await fetchAttendanceTrend({
+          dateFrom: firstDay.toISOString().split('T')[0],
+          dateTo: lastDay.toISOString().split('T')[0]
+        });
+
+        // Map backend data to recharts specific format if needed
+        const formattedData = (trend.data || []).map(item => {
+          // Parse date parts to avoid timezone issues. "2023-01-01" -> local date
+          const [y, m, d] = item.date.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          return {
+            name: date.toLocaleDateString("en-US", { weekday: "short" }),
+            fullDate: item.date,
+            present: item.present,
+            absent: item.absent,
+            late: item.late,
+            total: item.total
+          };
+        });
+        
+        setTrendData(formattedData);
+      } catch (error) {
+        console.error("Failed to load attendance trend:", error);
+      } finally {
+        setLoadingTrend(false);
+      }
+    };
+    loadTrendData();
+  }, []);
+
   // Periodic tick for real-time status updates (every 60 seconds)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -124,19 +201,19 @@ export default function Dashboard() {
     if (startMinutes === null || endMinutes === null) {
       console.error("Invalid time format for class", { startTime, endTime });
       // Fallback to a safe default that matches existing status values
-      return { status: "upcoming", color: "primary", label: "Upcoming" };
+      return { status: "upcoming", color: "primary", labelKey: "upcoming" };
     }
 
     if (currentMinutes > endMinutes) {
-      return { status: "completed", color: "success", label: "Completed" };
+      return { status: "completed", color: "success", labelKey: "completed" };
     } else if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
-      return { status: "live", color: "warning", label: "Pending" };
+      return { status: "live", color: "warning", labelKey: "pending" };
     } else {
       const minutesUntil = startMinutes - currentMinutes;
       return {
         status: "upcoming",
         color: "primary",
-        label: "Upcoming",
+        labelKey: "upcoming",
         startsIn: minutesUntil
       };
     }
@@ -159,6 +236,36 @@ export default function Dashboard() {
     }
     return null;
   }, [todayClasses, tick]); // Re-compute when classes or tick changes
+
+  const handleDownloadReport = async () => {
+    try {
+      setDownloadingReport(true);
+      toast.loading(t('dashboard.generating_report'), { id: 'report-toast' });
+      
+      const blob = await exportCombinedReport();
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Set filename with date
+      const date = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `combined_attendance_report_${date}.pdf`);
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      
+      toast.success(t('dashboard.report_downloaded'), { id: 'report-toast' });
+    } catch (error) {
+      console.error("Failed to download report:", error);
+      toast.error(t('dashboard.report_failed'), { id: 'report-toast' });
+    } finally {
+      setDownloadingReport(false);
+    }
+  };
 
   const getStatusBadge = () => {
     switch (mlStatus) {
@@ -192,20 +299,28 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* --- SECTION 1: PAGE HEADER --- */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-main)]">{t('dashboard.title')}</h1>
-            <p className="text-[var(--text-body)] mt-1">{t('dashboard.subtitle')}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-main)]">{t('dashboard.title')}</h1>
+            <p className="text-sm sm:text-base text-[var(--text-body)] mt-1">{t('dashboard.subtitle')}</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--bg-secondary)] font-medium transition-colors flex items-center gap-2 cursor-pointer">
-              <Download size={18} />
-              {t('dashboard.download_report')}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button 
+              onClick={handleDownloadReport}
+              disabled={downloadingReport}
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] rounded-lg hover:bg-[var(--bg-secondary)] font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {downloadingReport ? (
+                <Loader2 size={16} className="animate-spin sm:w-[18px] sm:h-[18px]" />
+              ) : (
+                <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
+              )}
+              <span className="hidden xs:inline">{downloadingReport ? t('dashboard.generating') : t('dashboard.download_report')}</span>
             </button>
-            <Link to="/attendance" className="px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:bg-[var(--primary-hover)] font-medium shadow-sm flex items-center gap-2 transition-colors">
-              <Play size={18} fill="currentColor" />
-              {t('dashboard.startAttendance')}
+            <Link to="/attendance" className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-lg hover:bg-[var(--primary-hover)] font-medium shadow-sm flex items-center justify-center gap-2 transition-colors text-sm">
+              <Play size={16} fill="currentColor" className="sm:w-[18px] sm:h-[18px]" />
+              <span className="hidden xs:inline">{t('dashboard.startAttendance')}</span>
             </Link>
           </div>
         </div>
@@ -233,21 +348,21 @@ export default function Dashboard() {
                   {!loadingSchedule && nextClass ? (
                     <>
                       <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                        Next class: {nextClass.subject || 'Class'} • {nextClass.start_time}
+                        {t('dashboard.next_class', { class: nextClass.subject || t('dashboard.class_default'), time: nextClass.start_time })}
                       </span>
                       {nextClass.room && (
                         <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                          Room {nextClass.room}
+                          {t('dashboard.room', { room: nextClass.room })}
                         </span>
                       )}
                     </>
                   ) : !loadingSchedule ? (
                     <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                      No upcoming classes today
+                      {t('dashboard.classes.no_upcoming_today')}
                     </span>
                   ) : (
                     <span className="px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-body)] rounded-full font-medium">
-                      Loading schedule...
+                      {t('dashboard.classes.loading_schedule')}
                     </span>
                   )}
                 </div>
@@ -255,7 +370,7 @@ export default function Dashboard() {
 
               <div className="flex flex-col items-end gap-3 w-full md:w-auto">
                 {getStatusBadge()}
-                <Link to="/attendance-session" className="w-full md:w-auto px-6 py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] transition shadow-md text-center">
+                <Link to="/attendance" className="w-full md:w-auto px-6 py-3 bg-[var(--primary)] text-[var(--text-on-primary)] rounded-xl font-semibold hover:bg-[var(--primary-hover)] transition shadow-md text-center">
                   {t('dashboard.start_session')}
                 </Link>
                 <div className="flex items-center gap-1.5 text-xs text-[var(--success)] font-medium">
@@ -266,51 +381,75 @@ export default function Dashboard() {
             </div>
 
             {/* 2.2 Stats Row (Blue Cards) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 sm:gap-4">
               {/* Stat 1 */}
-              <div className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-2xl p-5 relative overflow-hidden">
-                <p className="text-[var(--text-on-primary)]/80 text-sm font-medium mb-1">{t('dashboard.stats.attendance_rate')}</p>
+              <div className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-xl sm:rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <p className="text-[var(--text-on-primary)]/80 text-sm font-medium mb-1">
+                  {dashboardStats?.timeframe === 'week' ? t('dashboard.stats.attendance_rate_week') : t('dashboard.stats.attendance_rate')}
+                </p>
                 <div className="flex items-end justify-between">
-                  <h3 className="text-3xl font-bold">94%</h3>
-                  <span className="text-xs bg-[var(--text-on-primary)]/15 px-2 py-1 rounded text-[var(--text-on-primary)]/90">{t('dashboard.stats.increase')}</span>
+                  {loadingStats ? (
+                     <Loader2 className="animate-spin" size={24} />
+                  ) : (
+                    <>
+                      <h3 className="text-3xl font-bold">{dashboardStats?.attendanceRate ?? 0}%</h3>
+                      {dashboardStats?.increase !== undefined && (
+                        <span className="text-xs bg-[var(--text-on-primary)]/15 px-2 py-1 rounded text-[var(--text-on-primary)]/90">
+                          {dashboardStats.increase ? t('dashboard.stats.increase') : t('dashboard.stats.decrease')}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Stat 2 */}
-              <div className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-2xl p-5">
+              <div className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-xl sm:rounded-2xl p-4 sm:p-5">
                 <p className="text-[var(--text-on-primary)]/80 text-sm font-medium mb-1">{t('dashboard.stats.absent')}</p>
                 <div className="flex items-end justify-between">
-                  <h3 className="text-3xl font-bold">7</h3>
-                  <span className="text-xs text-[var(--text-on-primary)]/80">{t('dashboard.stats.all_classes')}</span>
+                  {loadingStats ? (
+                     <Loader2 className="animate-spin" size={24} />
+                  ) : (
+                    <>
+                      <h3 className="text-3xl font-bold">{dashboardStats?.absent ?? 0}</h3>
+                      <span className="text-xs text-[var(--text-on-primary)]/80">{t('dashboard.stats.all_classes')}</span>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Stat 3 */}
-              <div className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-2xl p-5">
+              <div className="bg-[var(--action-info-bg)] text-[var(--text-on-primary)] rounded-xl sm:rounded-2xl p-4 sm:p-5">
                 <p className="text-[var(--text-on-primary)]/80 text-sm font-medium mb-1">{t('dashboard.stats.late_arrivals')}</p>
                 <div className="flex items-end justify-between">
-                  <h3 className="text-3xl font-bold">3</h3>
-                  <span className="text-xs text-[var(--text-on-primary)]/80">{t('dashboard.stats.first_period')}</span>
+                  {loadingStats ? (
+                     <Loader2 className="animate-spin" size={24} />
+                  ) : (
+                    <>
+                      <h3 className="text-3xl font-bold">{dashboardStats?.late ?? 0}</h3>
+                      <span className="text-xs text-[var(--text-on-primary)]/80">{t('dashboard.stats.first_period')}</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* 2.3 Quick Actions Row (Light Gray Cards) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
               <Link to="/students" className="block">
-                <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:opacity-90 transition">
+                <div className="bg-[var(--bg-secondary)] p-4 sm:p-5 rounded-xl sm:rounded-2xl cursor-pointer hover:opacity-90 transition">
                   <div className="font-semibold text-[var(--text-main)] mb-1">{t('dashboard.quick_actions.view_students')}</div>
                   <div className="text-xs text-[var(--text-body)]">{t('dashboard.quick_actions.view_students_desc')}</div>
                 </div>
               </Link>
               <Link to="/attendance" className="block">
-                <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:opacity-90 transition">
+                <div className="bg-[var(--bg-secondary)] p-4 sm:p-5 rounded-xl sm:rounded-2xl cursor-pointer hover:opacity-90 transition">
                   <div className="font-semibold text-[var(--text-main)] mb-1">{t('dashboard.quick_actions.go_to_attendance')}</div>
                   <div className="text-xs text-[var(--text-body)]">{t('dashboard.quick_actions.go_to_attendance_desc')}</div>
                 </div>
               </Link>
               <Link to="/" className="block">
-                <div className="bg-[var(--bg-secondary)] p-5 rounded-2xl cursor-pointer hover:opacity-90 transition">
+                <div className="bg-[var(--bg-secondary)] p-4 sm:p-5 rounded-xl sm:rounded-2xl cursor-pointer hover:opacity-90 transition">
                   <div className="font-semibold text-[var(--text-main)] mb-1">{t('dashboard.quick_actions.manage_schedule')}</div>
                   <div className="text-xs text-[var(--text-body)]">{t('dashboard.quick_actions.manage_schedule_desc')}</div>
                 </div>
@@ -329,9 +468,87 @@ export default function Dashboard() {
                 <span className="text-xs text-[var(--text-body)] bg-[var(--bg-secondary)] px-2 py-1 rounded">{t('dashboard.trends.this_week')}</span>
               </div>
 
-              {/* Chart Placeholder Box */}
-              <div className="h-40 bg-[var(--bg-secondary)] rounded-xl w-full flex items-center justify-center text-[var(--text-body)]/50 mb-4 border border-dashed border-[var(--border-color)]">
-                {t('dashboard.trends.chart_area')}
+              {/* Chart Area */}
+              <div className="h-40 w-full mb-4">
+                {loadingTrend ? (
+                  <div className="h-full w-full bg-[var(--bg-secondary)]/30 rounded-xl flex items-center justify-center">
+                    <Loader2 size={24} className="animate-spin text-[var(--text-body)]/50" />
+                  </div>
+                ) : trendData.length === 0 ? (
+                  <div className="h-full w-full bg-[var(--bg-secondary)]/30 rounded-xl flex items-center justify-center text-sm text-[var(--text-body)]">
+                    {t('dashboard.trends.no_data', 'No data this week')}
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorPresentD" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorAbsentD" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--text-body)" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="var(--text-body)" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorLateD" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--warning)" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="var(--warning)" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fill: 'var(--text-body)', fontSize: 10}} 
+                        dy={5}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fill: 'var(--text-body)', fontSize: 10}} 
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          borderRadius: '8px', 
+                          border: '1px solid var(--border-color)', 
+                          backgroundColor: "var(--bg-card)", 
+                          color: "var(--text-main)",
+                          fontSize: '12px',
+                          padding: '8px'
+                        }}
+                        formatter={(value, name) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
+                        labelStyle={{color: 'var(--text-body)', marginBottom: '4px'}}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="present" 
+                        stroke="var(--primary)" 
+                        strokeWidth={2} 
+                        fillOpacity={1} 
+                        fill="url(#colorPresentD)" 
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="absent" 
+                        stroke="var(--text-body)" 
+                        strokeOpacity={0.5}
+                        strokeWidth={2} 
+                        fillOpacity={1} 
+                        fill="url(#colorAbsentD)" 
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="late" 
+                        stroke="var(--warning)" 
+                        strokeWidth={2} 
+                        fillOpacity={1} 
+                        fill="url(#colorLateD)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
 
               <div className="flex justify-center gap-4 text-xs">
@@ -346,12 +563,12 @@ export default function Dashboard() {
               {loadingSchedule ? (
                 <div className="bg-[var(--bg-card)] p-8 rounded-xl text-center border border-[var(--border-color)]">
                   <Loader2 className="mx-auto mb-3 text-[var(--text-body)]/30 animate-spin" size={32} />
-                  <p className="text-[var(--text-body)]">Loading schedule...</p>
+                  <p className="text-[var(--text-body)]">{t('dashboard.classes.loading_schedule')}</p>
                 </div>
               ) : todayClasses.length === 0 ? (
                 <div className="bg-[var(--bg-card)] p-8 rounded-xl text-center border border-[var(--border-color)]">
                   <Calendar className="mx-auto mb-3 text-[var(--text-body)]/30" size={48} />
-                  <p className="text-[var(--text-body)]">No classes scheduled for today</p>
+                  <p className="text-[var(--text-body)]">{t('dashboard.classes.no_classes_today')}</p>
                 </div>
               ) : (
                 todayClasses.map((cls) => {
@@ -374,10 +591,10 @@ export default function Dashboard() {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-semibold text-[var(--text-main)]">
-                          {cls.subject || 'Class'}
+                          {cls.subject || t('dashboard.class_default')}
                         </h4>
                         <span className={`px-2 py-0.5 ${bgColorMap[status.color]} text-[10px] font-bold uppercase tracking-wide rounded-full`}>
-                          {status.label}
+                          {t(`dashboard.classes.${status.labelKey}`)}
                         </span>
                       </div>
                       <div className="flex justify-between items-end">
@@ -385,11 +602,11 @@ export default function Dashboard() {
                           <span className="flex items-center gap-1">
                             <Clock size={12} /> {cls.start_time} - {cls.end_time}
                           </span>
-                          {cls.room && <span>Room {cls.room}</span>}
+                          {cls.room && <span>{t('dashboard.room', { room: cls.room })}</span>}
                         </div>
                         {status.status === 'upcoming' && status.startsIn !== undefined && status.startsIn >= 0 && (
                           <span className="text-xs font-medium text-[var(--primary)]">
-                            Starts in {status.startsIn} min
+                            {t('dashboard.classes.starts_in', { minutes: status.startsIn })}
                           </span>
                         )}
                         {status.status === 'completed' && cls.attendance_status && (

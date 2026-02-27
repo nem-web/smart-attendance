@@ -1,146 +1,116 @@
-name: Issue Auto Assignment
+name: Strict Assignment Guard
 
 on:
   issue_comment:
     types: [created]
+  issues:
+    types: [assigned]
 
 permissions:
   issues: write
-  pull-requests: read # Needed to check for PRs
+  pull-requests: read
 
 jobs:
-  auto-assign:
+  enforce-one-issue-policy:
     runs-on: ubuntu-latest
     steps:
-      - name: Issue Assignment Guard
+      - name: Assignment Logic and Workload Check
         uses: actions/github-script@v7
         with:
           script: |
-            const commentBody = context.payload.comment.body.toLowerCase();
-            const author = context.payload.comment.user.login;
+            const repo = context.repo;
             const issue = context.payload.issue;
+            let assignee = "";
+            let isAutoAssign = false;
 
-            // =================================================================
-            // 0. EXCLUSION LIST (Admin & Maintainers)
-            // These users will NEVER be auto-assigned by comments.
-            // They must be assigned manually via the sidebar.
-            // =================================================================
-            const maintainers = ["nem-web", "adi271001", "Suvam-paul145"]; 
+            // 1. Determine the context (Comment vs. Manual Sidebar Assignment)
+            if (context.eventName === 'issue_comment') {
+              const commentBody = context.payload.comment.body.toLowerCase();
+              const author = context.payload.comment.user.login;
+              const intentWords = ["assign", "take", "work", "handle", "pick", "do", "fix", "solve"];
+              const selfWords = ["me", "i", "myself"];
+              
+              const hasIntent = intentWords.some(w => commentBody.includes(w));
+              const hasSelf = selfWords.some(w => commentBody.includes(w));
 
-            if (maintainers.includes(author)) {
-              console.log(`User @${author} is a maintainer. Auto-assignment skipped.`);
-              return; 
+              if (hasIntent && hasSelf) {
+                assignee = author;
+                isAutoAssign = true;
+              } else {
+                return; // Not an assignment request
+              }
+            } else if (context.eventName === 'issues' && context.payload.action === 'assigned') {
+              assignee = context.payload.assignee.login;
             }
-            // =================================================================
 
-            // 1. Ignore Bots and PR comments
-            if (context.payload.comment.user.type === "Bot" || issue.pull_request) {
+            // 2. Bypass for Bots and Maintainers
+            const maintainers = ["nem-web", "adi271001", "Suvam-paul145"];
+            if (assignee.endsWith('[bot]') || assignee === 'copilot' || maintainers.includes(assignee)) {
+              console.log(`Bypassing check for bot/maintainer: ${assignee}`);
               return;
             }
 
-            // 2. Define Keywords
-            const intentWords = ["assign", "take", "work", "handle", "pick", "do", "fix", "solve"];
-            const selfWords = ["me", "i", "myself"];
-
-            // 3. Check if comment contains keywords
-            const hasIntent = intentWords.some(w => commentBody.includes(w));
-            const hasSelf = selfWords.some(w => commentBody.includes(w));
-
-            if (!hasIntent || !hasSelf) {
-              console.log("No assignment request detected.");
-              return;
-            }
-
-            // 4. Check if issue is ALREADY assigned to ANYONE
-            if (issue.assignees.length > 0) {
-              return;
-            }
-
-            // 5. Check if the issue is "On Hold"
-            const onHoldLabel = "on-hold"; 
-            const isHold = issue.labels.some(label => label.name.toLowerCase() === onHoldLabel);
-
+            // 3. Status Check: Is the issue "On Hold"?
+            const isHold = issue.labels.some(label => label.name.toLowerCase() === 'on-hold');
             if (isHold) {
               await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                ...repo,
                 issue_number: issue.number,
-                body: `⏳ **Assignment Paused**
-            
-            @${author}, thanks for your interest!
-            
-            However, this issue is currently marked as **on-hold**.
-            👉 This usually means it depends on another task or requires further discussion.
-            
-            Please wait until the label is removed or check out other open issues.`
+                body: `⏳ **Assignment Paused**\n\n@${assignee}, this issue is currently **on-hold**. Please wait until the label is removed.`
               });
+              if (!isAutoAssign) {
+                await github.rest.issues.removeAssignees({ ...repo, issue_number: issue.number, assignees: [assignee] });
+              }
               return;
             }
 
-            // 6. STRICT CHECK: Does the user ALREADY have an open issue?
-            const { data: assignedIssues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "open",
-              assignee: author,
+            // 4. Workload Check: Strict "One Issue" Rule
+            const assignedIssues = await github.paginate(github.rest.issues.listForRepo, {
+              ...repo,
+              state: 'open',
+              assignee: assignee
             });
 
-            if (assignedIssues.length > 0) {
-              
-              // --- PR EXCEPTION CHECK ---
-              // Search for OPEN PRs by this author in this repo
+            // Filter out the current issue to see if they are holding others
+            const otherIssues = assignedIssues.filter(i => i.number !== issue.number && !i.pull_request);
+
+            if (otherIssues.length > 0) {
+              // PR Exception Check: Do they have any OPEN PRs?
               const { data: prSearch } = await github.rest.search.issuesAndPullRequests({
-                q: `is:pr is:open author:${author} repo:${context.repo.owner}/${context.repo.repo}`
+                q: `is:pr is:open author:${assignee} repo:${repo.owner}/${repo.repo}`
               });
 
-              if (prSearch.total_count > 0) {
-                 // User has an open PR, so we ALLOW this new assignment.
-                 console.log(`@${author} has open PRs. Granting exception.`);
-                 
-                 await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    body: `ℹ️ **Multi-Tasking Exception**
-                    
-                    @${author} you have other open issues, but since you also have pending Pull Requests, this assignment is allowed.`
-                 });
-                 // We do NOT return here; we fall through to the assignment logic below.
-              
-              } else {
-                 // User has issues but NO PRs -> BLOCK THEM
-                 await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
+              if (prSearch.total_count === 0) {
+                const issueLinks = otherIssues.map(i => `#${i.number}`).join(', ');
+                
+                await github.rest.issues.createComment({
+                  ...repo,
                   issue_number: issue.number,
-                  body: `👋 @${author}
-              
-                  You already have an **assigned open issue** (#${assignedIssues[0].number}) and **no open Pull Requests**.
-              
-                  **Rule:** You can only work on **one issue at a time** unless you have submitted code (PR) for your previous task.
-                  👉 Please submit a PR for your current issue first.
-              
-                  Thanks for contributing 🚀`
+                  body: `🚫 **Assignment Blocked**\n\n@${assignee}, you are already assigned to **${otherIssues.length} other open issue(s)** (${issueLinks}) and have **no open Pull Requests**.\n\n**Rule:** You can only work on **one issue at a time** unless you have submitted a PR for your current task. Please finish your previous work first! 🚀`
                 });
-                return; // Stop execution
+
+                // Undo assignment if it was manual or block it if it was auto
+                await github.rest.issues.removeAssignees({
+                  ...repo,
+                  issue_number: issue.number,
+                  assignees: [assignee]
+                });
+                return;
               }
+              console.log(`Exception granted: @${assignee} has open PRs.`);
             }
 
-            // 7. Assign the issue
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              assignees: [author],
-            });
-
-            // 8. Post success comment
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              body: `✅ **Assigned to @${author}**
-            
-            All the best! 🚀  
-            Feel free to ask questions or share progress updates here.`
-            });
+            // 5. Finalize Auto-Assignment (if applicable)
+            if (isAutoAssign) {
+              await github.rest.issues.addAssignees({
+                ...repo,
+                issue_number: issue.number,
+                assignees: [assignee]
+              });
+              
+              await github.rest.issues.createComment({
+                ...repo,
+                issue_number: issue.number,
+                body: `✅ **Assigned to @${assignee}**\n\nAll the best! Feel free to share progress updates here.`
+              });
+            }

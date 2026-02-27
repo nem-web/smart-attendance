@@ -2,12 +2,22 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Analytics from '../Analytics';
-import { fetchSubjectAnalytics } from '../../api/analytics';
+import {
+  fetchSubjectAnalytics,
+  fetchGlobalStats,
+  fetchTopPerformers,
+  fetchClassRisk,
+  fetchAttendanceTrend,
+} from '../../api/analytics';
 import { fetchMySubjects } from '../../api/teacher';
 
 // Mock API modules
 vi.mock('../../api/analytics', () => ({
   fetchSubjectAnalytics: vi.fn(),
+  fetchGlobalStats: vi.fn(),
+  fetchTopPerformers: vi.fn(),
+  fetchClassRisk: vi.fn(),
+  fetchAttendanceTrend: vi.fn(),
 }));
 
 vi.mock('../../api/teacher', () => ({
@@ -39,6 +49,26 @@ describe('Analytics Page', () => {
             { _id: '1', name: 'Math' },
             { _id: '2', name: 'Science' }
         ]);
+        fetchGlobalStats.mockResolvedValue({
+            attendance: 85,
+            avgLate: 3,
+            riskCount: 1,
+            lateTime: 'N/A',
+            totalPresent: 100,
+            totalLate: 10,
+            totalAbsent: 20,
+            topSubjects: [],
+        });
+        fetchTopPerformers.mockResolvedValue({
+            data: [
+                { name: 'Grade 9A', score: 95 },
+                { name: 'Grade 10A', score: 92 },
+            ],
+        });
+        fetchClassRisk.mockResolvedValue({
+            data: [{ className: 'Grade 11C', attendancePercentage: 60 }],
+        });
+        fetchAttendanceTrend.mockResolvedValue({ data: [] });
         fetchSubjectAnalytics.mockResolvedValue({
             attendance: 90,
             avgLate: 5,
@@ -52,10 +82,11 @@ describe('Analytics Page', () => {
         });
     });
 
-    it('renders global leaderboard (classes) by default', () => {
+    it('renders global leaderboard (classes) by default', async () => {
         render(<Analytics />);
-        
-        const bestList = screen.getByTestId('best-performing-list');
+
+        // Wait for global data to load
+        const bestList = await screen.findByTestId('best-performing-list');
         const supportList = screen.getByTestId('needing-support-list');
 
         // Check for Class Names used in Global Leaderboard
@@ -81,6 +112,9 @@ describe('Analytics Page', () => {
         // Change selection to a subject (e.g., Math with id '1')
         fireEvent.change(select, { target: { value: '1' } });
         
+        // Wait for subject analytics to load
+        await waitFor(() => expect(fetchSubjectAnalytics).toHaveBeenCalledWith('1'));
+
         const bestList = await screen.findByTestId('best-performing-list');
 
         // Check for Student Names used in Student Leaderboard

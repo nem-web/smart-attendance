@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 import os
 import pytz
 from uuid import uuid4
@@ -42,8 +42,7 @@ class AddSlotRequest(BaseModel):
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def add_schedule_slot(
-    request: AddSlotRequest,
-    current: dict = Depends(get_current_teacher)
+    request: AddSlotRequest, current: dict = Depends(get_current_teacher)
 ):
     teacher = current.get("teacher")
     if not teacher:
@@ -51,32 +50,35 @@ async def add_schedule_slot(
             status_code=status.HTTP_404_NOT_FOUND, detail="Teacher profile not found"
         )
     teacher_id = str(teacher.get("userId"))
-    
+
     # Verify subject exists via repo (optional but good practice)
     # We need subject name to store in the schedule doc?
-    # If the schedule doc already exists, we might not strictly need it if we assume consistency.
+    # If the schedule doc already exists, we might not strictly need it
+    # if we assume consistency.
     # But if we create a NEW schedule doc, we should probably have it.
-    
+
     # Check if schedule doc exists for this subject
-    schedule_doc = await db["schedules"].find_one({"subject_id": request.subject_id, "teacher_id": teacher_id})
-    
+    schedule_doc = await db["schedules"].find_one(
+        {"subject_id": request.subject_id, "teacher_id": teacher_id}
+    )
+
     if not schedule_doc:
         # Fetch subject details to populate subject_name
         # Assuming subjects collection has name?
         # Using get_subjects_by_ids([request.subject_id])
         subjects = await get_subjects_by_ids([request.subject_id])
         if not subjects:
-             raise HTTPException(status_code=404, detail="Subject not found")
+            raise HTTPException(status_code=404, detail="Subject not found")
         subject_name = subjects[0].get("name")
-        
+
         new_doc = {
             "subject_id": request.subject_id,
             "teacher_id": teacher_id,
             "subject_name": subject_name,
-            "weekly_schedule": []
+            "weekly_schedule": [],
         }
         await db["schedules"].insert_one(new_doc)
-    
+
     new_slot = {
         "slot_id": str(uuid4()),
         "day": request.day,
@@ -84,41 +86,42 @@ async def add_schedule_slot(
         "start_time": request.start_time,
         "end_time": request.end_time,
         "room": request.room,
-        "tracked": True
+        "tracked": True,
     }
-    
+
     result = await db["schedules"].update_one(
         {"subject_id": request.subject_id, "teacher_id": teacher_id},
-        {"$push": {"weekly_schedule": new_slot}}
+        {"$push": {"weekly_schedule": new_slot}},
     )
-    
+
     if result.modified_count == 0:
         raise HTTPException(status_code=500, detail="Failed to add slot")
-        
+
     return {"status": "success", "slot_id": new_slot["slot_id"]}
 
 
 @router.delete("/{slot_id}")
 async def delete_schedule_slot(
-    slot_id: str,
-    current: dict = Depends(get_current_teacher)
+    slot_id: str, current: dict = Depends(get_current_teacher)
 ):
     teacher = current.get("teacher")
     if not teacher:
-         raise HTTPException(status_code=404, detail="Teacher not found")
+        raise HTTPException(status_code=404, detail="Teacher not found")
     teacher_id = str(teacher.get("userId"))
-    
+
     # We don't know the subject_id easily without querying.
     # But we can query where "weekly_schedule.slot_id": slot_id
-    
+
     result = await db["schedules"].update_one(
         {"teacher_id": teacher_id, "weekly_schedule.slot_id": slot_id},
-        {"$pull": {"weekly_schedule": {"slot_id": slot_id}}}
+        {"$pull": {"weekly_schedule": {"slot_id": slot_id}}},
     )
-    
+
     if result.modified_count == 0:
-         raise HTTPException(status_code=404, detail="Slot not found or not owned by teacher")
-         
+        raise HTTPException(
+            status_code=404, detail="Slot not found or not owned by teacher"
+        )
+
     return {"status": "success", "deleted_slot_id": slot_id}
 
 

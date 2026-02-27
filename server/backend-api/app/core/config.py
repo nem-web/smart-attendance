@@ -14,7 +14,7 @@ load_dotenv(BASE_DIR / ".env")
 APP_NAME = "Smart Attendance API"
 
 # CORS origins (can override via env as comma-separated in production)
-_default_origins = [
+DEFAULT_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:4173",
     "https://sa-gl.vercel.app",
@@ -22,9 +22,14 @@ _default_origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:4173",
 ]
-ORIGINS: List[str] = [
-    o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()
-] or _default_origins
+
+raw_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+
+# 🚫 HARD FAIL if wildcard is used
+if "*" in raw_origins:
+    raise RuntimeError("CORS_ORIGINS must not contain '*' when credentials are enabled")
+
+ORIGINS: List[str] = raw_origins or DEFAULT_ORIGINS
 
 
 class Settings(BaseSettings):

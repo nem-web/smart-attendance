@@ -11,6 +11,9 @@ export default defineConfig({
       jsxRuntime: 'automatic',
     }),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
@@ -34,7 +37,7 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
-      },
+        },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [

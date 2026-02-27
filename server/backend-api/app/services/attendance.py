@@ -1,12 +1,12 @@
 from app.db.mongo import db
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from bson import ObjectId
 
 attendance_col = db["attendance"]
 
 
 async def mark_attendance(payload: dict):
-    payload["created_at"] = datetime.now(UTC).isoformat()
+    payload["created_at"] = datetime.now(timezone.utc).isoformat()
     res = await attendance_col.insert_one(payload)
     doc = await attendance_col.find_one({"_id": res.inserted_id})
     doc["_id"] = str(doc["_id"])

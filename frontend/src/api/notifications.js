@@ -75,18 +75,18 @@ export const getInAppNotifications = async () => {
 };
 
 /**
- * Mark a single notification as read
+ * Delete a notification
  */
-export const markNotificationAsRead = async (notificationId) => {
-  const response = await api.patch(`/notifications/in-app/${notificationId}/read`);
+export const deleteNotification = async (notificationId) => {
+  const response = await api.delete(`/notifications/in-app/${notificationId}`);
   return response.data;
 };
 
 /**
- * Mark all notifications as read
+ * Delete all notifications
  */
-export const markAllNotificationsAsRead = async () => {
-  const response = await api.post("/notifications/in-app/mark-all-read");
+export const deleteAllNotifications = async () => {
+  const response = await api.delete("/notifications/in-app/delete-all");
   return response.data;
 };
 

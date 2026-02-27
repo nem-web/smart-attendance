@@ -121,6 +121,9 @@ jobs:
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > ../../backend.log 2>&1 &
 
       - name: Start ML Service
+        env:
+          MONGO_URI: mongodb://localhost:27017
+          MONGO_DB_NAME: e2e_smart_attendance
         run: |
           cd server/ml-service
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8001 > ../../ml.log 2>&1 &

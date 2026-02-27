@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 from unittest.mock import patch, AsyncMock
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 
 @pytest.mark.asyncio
@@ -208,7 +208,7 @@ async def test_oauth_session_management(client: AsyncClient, db):
         "role": "teacher",
         "college_name": "Test College",
         "is_verified": False,
-        "created_at": datetime.now(UTC),
+        "created_at": datetime.now(timezone.utc),
     }
 
     result = await db.users.insert_one(user_doc)
@@ -223,7 +223,7 @@ async def test_oauth_session_management(client: AsyncClient, db):
         {
             "$set": {
                 "current_active_session": hash_session_id(session_id),
-                "session_created_at": datetime.now(UTC),
+                "session_created_at": datetime.now(timezone.utc),
                 "is_verified": True,
             }
         },

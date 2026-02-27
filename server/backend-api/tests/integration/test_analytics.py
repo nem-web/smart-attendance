@@ -143,7 +143,7 @@ async def test_monthly_summary(client: AsyncClient, db, teacher_token_header):
             "late": 1,
             "total": 26,
             "percentage": 76.92,
-            "teacherId": ObjectId()
+            "teacherId": ObjectId(),
         },
         "2024-01-20": {
             "present": 22,
@@ -151,7 +151,7 @@ async def test_monthly_summary(client: AsyncClient, db, teacher_token_header):
             "late": 0,
             "total": 26,
             "percentage": 84.62,
-            "teacherId": teacher_id
+            "teacherId": teacher_id,
         },
         "2024-02-10": {
             "present": 18,
@@ -159,16 +159,12 @@ async def test_monthly_summary(client: AsyncClient, db, teacher_token_header):
             "late": 0,
             "total": 26,
             "percentage": 69.23,
-            "teacherId": teacher_id
-        }
+            "teacherId": teacher_id,
+        },
     }
 
     await db.attendance_daily.insert_one(
-        {
-            "classId": class_id,
-            "subjectId": class_id,
-            "daily": daily_map
-        }
+        {"classId": class_id, "subjectId": class_id, "daily": daily_map}
     )
 
     # Test without filter
@@ -204,7 +200,7 @@ async def test_monthly_summary_invalid_class_id(
     """Test monthly summary with invalid classId"""
     teacher_id = ObjectId()
     headers = teacher_token_header(str(teacher_id))
-    
+
     # Create at least one subject so the endpoint doesn't return early
     await db.subjects.insert_one(
         {
@@ -252,7 +248,7 @@ async def test_class_risk(client: AsyncClient, db, teacher_token_header):
                     "total": 26,
                     "percentage": 88.46,
                 }
-            }
+            },
         }
     )
 
@@ -278,7 +274,7 @@ async def test_class_risk(client: AsyncClient, db, teacher_token_header):
                     "total": 26,
                     "percentage": 57.69,
                 }
-            }
+            },
         }
     )
 
@@ -304,7 +300,7 @@ async def test_class_risk(client: AsyncClient, db, teacher_token_header):
                     "total": 26,
                     "percentage": 69.23,
                 }
-            }
+            },
         }
     )
 
@@ -368,7 +364,7 @@ async def test_class_risk_empty(client: AsyncClient, db, teacher_token_header):
                     "total": 26,
                     "percentage": 92.31,
                 }
-            }
+            },
         }
     )
 
@@ -457,7 +453,7 @@ async def test_monthly_summary_forbidden_for_unowned_class(
             "professor_ids": [teacher_id],
         }
     )
-    
+
     await db.subjects.insert_one(
         {
             "_id": class_id,
@@ -466,7 +462,7 @@ async def test_monthly_summary_forbidden_for_unowned_class(
             "professor_ids": [other_teacher_id],
         }
     )
-    
+
     response = await client.get(
         f"/api/analytics/monthly-summary?classId={class_id}",
         headers=headers,
@@ -515,7 +511,7 @@ async def test_monthly_summary_filters_to_teacher_subjects(
                         "total": 26,
                         "percentage": 69.23,
                     }
-                }
+                },
             },
             {
                 "classId": other_subject,
@@ -528,7 +524,7 @@ async def test_monthly_summary_filters_to_teacher_subjects(
                         "total": 26,
                         "percentage": 19.23,
                     }
-                }
+                },
             },
         ]
     )
@@ -580,7 +576,7 @@ async def test_class_risk_filters_to_teacher_subjects(
                         "total": 26,
                         "percentage": 69.23,
                     }
-                }
+                },
             },
             {
                 "classId": other_subject,
@@ -593,7 +589,7 @@ async def test_class_risk_filters_to_teacher_subjects(
                         "total": 26,
                         "percentage": 11.54,
                     }
-                }
+                },
             },
         ]
     )
@@ -654,7 +650,7 @@ async def test_global_stats(client: AsyncClient, db, teacher_token_header):
                     "late": 0,
                     "total": 26,
                     "percentage": 84.62,
-                    "teacherId": teacher_id
+                    "teacherId": teacher_id,
                 },
                 "2024-01-16": {
                     "present": 23,
@@ -662,9 +658,9 @@ async def test_global_stats(client: AsyncClient, db, teacher_token_header):
                     "late": 0,
                     "total": 26,
                     "percentage": 88.46,
-                    "teacherId": teacher_id
-                }
-            }
+                    "teacherId": teacher_id,
+                },
+            },
         }
     )
 
@@ -680,9 +676,9 @@ async def test_global_stats(client: AsyncClient, db, teacher_token_header):
                     "late": 0,
                     "total": 26,
                     "percentage": 69.23,
-                    "teacherId": teacher_id
+                    "teacherId": teacher_id,
                 }
-            }
+            },
         }
     )
 
@@ -698,9 +694,9 @@ async def test_global_stats(client: AsyncClient, db, teacher_token_header):
                     "late": 0,
                     "total": 26,
                     "percentage": 92.31,
-                    "teacherId": teacher_id
+                    "teacherId": teacher_id,
                 }
-            }
+            },
         }
     )
 

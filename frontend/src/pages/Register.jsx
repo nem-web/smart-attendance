@@ -112,26 +112,26 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
-      <div className="max-w-5xl w-full bg-[var(--bg-card)] rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+      <div className="max-w-5xl w-full bg-[var(--bg-card)] rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[550px] md:min-h-[600px]">
 
         {/* Left Side: Form Area */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative">
+        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-12 flex flex-col justify-center relative">
 
           {step === 2 && (
             <button
               onClick={() => setStep(1)}
-              className="absolute top-8 left-8 text-[var(--text-body)] opacity-70 hover:text-[var(--text-main)] hover:opacity-100 flex items-center gap-2 text-sm font-medium transition-colors"
+              className="absolute top-4 sm:top-8 left-4 sm:left-8 text-[var(--text-body)] opacity-70 hover:text-[var(--text-main)] hover:opacity-100 flex items-center gap-2 text-sm font-medium transition-colors"
             >
               <ArrowLeft size={16} /> {t('register.back')}
             </button>
           )}
 
-          <div className="w-full max-w-md mx-auto space-y-8">
+          <div className="w-full max-w-md mx-auto space-y-6 sm:space-y-8">
 
             {/* Header */}
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-[var(--text-main)]">{t('register.title')}</h1>
-              <p className="text-[var(--text-body)] opacity-80">
+            <div className="space-y-2 mt-8 sm:mt-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-main)]">{t('register.title')}</h1>
+              <p className="text-sm sm:text-base text-[var(--text-body)] opacity-80">
                 {step === 1 ? t('register.subtitle_start') : t('register.subtitle_role', { role })}
               </p>
             </div>

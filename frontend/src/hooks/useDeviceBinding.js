@@ -15,7 +15,7 @@ export const useDeviceBinding = () => {
         "deviceBindingRequired"
       );
       if (deviceBindingRequired) {
-        const data = JSON.parse(deviceBindingRequired);
+        JSON.parse(deviceBindingRequired);
         setIsModalOpen(true);
         // Clean up after setting
         sessionStorage.removeItem("deviceBindingRequired");

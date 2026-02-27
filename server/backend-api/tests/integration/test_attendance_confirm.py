@@ -32,7 +32,10 @@ async def test_confirm_attendance_invalid_student_id_returns_400(client: AsyncCl
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Invalid ObjectId at present_students[0]"
+    assert (
+        response.json()["detail"]
+        == "Invalid ObjectId in present_students: bad-student-id"
+    )
 
 
 @pytest.mark.asyncio
@@ -49,7 +52,10 @@ async def test_confirm_attendance_invalid_absent_student_id_returns_400(
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Invalid ObjectId at absent_students[0]"
+    assert (
+        response.json()["detail"]
+        == "Invalid ObjectId in absent_students: bad-student-id"
+    )
 
 
 @pytest.mark.asyncio
@@ -137,14 +143,12 @@ async def test_confirm_attendance_deduplicates_ids_and_writes_summary(
     assert absent_record["attendance"]["absent"] == 1
     assert absent_record["attendance"]["lastMarkedAt"] == today
 
-    summary = await db.attendance_daily.find_one(
-        {"subjectId": subject_id}
-    )
+    summary = await db.attendance_daily.find_one({"subjectId": subject_id})
     assert summary is not None
     assert today in summary["daily"]
     daily_record = summary["daily"][today]
     # No teacherId in confirm payload, so it might be None or not set
-    # assert daily_record["teacherId"] == teacher_id 
+    # assert daily_record["teacherId"] == teacher_id
     assert daily_record["present"] == 1
     assert daily_record["absent"] == 1
     assert daily_record["total"] == 2

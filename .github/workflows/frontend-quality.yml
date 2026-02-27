@@ -30,4 +30,4 @@ jobs:
         run: npm run lint
 
       - name: Audit dependencies
-        run: npm audit
+        run: npm audit --audit-level=high

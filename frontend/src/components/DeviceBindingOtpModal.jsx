@@ -12,15 +12,20 @@ export default function DeviceBindingOTPModal({ isOpen, onClose, onSuccess, emai
   const handleSendOTP = async () => {
     setIsSendingOTP(true);
     try {
-      const deviceId = localStorage.getItem("device_uuid");
+      const deviceId = getDeviceUUID();
       await api.post("/auth/device-binding-otp", {
-        email,
+        email: userEmail,
         new_device_id: deviceId,
       });
-      toast.success("OTP sent to your email!");
-    } catch (error) {
-      console.error("Failed to send OTP:", error);
-      toast.error(error.response?.data?.detail || "Failed to send OTP");
+
+      setStep("otp_sent");
+      setResendCountdown(60);
+      toast.success("OTP sent to your registered email");
+    } catch (err) {
+      setError(
+        err.response?.data?.detail || "Failed to send OTP. Please try again."
+      );
+      toast.error("Failed to send OTP");
     } finally {
       setIsSendingOTP(false);
     }
@@ -35,42 +40,147 @@ export default function DeviceBindingOTPModal({ isOpen, onClose, onSuccess, emai
 
     setIsLoading(true);
     try {
-      const deviceId = localStorage.getItem("device_uuid");
+      const deviceId = getDeviceUUID();
       await api.post("/auth/verify-device-binding-otp", {
-        email,
-        otp,
+        email: userEmail,
+        otp: otp,
         new_device_id: deviceId,
       });
-      toast.success("Device verified successfully!");
-      setOtp("");
-      onSuccess();
-    } catch (error) {
-      console.error("Failed to verify OTP:", error);
-      toast.error(error.response?.data?.detail || "Invalid or expired OTP");
+
+      toast.success("Device successfully bound! You can now mark attendance.");
+      handleClose();
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to verify OTP.");
+      toast.error("OTP verification failed");
+      setStep("otp_sent");
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  const handleResendOtp = () => {
+    setOtp("");
+    setError("");
+    handleSendOtp();
+  };
+
+  const handleClose = () => {
+    setOtp("");
+    setError("");
+    setStep("initial");
+    setResendCountdown(0);
+    setLoading(false);
+    onClose();
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-color)] max-w-md w-full mx-4 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[var(--border-color)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[var(--action-info-bg)]/10 flex items-center justify-center">
-              <Shield className="text-[var(--action-info-bg)]" size={20} />
-            </div>
-            <h2 className="text-xl font-semibold text-[var(--text-main)]">
-              Verify New Device
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-[var(--text-body)] hover:text-[var(--text-main)] transition-colors"
-            aria-label="Close dialog"
+    <Dialog open={isOpen} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 600 }}>Verify New Device</DialogTitle>
+
+      <DialogContent sx={{ pt: 3 }}>
+        {step === "initial" && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Alert severity="warning" sx={{ mb: 1 }}>
+              <Typography variant="body2">
+                A new device has been detected. For security, please verify this
+                device with an OTP sent to your email.
+              </Typography>
+            </Alert>
+
+            <Typography variant="body2" color="text.secondary">
+              An OTP (One-Time Password) will be sent to your registered email
+              address. Use it to verify and bind this device to your account.
+            </Typography>
+          </Box>
+        )}
+
+        {step === "otp_sent" && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Alert severity="info">
+              <Typography variant="body2">
+                We&apos;ve sent a 6-digit OTP to your email. Please enter it below.
+              </Typography>
+            </Alert>
+
+            <TextField
+              label="Enter OTP"
+              type="text"
+              value={otp}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Only allow digits, max 6
+                if (/^\d{0,6}$/.test(val)) {
+                  setOtp(val);
+                }
+              }}
+              placeholder="000000"
+              slotProps={{
+                htmlInput: {
+                  maxLength: 6,
+                  pattern: "[0-9]*",
+                  inputMode: "numeric",
+                  style: { textAlign: "center", letterSpacing: "0.5em" },
+                }
+              }}
+              fullWidth
+              disabled={loading}
+              autoFocus
+            />
+
+            {resendCountdown > 0 && (
+              <Typography variant="caption" color="text.secondary">
+                Resend OTP in {resendCountdown} seconds
+              </Typography>
+            )}
+
+            {resendCountdown === 0 && (
+              <Button
+                variant="text"
+                size="small"
+                onClick={handleResendOtp}
+                disabled={loading}
+              >
+                Resend OTP
+              </Button>
+            )}
+          </Box>
+        )}
+
+        {step === "verifying" && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Alert severity="info">
+              <Typography variant="body2">
+                Verifying your OTP...
+              </Typography>
+            </Alert>
+          </Box>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+      </DialogContent>
+
+      <Divider />
+
+      <DialogActions sx={{ p: 2, gap: 1 }}>
+        <Button onClick={handleClose} disabled={loading}>
+          Cancel
+        </Button>
+
+        {step === "initial" && (
+          <Button
+            onClick={handleSendOtp}
+            variant="contained"
+            disabled={loading}
+            sx={{
+              minWidth: 150,
+            }}
           >
             <X size={20} />
           </button>
