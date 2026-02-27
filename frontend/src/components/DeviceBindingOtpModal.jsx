@@ -86,7 +86,7 @@ export default function DeviceBindingOTPModal({ isOpen, onClose, onSuccess, emai
           </div>
 
           {/* Send OTP Button */}
-          <div></div>
+          <div>
           <button
             onClick={handleSendOTP}
             disabled={isSendingOTP}
