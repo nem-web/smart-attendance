@@ -12,7 +12,7 @@ precacheAndRoute(self.__WB_MANIFEST)
 
 // Match all GET API requests to the external API
 // Try to use the API URL from environment variables if available, otherwise fallback
-const apiUrl = import.meta.env.VITE_API_URL || 'https://smart-attendance-api-i87a.onrender.com';
+const apiUrl = import.meta.env.VITE_API_URL || 'https://smart-attendance-backend.onrender.com';
 
 // API Caching Handler for general reads
 const apiCacheHandler = new NetworkFirst({

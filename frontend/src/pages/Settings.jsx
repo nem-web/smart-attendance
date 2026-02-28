@@ -214,6 +214,7 @@ export default function Settings() {
 
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Extracted loader function for consistent data handling
   async function loadProfile(data) {
@@ -289,7 +290,7 @@ export default function Settings() {
     return () => {
       mounted = false;
     };
-  }, [setTheme]);
+  }, [setTheme, retryCount]);
 
   useEffect(() => {
     if (loaded) console.log("Profile loaded:", profile);
@@ -460,8 +461,16 @@ export default function Settings() {
 
   if (loadError)
     return (
-      <div className="p-6 text-[var(--danger)]">
-        {t('settings.alerts.load_failed', { error: loadError })}
+      <div className="p-6 flex flex-col items-start gap-4">
+        <p className="text-[var(--danger)]">
+          {t('settings.alerts.load_failed', { error: loadError })}
+        </p>
+        <button
+          onClick={() => setRetryCount(c => c + 1)}
+          className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--text-on-primary)] hover:opacity-90 transition-opacity text-sm font-medium"
+        >
+          {t('settings.alerts.retry', 'Retry')}
+        </button>
       </div>
     );
 

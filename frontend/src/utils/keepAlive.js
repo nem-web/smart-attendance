@@ -10,22 +10,18 @@
 export const pingBackend = () => {
   const backendUrl = import.meta.env.VITE_API_URL;
 
-  // Skip if no backend URL is configured
-  if (!backendUrl) {
-    console.warn('[KeepAlive] Backend URL not configured - skipping ping');
-    return;
-  }
+  // Use the direct backend URL if configured, otherwise fall back to the
+  // Vercel-proxied relative path so the backend is kept warm in production.
+  const healthUrl = backendUrl
+    ? `${backendUrl.replace(/\/+$/, '')}/health`
+    : '/api/health';
 
   try {
-    // Normalize backend URL to avoid double slashes
-    const baseUrl = backendUrl.replace(/\/+$/, '');
-    
-    // Use a lightweight health check endpoint
     // Fire-and-forget request with minimal timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-    fetch(`${baseUrl}/health`, {
+    fetch(healthUrl, {
       method: 'GET',
       signal: controller.signal,
       // Don't send credentials for health check

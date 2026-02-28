@@ -84,13 +84,13 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://smart-attendance-api-i87a.onrender.com',
+        target: 'https://smart-attendance-backend.onrender.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         secure: false,
       },
       '/static': {
-        target: 'https://smart-attendance-api-i87a.onrender.com',
+        target: 'https://smart-attendance-backend.onrender.com',
         changeOrigin: true,
         secure: false,
       }
