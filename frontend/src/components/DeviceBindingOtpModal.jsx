@@ -16,22 +16,6 @@ import toast from "react-hot-toast";
 import api from "../api/axiosClient";
 import { getDeviceUUID } from "../utils/deviceBinding";
 
-/**
- * DeviceBindingOtpModal Component
- *
- * Displays an OTP verification modal when:
- * - A new device is detected during attendance marking
- * - Device binding failed with 403 error
- *
- * Flow:
- * 1. User sees modal asking to verify new device
- * 2. Clicks "Send OTP" button
- * 3. Backend sends OTP to registered email
- * 4. User enters OTP in the input field
- * 5. Clicks "Verify & Bind Device" to confirm
- * 6. Backend binds the new device to account
- * 7. Modal closes, user can retry attendance
- */
 const DeviceBindingOtpModal = ({ isOpen, onClose, userEmail, onSuccess }) => {
   const [step, setStep] = useState("initial"); // "initial", "otp_sent", "verifying"
   const [otp, setOtp] = useState("");
