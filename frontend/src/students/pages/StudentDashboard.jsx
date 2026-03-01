@@ -260,10 +260,12 @@ export default function StudentDashboard() {
                 )}
               </div>
 
-              {/* Empty State / End of List Decor */}
-              <div className="text-center mt-6">
-                <p className="text-xs text-[var(--text-body)]/70">{t("student_dashboard.schedule.all_caught_up")}</p>
-              </div>
+              {/* End of List — only show when there were actual classes and all are done */}
+              {schedule.length > 0 && schedule.every((item) => getStatus(item.start_time, item.end_time) === "Completed") && (
+                <div className="text-center mt-6">
+                  <p className="text-xs text-[var(--text-body)]/70">{t("student_dashboard.schedule.all_caught_up")}</p>
+                </div>
+              )}
             </div>
 
           </div>
