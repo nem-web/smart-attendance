@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getOrCreateDeviceUUID } from "../utils/deviceBinding";
+import { getOrCreateDeviceUUID } from "../utils/deviceBinding"; // Update path if needed
 
 const api = axios.create({
   baseURL: "/api",
@@ -12,33 +12,51 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Add device UUID to all requests
-  const deviceUUID = getOrCreateDeviceUUID();
-  config.headers["X-Device-ID"] = deviceUUID;
-
+  // Ensure every request has the Device ID attached
+  config.headers["X-Device-ID"] = getOrCreateDeviceUUID();
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    
+    // Safely extract detail (it might be a string or an object depending on the error)
+    const detail = error.response?.data?.detail;
 
-    // Check for device binding error (403 New Device Detected)
-    if (error.response?.status === 403 && 
-        error.response?.data?.detail?.includes("New device detected")) {
-      // Store device binding state for modal to use
+    /* ===============================
+       1. DEVICE BINDING → OTP FLOW
+       =============================== */
+    // Check if detail is an object (new backend format) or string
+    const isDeviceBindingError = 
+      typeof detail === "object" 
+        ? detail?.message === "DEVICE_BINDING_REQUIRED"
+        : detail === "DEVICE_BINDING_REQUIRED";
+
+    if (error.response?.status === 403 && isDeviceBindingError) {
+      
+      // CRITICAL FIX: If the backend generated a new device ID, save it immediately!
+      if (typeof detail === "object" && detail?.device_id) {
+        localStorage.setItem("device_uuid", detail.device_id);
+      }
+
+      let email = "";
+      try {
+        const userStr = localStorage.getItem("user");
+        if (userStr) email = JSON.parse(userStr).email;
+      } catch (e) {
+        console.error("Failed to parse user", e);
+      }
+
       sessionStorage.setItem(
         "deviceBindingRequired",
         JSON.stringify({
-          error: error.response.data.detail,
+          email: email,
           timestamp: Date.now(),
         })
       );
 
-      // Import toast dynamically to avoid circular dependencies
       const { toast } = await import("react-hot-toast");
       toast.error("New device detected. Please verify with OTP.", {
         duration: 5000,
@@ -48,28 +66,29 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Check for session conflict error
+    /* ===============================
+       2. SESSION CONFLICT
+       =============================== */
     if (
       error.response?.status === 401 &&
-      error.response?.data?.detail?.includes("SESSION_CONFLICT")
+      typeof detail === "string" &&
+      detail.includes("SESSION_CONFLICT")
     ) {
-      // Import toast dynamically to avoid circular dependencies
       const { toast } = await import("react-hot-toast");
 
-      // Clear all session data
+      // CRITICAL FIX: Preserve device UUID before clearing storage
+      const currentDeviceId = localStorage.getItem("device_uuid");
       localStorage.clear();
       sessionStorage.clear();
+      if (currentDeviceId) {
+        localStorage.setItem("device_uuid", currentDeviceId);
+      }
 
-      // Show user-friendly notification
       toast.error(
         "You have been logged out because this account was logged in on another device",
-        {
-          duration: 5000,
-          position: "top-center",
-        }
+        { duration: 5000, position: "top-center" }
       );
 
-      // Redirect to login after a short delay
       setTimeout(() => {
         window.location.href = "/login";
       }, 1000);
@@ -77,35 +96,38 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Handle token refresh for other 401 errors
+    /* ===============================
+       3. TOKEN REFRESH
+       =============================== */
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem("refresh_token");
 
       if (refreshToken) {
         try {
-          const res = await axios.post("/auth/refresh-token", {
+          const res = await axios.post("/api/auth/refresh-token", {
             refresh_token: refreshToken,
           });
 
-          if (res.status === 200) {
-            localStorage.setItem("token", res.data.token);
-            if (res.data.refresh_token) {
-              localStorage.setItem("refresh_token", res.data.refresh_token);
-            }
-            api.defaults.headers.common["Authorization"] =
-              "Bearer " + res.data.token;
-            return api(originalRequest);
+          localStorage.setItem("token", res.data.token);
+          if (res.data.refresh_token) {
+            localStorage.setItem("refresh_token", res.data.refresh_token);
           }
-        } catch (refreshError) {
-          console.error("Refresh token failed", refreshError);
-          // Clear storage and redirect to login
-          localStorage.removeItem("token");
-          localStorage.removeItem("refresh_token");
+
+          api.defaults.headers.common.Authorization = "Bearer " + res.data.token;
+          return api(originalRequest);
+        } catch {
+          // CRITICAL FIX: Preserve device UUID before clearing storage on refresh failure
+          const currentDeviceId = localStorage.getItem("device_uuid");
+          localStorage.clear();
+          if (currentDeviceId) {
+            localStorage.setItem("device_uuid", currentDeviceId);
+          }
           window.location.href = "/login";
         }
       }
     }
+
     return Promise.reject(error);
   }
 );

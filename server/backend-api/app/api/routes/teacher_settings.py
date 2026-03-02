@@ -1,4 +1,4 @@
-# backend/app/api/routes/settings.py
+# backend/app/routes/settings.py
 import logging
 
 from app.db.mongo import db
@@ -429,6 +429,141 @@ async def get_subject_students(
         )
 
     return response
+
+# GET STUDENT ATTENDANCE TRENDS
+@router.get("/teachers/subjects/{subject_id}/students/trends", response_model=dict)
+async def get_students_attendance_trends(
+    subject_id: str, current_user: dict = Depends(get_current_teacher)
+):
+    """
+    Calculate attendance trends for all students in a subject.
+    Compares current week vs previous week attendance using attendance_logs.
+    """
+    from datetime import datetime, timedelta
+
+    prof_id = validate_object_id(current_user["id"])
+    subj_id = validate_object_id(subject_id, "subject_id")
+
+    # SECURITY: Ensure teacher teaches this subject
+    subject = await db.subjects.find_one(
+        {"_id": subj_id, "professor_ids": prof_id}, {"students": 1}
+    )
+
+    if not subject:
+        raise HTTPException(
+            status_code=404, detail="Subject not found or access denied"
+        )
+
+    subject_students = subject.get("students", [])
+    if not subject_students:
+        return {}
+
+    # Calculate date ranges for current and previous week
+    today = datetime.now().date()
+    current_week_start = today - timedelta(days=today.weekday())  # Monday
+    previous_week_start = current_week_start - timedelta(days=7)
+    previous_week_end = current_week_start - timedelta(days=1)
+
+    # Get attendance_daily document for this subject to count total classes
+    attendance_doc = await db.attendance_daily.find_one({"subjectId": subj_id})
+    
+    if not attendance_doc or "daily" not in attendance_doc:
+        # No attendance data yet, return zero trends
+        return {
+            str(s["student_id"]): {"trend": 0, "current_percentage": 0, "previous_percentage": 0}
+            for s in subject_students
+        }
+
+    daily_data = attendance_doc.get("daily", {})
+    
+    # Count classes in each period
+    current_week_classes = []
+    previous_week_classes = []
+    
+    for date_str in daily_data.keys():
+        try:
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        
+        if date_obj >= current_week_start:
+            current_week_classes.append(date_str)
+        elif previous_week_start <= date_obj <= previous_week_end:
+            previous_week_classes.append(date_str)
+
+    trends = {}
+
+    for student_entry in subject_students:
+        student_id = student_entry["student_id"]
+        student_id_str = str(student_id)
+
+        # Query attendance_logs for this student in this subject
+        # attendance_logs schema: { subjectId, date, students: [{ studentId, scanTime, method }] }
+        
+        # Current week attendance
+        current_week_pipeline = [
+            {
+                "$match": {
+                    "subjectId": subj_id,
+                    "date": {"$in": current_week_classes},
+                }
+            },
+            {"$unwind": "$students"},
+            {
+                "$match": {
+                    "students.studentId": student_id,
+                }
+            },
+            {"$count": "count"},
+        ]
+        current_week_count = 0
+        async for doc in db.attendance_logs.aggregate(current_week_pipeline):
+            current_week_count = doc.get("count", 0)
+
+        # Previous week attendance
+        previous_week_pipeline = [
+            {
+                "$match": {
+                    "subjectId": subj_id,
+                    "date": {"$in": previous_week_classes},
+                }
+            },
+            {"$unwind": "$students"},
+            {
+                "$match": {
+                    "students.studentId": student_id,
+                }
+            },
+            {"$count": "count"},
+        ]
+        previous_week_count = 0
+        async for doc in db.attendance_logs.aggregate(previous_week_pipeline):
+            previous_week_count = doc.get("count", 0)
+
+        # Calculate percentages
+        current_percentage = (
+            round((current_week_count / len(current_week_classes)) * 100, 1)
+            if len(current_week_classes) > 0
+            else 0
+        )
+        
+        previous_percentage = (
+            round((previous_week_count / len(previous_week_classes)) * 100, 1)
+            if len(previous_week_classes) > 0
+            else 0
+        )
+
+        # Calculate trend (difference between current and previous week)
+        trend = round(current_percentage - previous_percentage, 1)
+
+        trends[student_id_str] = {
+            "trend": trend,
+            "current_percentage": current_percentage,
+            "previous_percentage": previous_percentage
+        }
+
+    return trends
+
 
 
 @router.post("/teachers/subjects/{subject_id}/students/{student_id}/verify")

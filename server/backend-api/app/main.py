@@ -20,6 +20,7 @@ from .api.routes.notifications import router as notifications_router
 from .api.routes.reports import router as reports_router
 from .api.routes.students import router as students_router
 from .api.routes.health import router as health_router
+from .api.routes.webauthn import router as webauthn_router
 from .core.config import APP_NAME, ORIGINS
 from app.services.attendance_daily import (
     ensure_indexes as ensure_attendance_daily_indexes,
@@ -85,7 +86,10 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title=APP_NAME, lifespan=lifespan)
+    app = FastAPI(
+        title=APP_NAME,
+        lifespan=lifespan,
+    )
 
     # Rate limiter
     app.state.limiter = limiter
@@ -134,6 +138,7 @@ def create_app() -> FastAPI:
     app.include_router(analytics_router)
     app.include_router(reports_router)
     app.include_router(health_router, tags=["Health"])
+    app.include_router(webauthn_router)
 
     return app
 

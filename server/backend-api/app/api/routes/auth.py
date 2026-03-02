@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Request
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
@@ -47,6 +48,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 oauth = OAuth()
+
+# NOTE: Rate limiter uses slowapi's get_remote_address() which extracts IP from request.client
+# For production deployments behind reverse proxies (nginx, load balancer), ensure the proxy
+# forwards the real client IP via X-Forwarded-For header and configure trusted proxy middleware
+# in main.py to parse it correctly. Otherwise, all requests will be rate-limited by proxy IP.
+# See: https://slowapi.readthedocs.io/en/latest/#using-x-forwarded-for
 
 
 @router.post("/register", response_model=RegisterResponse)
@@ -196,41 +203,52 @@ async def login(request: Request, payload: LoginRequest):
     if not user.get("is_verified", False):
         raise HTTPException(status_code=403, detail="Please verify your email first..")
 
-    # 4. Check device binding cooldown after logout - ONLY for students
-    # Teachers and admins are exempt from device binding
+    # 4. DEVICE IDENTIFICATION & GENERATION
+    device_id = request.headers.get("X-Device-ID")
+    
+    # If the frontend didn't send a device ID, generate one now.
+    if not device_id:
+        device_id = str(uuid.uuid4())
+        logger.info(f"No device ID provided. Generated new device ID: {device_id}")
+
+    update_trusted_device = False
+
+    # 5. DEVICE BINDING WITH 1-HOUR COOLDOWN CHECK - ONLY FOR STUDENTS
     if user["role"] == "student":
-        device_id = request.headers.get("X-Device-ID")
-        last_logout_time = user.get("last_logout_time")
         trusted_device_id = user.get("trusted_device_id")
 
-        if device_id and last_logout_time and trusted_device_id:
-            # Normalize logout time to UTC
-            if last_logout_time.tzinfo is None:
-                last_logout_time = last_logout_time.replace(tzinfo=timezone.utc)
+        if not trusted_device_id:
+            # Condition 1: First login ever -> Allow & Bind
+            update_trusted_device = True
+            
+        elif trusted_device_id != device_id:
+            # Condition 3: Mismatch! Check the 1-hour cooldown
+            last_logout_time = user.get("last_logout_time")
+            
+            if last_logout_time:
+                # Ensure timezone awareness for comparison
+                if last_logout_time.tzinfo is None:
+                    last_logout_time = last_logout_time.replace(tzinfo=timezone.utc)
+                
+                time_since_logout = datetime.now(timezone.utc) - last_logout_time
+                
+                # If they logged out less than 1 hour ago -> Trigger OTP Modal
+                if time_since_logout < timedelta(hours=1):
+                    # We pass the newly generated/provided device_id in the error detail 
+                    # so the frontend knows which device ID to request the OTP for.
+                    raise HTTPException(
+                        status_code=403,
+                        detail={
+                            "message": "DEVICE_BINDING_REQUIRED",
+                            "device_id": device_id 
+                        }
+                    )
+            
+            # If we get here: They logged out > 1 hour ago or never logged out.
+            # Bypass OTP and mark the new device to be updated.
+            update_trusted_device = True
 
-            # Check if less than 5 hours have passed since logout
-            time_since_logout = datetime.now(timezone.utc) - last_logout_time
-            cooldown_period = timedelta(hours=5)
-
-            # If logging in from a different device within cooldown period
-            if time_since_logout < cooldown_period and device_id != trusted_device_id:
-                hours_remaining = (
-                    cooldown_period - time_since_logout
-                ).total_seconds() / 3600
-                logger.warning(
-                    "Login attempt from new device within cooldown period for user: %s",
-                    payload.email,
-                )
-                raise HTTPException(
-                    status_code=403,
-                    detail=(
-                        f"DEVICE_COOLDOWN: You recently logged out. Please wait "
-                        f"{hours_remaining:.1f} hours before logging in from a "
-                        "new device, or verify with OTP."
-                    ),
-                )
-
-    # 5. Generate session ID and tokens
+    # 6. Generate session ID and tokens
     session_id = generate_session_id()
     access_token = create_access_token(
         user_id=str(user["_id"]),
@@ -242,16 +260,13 @@ async def login(request: Request, payload: LoginRequest):
         user_id=str(user["_id"]), session_id=session_id
     )
 
-    # 6. Store hashed session ID in database (invalidates previous sessions)
+    # 7. Store hashed session ID in database
     update_data = {
         "current_active_session": hash_session_id(session_id),
         "session_created_at": datetime.now(timezone.utc),
     }
 
-    # If this is the first login (no trusted device yet) and a device ID is provided,
-    # bind it automatically
-    device_id = request.headers.get("X-Device-ID")
-    if user["role"] == "student" and not user.get("trusted_device_id") and device_id:
+    if user["role"] == "student" and update_trusted_device:
         update_data["trusted_device_id"] = device_id
 
     await db.users.update_one(
@@ -261,6 +276,7 @@ async def login(request: Request, payload: LoginRequest):
 
     logger.info(f"New session created for user: {payload.email}")
 
+    # Return the device_id so the frontend can store it
     return {
         "user_id": str(user["_id"]),
         "email": email,
@@ -269,8 +285,8 @@ async def login(request: Request, payload: LoginRequest):
         "college_name": user.get("college_name", ""),
         "token": access_token,
         "refresh_token": refresh_token,
+        "device_id": device_id,  # <-- NEW: Send back the device ID
     }
-
 
 @router.post("/refresh-token", response_model=UserResponse)
 @limiter.limit("5/minute")
@@ -392,7 +408,10 @@ def _clear_otp_fields() -> dict:
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
+@limiter.limit("5/minute")  # Per IP: 5 OTP requests per minute
+@limiter.limit("10/hour")   # Per IP: 10 OTP requests per hour
 async def forgot_password(
+    request: Request,
     payload: ForgotPasswordRequest,
     background_tasks: BackgroundTasks,
 ) -> dict:
@@ -402,6 +421,10 @@ async def forgot_password(
     Generates a secure OTP, hashes it before storing, and enqueues an email via
     Brevo. Returns the same message whether the email exists or not to avoid
     email enumeration.
+    
+    Rate Limits:
+    - 5 OTP requests per minute per IP
+    - 10 OTP requests per hour per IP
     """
     user = await db.users.find_one({"email": payload.email})
     if not user:
@@ -434,12 +457,18 @@ async def forgot_password(
 
 
 @router.post("/verify-otp", response_model=VerifyOtpResponse)
-async def verify_otp(payload: VerifyOtpRequest) -> dict:
+@limiter.limit("3/minute")  # Per IP: 3 attempts per minute
+@limiter.limit("10/hour")   # Per IP: 10 attempts per hour
+async def verify_otp(request: Request, payload: VerifyOtpRequest) -> dict:
     """
     Verify the OTP sent to the user's email.
 
     Returns a generic 400 error for invalid/expired OTP or unknown email to
     prevent enumeration. After 5 failed attempts, the OTP is cleared.
+    
+    Rate Limits:
+    - 3 attempts per minute per IP
+    - 10 attempts per hour per IP
     """
     user = await db.users.find_one({"email": payload.email})
     if not user:
@@ -477,13 +506,19 @@ async def verify_otp(payload: VerifyOtpRequest) -> dict:
 
 
 @router.post("/reset-password", response_model=ResetPasswordResponse)
-async def reset_password(payload: ResetPasswordRequest) -> dict:
+@limiter.limit("3/minute")  # Per IP: 3 attempts per minute
+@limiter.limit("10/hour")   # Per IP: 10 attempts per hour
+async def reset_password(request: Request, payload: ResetPasswordRequest) -> dict:
     """
     Set a new password after OTP verification.
 
     Validates the OTP again (hashed comparison), then updates the password
     and clears all OTP-related fields. Returns a generic 400 for any
     validation failure to prevent email enumeration.
+    
+    Rate Limits:
+    - 3 attempts per minute per IP
+    - 10 attempts per hour per IP
     """
     user = await db.users.find_one({"email": payload.email})
     if not user:
@@ -726,11 +761,10 @@ async def send_device_binding_otp(
     )
 
     background_tasks.add_task(
-        BrevoEmailService.send_otp_email,
+        BrevoEmailService.send_device_binding_otp_email,
         payload.email,
         user.get("name", "User"),
         otp,
-        subject="Device Binding Verification",
     )
 
     logger.info(
@@ -744,7 +778,10 @@ async def send_device_binding_otp(
 @router.post(
     "/verify-device-binding-otp", response_model=VerifyDeviceBindingOtpResponse
 )
+@limiter.limit("3/minute")  # Per IP: 3 attempts per minute
+@limiter.limit("10/hour")   # Per IP: 10 attempts per hour
 async def verify_device_binding_otp(
+    request: Request,
     payload: VerifyDeviceBindingOtpRequest,
 ) -> dict:
     """
@@ -752,6 +789,10 @@ async def verify_device_binding_otp(
 
     Returns a generic 400 error for invalid/expired OTP or unknown email to
     prevent enumeration. After 5 failed attempts, the OTP is cleared.
+    
+    Rate Limits:
+    - 3 attempts per minute per IP
+    - 10 attempts per hour per IP
     """
     user = await db.users.find_one({"email": payload.email})
     if not user:
@@ -859,10 +900,10 @@ async def verify_device_binding_otp(
 @router.post("/logout")
 async def logout(request: Request):
     """
-    Logout endpoint that tracks logout time for device binding cooldown.
-
-    When a user logs out, we save the timestamp. If they try to login from
-    a new/untrusted device within 5 hours, they'll need OTP verification.
+    Unified logout endpoint for all roles.
+    
+    - Clears the active session for everyone.
+    - Tracks logout time specifically for students (for device binding cooldown).
     """
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
@@ -872,26 +913,55 @@ async def logout(request: Request):
         token = auth_header.split(" ")[1]
         decoded = decode_jwt(token)
         user_id = decoded.get("user_id")
+        
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token payload: missing user_id")
+            
+        try:
+            obj_id = ObjectId(user_id)
+        except InvalidId:
+            raise HTTPException(status_code=401, detail="Invalid user ID format")
+
     except (jwt.DecodeError, jwt.ExpiredSignatureError) as e:
         raise HTTPException(
-            status_code=401, detail=f"Invalid token: {type(e).__name__}"
+            status_code=401, detail=f"Invalid or expired token: {type(e).__name__}"
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Unexpected error during token decode: %s", e)
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # Update last logout time
-    await db.users.update_one(
-        {"_id": ObjectId(user_id)},
-        {
-            "$set": {
-                "last_logout_time": datetime.now(timezone.utc),
-            },
-            "$unset": {  # nosec B105 - MongoDB unset operator, not a password
-                "current_active_session": 1,
-            },
-        },
-    )
+    try:
+        # 1. Fetch the user to determine their role
+        user = await db.users.find_one({"_id": obj_id}, {"role": 1})
+        
+        if not user:
+            logger.warning("Logout attempted for non-existent user: %s", user_id)
+            raise HTTPException(status_code=404, detail="User not found")
 
-    logger.info("User logged out: %s", user_id)
-    return {"message": "Logged out successfully"}
+        # 2. Build the base update query (always remove active session)
+        update_query = {
+            "$unset": {  # nosec B105
+                "current_active_session": 1,
+            }
+        }
+
+        # 3. Conditionally add the last_logout_time if the role is 'student'
+        if user.get("role") == "student":
+            update_query["$set"] = {
+                "last_logout_time": datetime.now(timezone.utc),
+            }
+
+        # 4. Execute the update
+        await db.users.update_one({"_id": obj_id}, update_query)
+
+        logger.info("User logged out: %s (Role: %s)", user_id, user.get("role"))
+        return {"message": "Logged out successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Database error during logout for user %s: %s", user_id, e)
+        raise HTTPException(status_code=500, detail="Internal server error during logout")
+

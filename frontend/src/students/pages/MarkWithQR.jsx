@@ -12,12 +12,14 @@ import {
 } from "lucide-react";
 import api from "../../api/axiosClient";
 import QRScanner from "../components/QRScanner";
-import DeviceBindingOTPModal from "../../components/DeviceBindingOTPModal";
+import DeviceBindingOTPModal from "../../components/DeviceBindingOtpModal";
+import { authenticateDevice } from "../../api/webauthn";
+import { toast } from "react-hot-toast";
 
 export default function MarkWithQR() {
     const navigate = useNavigate();
     const [showScanner, setShowScanner] = useState(false);
-    const [status, setStatus] = useState("idle"); // idle, scanning, geolocating, submitting, success, error
+    const [status, setStatus] = useState("idle"); // idle, scanning, geolocating, submitting, success, error, verifying_bio
     const [errorMsg, setErrorMsg] = useState("");
     const [showDeviceBindingModal, setShowDeviceBindingModal] = useState(false);
     const [userEmail, setUserEmail] = useState("");
@@ -143,29 +145,65 @@ export default function MarkWithQR() {
     };
 
     const submitAttendance = async (qrData, lat, lng) => {
+        let webauthnCredential = null;
+
+        try {
+            // Attempt biometric authentication
+            setStatus("verifying_bio");
+            webauthnCredential = await authenticateDevice();
+        } catch (err) {
+            console.error("Biometric auth failed:", err);
+            
+            // If the user explicitly cancelled, we stop.
+            if (err.name === 'NotAllowedError' || err.message.includes("cancelled")) {
+                 setStatus("error");
+                 setErrorMsg("Biometric check cancelled. Attendance not marked.");
+                 return;
+            }
+
+            // CRITICAL: If biometric auth is REQUIRED, we must NOT proceed on error.
+            // For now, we assume it is required.
+            setStatus("error");
+            setErrorMsg(`Biometric Verification Failed: ${err.message || "Unknown error"}`);
+            return;
+        }
+
         setStatus("submitting");
         try {
-            const response = await api.post("/api/attendance/mark-qr", {
+            const payload = {
                 subjectId: qrData.subjectId,
                 date: qrData.date,
                 sessionId: qrData.sessionId,
                 token: qrData.token,
                 latitude: lat,
                 longitude: lng,
-            });
+                webauthn_credential: webauthnCredential ? webauthnCredential : null
+            };
 
-            // If the request did not throw, treat it as a success based on HTTP status
-            if (response.data.proxy_suspected) {
+            // Use the correct endpoint path - previous code used /api/attendance/mark-qr
+            // Check if existing api client has base url. 
+            // api is axiosClient.js. Usually has baseURL.
+            // If code used "/api/attendance/mark-qr", it implies baseURL might not include /api prefix or it's duplicated?
+            // Let's assume standard axios client usage. The previous code had "/api/attendance/mark-qr".
+            // Let's respect that.
+            const response = await api.post("/attendance/mark-qr", payload);
+
+            if (response.data.status === "success") {
+                 setStatus("success");
+            } else if (response.data.proxy_suspected) {
                 setStatus("proxy");
             } else {
-                setStatus("success");
+                 setStatus("success");
             }
             sessionStorage.removeItem("deviceBindingRequired");
         } catch (error) {
             // Check if it's a device binding error
             if (error.response?.status === 403 && 
                 error.response?.data?.detail?.includes("New device detected")) {
-                // Store pending attendance data
+                // Store pending attendance data  
+                // We need to store qrData, lat, lng to retry.
+                // But submitAttendance expects them. 
+                // The setPendingAttendanceData called below uses {qrData, lat, lng} object.
                 setPendingAttendanceData({ qrData, lat, lng });
                 
                 // Get user email
@@ -261,22 +299,22 @@ export default function MarkWithQR() {
                     </div>
                 )}
 
-                {(status === "geolocating" || status === "submitting") && (
+                {(status === "geolocating" || status === "submitting" || status === "verifying_bio") && (
                     <div className="text-center space-y-6">
                         <div className="relative">
                             <div className="w-24 h-24 border-4 border-[var(--border-color)]/40 border-t-[var(--action-info-bg)] rounded-full animate-spin mx-auto"></div>
                             <div className="absolute inset-0 flex items-center justify-center text-[var(--action-info-bg)]">
-                                {status === "geolocating" ? <Navigation size={32} /> : <Loader2 size={32} className="animate-spin" />}
+                                {status === "geolocating" ? <Navigation size={32} /> : status === "verifying_bio" ? <ShieldCheck size={32} /> : <Loader2 size={32} className="animate-spin" />}
                             </div>
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-xl font-bold text-[var(--text-main)]">
-                                {status === "geolocating" ? "Locating you..." : "Processing..."}
+                                {status === "geolocating" ? "Locating you..." : status === "verifying_bio" ? "Verify Identity" : "Processing..."}
                             </h3>
                             <p className="text-[var(--text-body)]/80 text-sm">
                                 {status === "geolocating"
                                     ? "We&apos;re verifying you&apos;re in the classroom."
-                                    : "Hang tight, we&apos;re marking your attendance."}
+                                    : status === "verifying_bio" ? "Please verify your identity using your device biometrics." : "Hang tight, we&apos;re marking your attendance."}
                             </p>
                         </div>
                     </div>

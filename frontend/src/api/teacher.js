@@ -10,6 +10,11 @@ export const fetchSubjectStudents = async (subjectId) => {
   return res.data;
 };
 
+export const fetchStudentsTrends = async (subjectId) => {
+  const res = await api.get(`/settings/teachers/subjects/${subjectId}/students/trends`);
+  return res.data;
+};
+
 export const verifyStudent = (subjectId, studentId) =>
   api.post(`/settings/teachers/subjects/${subjectId}/students/${studentId}/verify`);
 

@@ -12,7 +12,7 @@ from app.core.security import get_current_user
 from app.db.mongo import db
 from app.schemas.analytics import SubjectStatsResponse, StudentStat
 
-router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
+router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
 # -------------------------------------------------------------------------
@@ -258,7 +258,7 @@ async def get_subject_analytics(
 
     # Calculate Subject Totals for Pie Chart
     # We iterate over students_info again or stats_list?
-    # Actually request says "Subject Specific Stats (Pie Chart) GET /api/analytics/subject/{subject_id}"  # noqa: E501
+    # Actually request says "Subject Specific Stats (Pie Chart) GET /analytics/subject/{subject_id}"  # noqa: E501
     # The existing response model SubjectStatsResponse doesn't seem to have totals.
     # I should add totals to the response.
     # But for now, I'll calculate totals from students_info.

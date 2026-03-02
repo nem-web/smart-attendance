@@ -206,7 +206,7 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
 
         // Call API to confirm attendance
         const api = (await import("../../api/axiosClient")).default;
-        await api.post("/api/attendance/confirm", {
+        await api.post("/attendance/confirm", {
             subject_id: subjectId,
             present_students: presentStudents,
             absent_students: absentStudents

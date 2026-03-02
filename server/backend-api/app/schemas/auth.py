@@ -66,6 +66,7 @@ class UserResponse(BaseModel):
     college_name: str
     token: str
     refresh_token: str | None = None
+    device_id: Optional[str] = None
 
 
 class RegisterResponse(BaseModel):

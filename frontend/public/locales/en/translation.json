@@ -17,7 +17,9 @@
       "current": "Current",
       "safe_zone_label": "Safe zone: {{percent}}%",
       "need_classes_title": "You need {{count}} more classes",
-      "need_classes_desc": "Attend the next {{count}} scheduled classes to reach the safe {{percent}}% attendance zone buffer."
+      "need_classes_desc": "Attend the next {{count}} scheduled classes to reach the safe {{percent}}% attendance zone buffer.",
+      "target_achieved_title": "Target achieved!",
+      "target_achieved_desc": "You are currently above the {{percent}}% target attendance. Maintain your streak!"
     },
     "schedule": {
       "today": "Today",
@@ -70,7 +72,8 @@
     },
     "errors": {
       "load_failed": "Failed to load subjects"
-    }
+    },
+    "enroll_subject": "Enroll subject"
   },
   "forecast": {
     "title": "History & forecast",
@@ -120,7 +123,11 @@
       "desc": "Upload a clear, high-quality photo. This will be used for face recognition during attendance.",
       "replace": "Replace photo",
       "upload": "Upload photo",
-      "tips": "Tips: Use good lighting, look straight at the camera, avoid masks, caps, or filters."
+      "tips": "Tips: Use good lighting, look straight at the camera, avoid masks, caps, or filters.",
+      "error_size": "Image too large. Maximum size is 5MB",
+      "error_type": "Invalid file type. Only JPEG and PNG images are allowed",
+      "error_dimensions": "Image dimensions too large. Maximum size is 4096x4096 pixels",
+      "error_load": "Failed to load image. Please try another file"
     },
     "summary": {
       "title": "Attendance summary",
@@ -137,7 +144,11 @@
       "add_btn": "Add subject",
       "modal_title": "Add Subject",
       "cancel": "Cancel"
-    }
+    },
+    "enroll_subject": "Enroll subject",
+    "appearance": "Appearance",
+    "biometric_auth": "Biometric authentication",
+    "logout": "Logout"
   },
   "welcome": "Welcome",
   "login": {
@@ -368,7 +379,8 @@
     },
     "trend": {
       "no_change": "No change",
-      "vs_last_month": "vs last month"
+      "vs_last_month": "vs last month",
+      "stable": "Stable"
     },
     "no_students_found": "No students found",
     "no_match": "No students match \"{{query}}\"",
@@ -478,6 +490,8 @@
       "actions": "Actions"
     },
     "status_unverified": "Unverified",
+    "status_verified": "Verified",
+    "status_ready_to_verify": "Ready to verify",
     "status_waiting_image": "Waiting image",
     "added_time": "Added {{time}}",
     "actions": {
@@ -561,7 +575,11 @@
     },
     "lists": {
       "best": "Best performing classes",
-      "needs_support": "Classes needing support"
+      "needs_support": "Classes needing support",
+      "best_students": "Best performing students",
+      "needs_support_students": "Students needing support",
+      "no_students_at_risk": "No students at risk",
+      "no_top_performers": "No students meeting threshold"
     },
     "breakdown": {
       "title": "Class-wise breakdown",

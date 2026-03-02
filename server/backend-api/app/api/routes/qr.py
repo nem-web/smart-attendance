@@ -31,8 +31,8 @@ from app.utils.qr_token import QR_TOKEN_TTL_SECONDS
 logger = logging.getLogger(__name__)
 
 # Two routers — they live under different prefixes.
-qr_router = APIRouter(prefix="/api/qr", tags=["QR Code"])
-qr_attendance_router = APIRouter(prefix="/api/attendance", tags=["QR Attendance"])
+qr_router = APIRouter(prefix="/qr", tags=["QR Code"])
+qr_attendance_router = APIRouter(prefix="/attendance", tags=["QR Attendance"])
 
 
 # ── Teacher: Generate QR ───────────────────────────────────────

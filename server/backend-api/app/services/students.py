@@ -50,6 +50,14 @@ async def get_student_profile(user_id: str):
         "image_url": student.get("image_url"),
         "attendance": attendance_summary,
         "recent_attendance": attendance_summary["recent_attendance"],
+        # Return only public key metadata, not the key itself if not needed
+        "webauthn_credentials": [
+            {
+                "credential_id": cred["credential_id"],
+                "created_at": cred["created_at"].isoformat() if cred.get("created_at") else None,
+            }
+            for cred in user.get("webauthn_credentials", [])
+        ]
     }
 
     return profile

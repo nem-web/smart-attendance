@@ -42,13 +42,15 @@ import MarkWithQR from "./students/pages/MarkWithQR";
 function RedirectToHome() {
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
-  console.log(storedUser);
+  // console.log("RedirectToHome user:", user);
 
-  if (!user) return <Navigate to={"/login"} />;
+  if (!user || !user.role) return <Navigate to={"/login"} />;
 
-  if (user.role === "teacher") return <Navigate to={"/dashboard"} />;
-  if (user.role === "student") return <Navigate to={"/student-dashboard"} />;
-  if (user.role === "parent") return <Navigate to={"/parent/dashboard"} />;
+  const role = user.role.toLowerCase();
+
+  if (role === "teacher") return <Navigate to={"/dashboard"} />;
+  if (role === "student") return <Navigate to={"/student-dashboard"} />;
+  if (role === "parent") return <Navigate to={"/parent/dashboard"} />;
 
   return <Navigate to={"/login"} />;
 }

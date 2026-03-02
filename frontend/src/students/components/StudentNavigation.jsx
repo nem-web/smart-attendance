@@ -4,7 +4,7 @@ import { Home, BookOpen, TrendingUp, User, CircleUser, LogOut } from "lucide-rea
 import { useTranslation } from "react-i18next";
 import PropTypes from "prop-types";
 import EnhancedThemeToggle from "../../components/EnhancedThemeToggle";
-
+import { logout } from "../../api/auth.js";
 
 function DesktopItem({ icon: Icon, label, active, path }) {
   return (
@@ -68,7 +68,6 @@ export default function StudentNavigation({ activePage = "home" }) {
 
   const navigate = useNavigate();
 
-
   const navItems = [
     { id: "home", label: t('student_dashboard.nav.home'), icon: Home, path: "/student-dashboard" },
     { id: "subjects", label: t('student_dashboard.nav.subjects'), icon: BookOpen, path: "/student-subjects" },
@@ -112,11 +111,23 @@ export default function StudentNavigation({ activePage = "home" }) {
               </div>
             </div>
             <div className="logout flex-shrink-0">
-              <LogOut className="cursor-pointer text-[var(--text-body)] hover:text-[var(--danger)] transition-colors" size={20} onClick={()=>{
-                localStorage.removeItem("user");
-                 localStorage.removeItem("token");
-                navigate("/");
-              }}/>
+              <LogOut 
+                className="cursor-pointer text-[var(--text-body)] hover:text-[var(--danger)] transition-colors" 
+                size={20} 
+                onClick={async () => {
+                  try {
+                    // Notify backend to update the last_logout_time
+                    await logout();
+                  } catch (error) {
+                    console.error("Logout API failed, forcing local logout", error);
+                  } finally {
+                    // Always clear local storage and redirect, even if API fails
+                    localStorage.removeItem("user");
+                    localStorage.removeItem("token");
+                    navigate("/");
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
@@ -134,12 +145,10 @@ export default function StudentNavigation({ activePage = "home" }) {
           />
         ))}
       </div>
-     
     </>
   );
 };
 
 StudentNavigation.propTypes = {
   activePage: PropTypes.string,
-
 };

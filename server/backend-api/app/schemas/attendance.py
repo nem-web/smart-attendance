@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 
 class AttendanceCreate(BaseModel):
@@ -17,6 +17,12 @@ class AttendanceOut(AttendanceCreate):
     created_at: Optional[str]
 
 
+class AttendanceConfirm(BaseModel):
+    subject_id: str
+    date: date
+    present_students: List[str]
+    absent_students: List[str]
+
 class QRAttendanceRequest(BaseModel):
     subjectId: str
     date: str
@@ -24,3 +30,4 @@ class QRAttendanceRequest(BaseModel):
     token: str
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
+    webauthn_credential: Optional[dict] = None

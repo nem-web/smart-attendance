@@ -12,21 +12,34 @@ Thumbs.db
 # =========================
 # PYTHON (server)
 # =========================
+# Virtual environments
+**/venv/
+**/.venv/
+**/env/
 server/.venv/
 server/venv/
 server/backend-api/.venv/
 server/backend-api/venv/
 server/ml-service/.venv/
+server/ml-service/venv/
+
+# Python cache
 server/__pycache__/
 server/**/*.pyc
 server/**/*.pyo
 server/**/*.pyd
 server/**/*.so
+**/__pycache__/
+*.pyc
+
+# Testing
 server/.pytest_cache/
 server/.mypy_cache/
 server/.ruff_cache/
 server/**/.coverage
 server/**/htmlcov/
+.pytest_cache/
+.coverage
 
 # ML Models (downloaded at build/runtime)
 # Note: blaze_face_short_range.tflite is downloaded by download_models.py
@@ -36,6 +49,10 @@ server/ml-service/app/ml/*.tflite
 # ENV FILES (NEVER COMMIT)
 server/.env
 server/*.env
+server/backend-api/.env
+server/ml-service/.env
+frontend/.env
+frontend/.env.local
 
 # =========================
 # FASTAPI / UVICORN
@@ -70,4 +87,11 @@ frontend/.cache/
 *.gz
 *.rar
 demo_user_id.txt
+
+# =========================
+# LOCAL SETUP FILES
+# =========================
+SETUP_INSTRUCTIONS.md
+GIT_SETUP_GUIDE.md
+LOCAL_SETUP_SUMMARY.md
 

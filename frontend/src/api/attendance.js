@@ -21,7 +21,7 @@ export const captureAndSend = async (
       payload.longitude = currentCoords.longitude;
     }
 
-    const res = await api.post("/api/attendance/mark", payload);
+    const res = await api.post("/attendance/mark", payload);
 
     console.log("Attendance response:", res.data);
     setDetections(res.data.faces);

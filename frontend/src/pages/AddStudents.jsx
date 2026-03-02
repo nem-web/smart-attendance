@@ -48,20 +48,32 @@ export default function AddStudents() {
       if (filterType === "Unverified only") return s.verified === false;
       return true;
     })
-    .map((s) => ({
-      id: s.student_id,
-      name: s.name,
-      roll: s.roll,           
-      year: s.year,           
-      branch: s.branch.toUpperCase(),
-      status: s.verified ? t('add_students.status_verified', "Verified") : t('add_students.status_unverified', "Unverified"),
-      addedTime: t('add_students.added_time', { time: "Just now", defaultValue: "Just now" }), // "Just now" could also be translated if dynamic
-      avatar: s.avatar,
-      hasImage: true,
-      actionType: s.verified ? "none" : "verify"
-  }));
+    .map((s) => {
+      const hasAvatar = s.avatar && s.avatar.trim() !== '';
+      let status;
+      if (s.verified) {
+        status = 'verified';
+      } else if (hasAvatar) {
+        status = 'ready_to_verify';
+      } else {
+        status = 'waiting_image';
+      }
+      
+      return {
+        id: s.student_id,
+        name: s.name,
+        roll: s.roll,           
+        year: s.year,           
+        branch: s.branch.toUpperCase(),
+        status: status,
+        addedTime: t('add_students.added_time', { time: "Just now", defaultValue: "Just now" }),
+        avatar: s.avatar,
+        hasImage: hasAvatar,
+        verified: s.verified
+      };
+    });
 
-  const unverifiedCount = filteredStudents.filter(s => s.status === t('add_students.status_unverified', "Unverified")).length;
+  const unverifiedCount = filteredStudents.filter(s => s.status === 'ready_to_verify' || s.status === 'waiting_image').length;
 
   const handleRefresh = async () => {
     if(!selectedSubject) return;
@@ -74,14 +86,14 @@ export default function AddStudents() {
   };
 
   const handleVerifyAllVisible = () => {
-    const studentsToVerify = filteredStudents.filter(s => s.actionType === 'verify');
+    const studentsToVerify = filteredStudents.filter(s => !s.verified && s.hasImage);
     if (studentsToVerify.length === 0) return;
     setIsVerifyAllModalOpen(true);
   };
 
   const confirmVerifyAll = async () => {
     const studentsToVerify = filteredStudents
-      .filter(s => s.actionType === 'verify')
+      .filter(s => !s.verified && s.hasImage)
       .map(s => s.id);
     
     setIsVerifying(true);
@@ -259,21 +271,26 @@ export default function AddStudents() {
                     <td className="px-6 py-4 text-sm text-[var(--text-body)]">{student.year}</td>
                     <td className="px-6 py-4 text-sm text-[var(--text-main)] max-w-[200px]">{student.branch}</td>
                     <td className="px-6 py-4">
-                      {student.status === t('add_students.status_unverified', "Unverified") ? (
-                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/30">
-                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)]"></span>
-                           {t('add_students.status_unverified', "Unverified")}
-                         </span>
+                      {student.status === 'verified' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]"></span>
+                          {t('add_students.status_verified', "Verified")}
+                        </span>
+                      ) : student.status === 'ready_to_verify' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+                          {t('add_students.status_ready_to_verify', "Ready to verify")}
+                        </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--bg-secondary)] text-[var(--text-body)] border border-[var(--border-color)]">
-                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-body)] opacity-70"></span>
-                           {t('add_students.status_waiting_image', "Waiting image")}
-                         </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)]"></span>
+                          {t('add_students.status_waiting_image', "Waiting image")}
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {!student.verified && (
+                        {!student.verified && student.hasImage && (
                           <button
                             onClick={() => handleVerify(student.id)}
                             className="flex items-center gap-1 px-3 py-1.5 bg-[var(--success)] text-[var(--text-on-primary)] rounded-lg text-xs font-bold hover:bg-[var(--success)]/90 transition shadow-sm"

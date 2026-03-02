@@ -13,6 +13,7 @@ from app.db.mongo import db
 from app.services.attendance_daily import save_daily_summary
 from app.services.attendance import log_grouped_attendance
 from app.services.ml_client import ml_client
+from app.schemas.attendance import AttendanceConfirm
 from app.utils.geo import calculate_distance
 from app.schemas.attendance import QRAttendanceRequest
 from app.core.security import get_current_user
@@ -21,8 +22,12 @@ from fastapi import Depends
 
 from app.services.attendance_socket_service import stop_and_save_session, sio
 
+# Import WebAuthn verification
+from app.services.webauthn_service import verify_auth_response, get_rp_id
+from webauthn.helpers import parse_authentication_credential_json
+
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
+router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 
 @router.post("/stop-session/{session_id}")
@@ -92,7 +97,9 @@ def _parse_object_id_list(
 
 @router.post("/mark-qr")
 async def mark_attendance_qr(
-    payload: QRAttendanceRequest, current_user: dict = Depends(get_current_user)
+    payload: QRAttendanceRequest, 
+    request: Request,
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Mark attendance via QR code with geofencing check and date validation.
@@ -110,7 +117,32 @@ async def mark_attendance_qr(
     if current_user["role"] != "student":
         raise HTTPException(status_code=403, detail="Only students can mark attendance")
 
-    student_oid = ObjectId(current_user["id"])
+    # Fetch full user document for biometrics
+    try:
+        user_id = ObjectId(current_user["id"])
+        user_doc = await db.users.find_one({"_id": user_id})
+        if not user_doc:
+             raise HTTPException(status_code=404, detail="Student not found")
+    except Exception:
+         raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    # -------------------------------------------------------------------------
+    # WebAuthn Verification
+    # -------------------------------------------------------------------------
+    if payload.webauthn_credential:
+        origin = request.headers.get("origin")
+        rp_id = get_rp_id(origin)
+        try:
+           credential_model = parse_authentication_credential_json(payload.webauthn_credential)
+           # Pass the full user_doc, which has _id and webauthn_credentials
+           await verify_auth_response(user_doc, credential_model, origin, rp_id)
+        except Exception as e:
+           raise HTTPException(status_code=400, detail=f"Biometric verification failed: {str(e)}")
+    elif user_doc.get("webauthn_credentials") and len(user_doc["webauthn_credentials"]) > 0:
+        # If user has registered biometrics, they MUST use them.
+        raise HTTPException(status_code=400, detail="Biometric authentication required")
+
+    student_oid = user_id
     subject_id = payload.subjectId
 
     if not ObjectId.is_valid(subject_id):
@@ -592,13 +624,14 @@ async def mark_attendance(request: Request, payload: Dict):
 
 
 @router.post("/confirm")
-async def confirm_attendance(payload: Dict):
+async def confirm_attendance(payload: AttendanceConfirm):
     """
     Confirm attendance for students after manual review
 
     payload:
     {
       "subject_id": "...",
+      "date": "2025-01-01",
       "present_students": ["id1", "id2", ...],
       "absent_students": ["id3", "id4", ...]
     }
@@ -607,13 +640,10 @@ async def confirm_attendance(payload: Dict):
     - present_updated / absent_updated are counts of unique IDs submitted
       after deduplication (not the count of DB rows modified).
     """
-    subject_oid = _parse_object_id(payload.get("subject_id"), "subject_id")
-    present_oids, present_set = _parse_object_id_list(
-        payload.get("present_students", []), "present_students"
-    )
-    absent_oids, absent_set = _parse_object_id_list(
-        payload.get("absent_students", []), "absent_students"
-    )
+    subject_id = payload.subject_id
+    present_students = payload.present_students
+    absent_students = payload.absent_students
+    selected_date = payload.date
 
     overlap = present_set.intersection(absent_set)
     if overlap:
@@ -626,72 +656,40 @@ async def confirm_attendance(payload: Dict):
     if not subject:
         raise HTTPException(status_code=404, detail="Subject not found")
 
-    today = date.today().isoformat()
+    att_date = selected_date.isoformat() if selected_date else date.today().isoformat()
+    subject_oid = ObjectId(subject_id)
+    present_oids = [ObjectId(sid) for sid in present_students]
+    absent_oids = [ObjectId(sid) for sid in absent_students]
 
-    # Mark PRESENT students - increment total AND present
-    if present_oids:
-        await db.subjects.update_one(
-            {"_id": subject_oid},
+    # Mark PRESENT students
+    await db.subjects.update_one(
+        {"_id": subject_oid},
+        {
+            "$inc": {"students.$[p].attendance.present": 1},
+            "$set": {"students.$[p].attendance.lastMarkedAt": att_date},
+        },
+        array_filters=[
             {
-                "$inc": {
-                    "students.$[p].attendance.total": 1,
-                    "students.$[p].attendance.present": 1,
-                },
-                "$set": {"students.$[p].attendance.lastMarkedAt": today},
-            },
-            array_filters=[
-                {
-                    "p.student_id": {"$in": present_oids},
-                    "p.attendance.lastMarkedAt": {"$ne": today},
-                }
-            ],
-        )
+                "p.student_id": {"$in": present_oids},
+                "p.attendance.lastMarkedAt": {"$ne": att_date},
+            }
+        ],
+    )
 
-    # Mark ABSENT students - increment total AND absent
-    if absent_oids:
-        await db.subjects.update_one(
-            {"_id": subject_oid},
+    # Mark ABSENT students
+    await db.subjects.update_one(
+        {"_id": subject_oid},
+        {
+            "$inc": {"students.$[a].attendance.absent": 1},
+            "$set": {"students.$[a].attendance.lastMarkedAt": att_date},
+        },
+        array_filters=[
             {
-                "$inc": {
-                    "students.$[a].attendance.total": 1,
-                    "students.$[a].attendance.absent": 1,
-                },
-                "$set": {"students.$[a].attendance.lastMarkedAt": today},
-            },
-            array_filters=[
-                {
-                    "a.student_id": {"$in": absent_oids},
-                    "a.attendance.lastMarkedAt": {"$ne": today},
-                }
-            ],
-        )
-
-    # Update percentage for all modified students
-    # Fetch the subject to get updated student records
-    updated_subject = await db.subjects.find_one({"_id": subject_oid}, {"students": 1})
-
-    if updated_subject:
-        # Calculate and update percentages for students with attendance marked
-        all_modified_student_ids = present_oids + absent_oids
-
-        for student in updated_subject.get("students", []):
-            student_id = student.get("student_id")
-            if student_id not in all_modified_student_ids:
-                continue
-
-            attendance = student.get("attendance", {})
-            total = attendance.get("total", 0)
-            present = attendance.get("present", 0)
-
-            # Calculate percentage
-            percentage = round((present / total) * 100, 2) if total > 0 else 0
-
-            # Update percentage in database
-            await db.subjects.update_one(
-                {"_id": subject_oid, "students.student_id": student_id},
-                {"$set": {"students.$[s].attendance.percentage": percentage}},
-                array_filters=[{"s.student_id": student_id}],
-            )
+                "a.student_id": {"$in": absent_oids},
+                "a.attendance.lastMarkedAt": {"$ne": att_date},
+            }
+        ],
+    )
 
     # --- Write daily attendance summary ---
     teacher_id = (
@@ -788,9 +786,9 @@ async def confirm_attendance(payload: Dict):
     await save_daily_summary(
         subject_id=subject_oid,
         teacher_id=teacher_id,
-        record_date=today,
-        present=total_present_today,
-        absent=absent_count,
+        record_date=att_date,
+        present=len(present_students),
+        absent=len(absent_students),
     )
 
     return {

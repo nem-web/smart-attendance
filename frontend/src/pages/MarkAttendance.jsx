@@ -44,7 +44,15 @@ export default function MarkAttendance() {
 
   const [attendanceMap, setAttendanceMap] = useState({});
   const [attendanceSubmitted, setAttendanceSubmitted] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   
+  const [_currentCoords, setCurrentCoords] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   
@@ -274,7 +282,12 @@ export default function MarkAttendance() {
     }
 
     try {
-      await api.post("/api/attendance/confirm", payload);
+      await api.post("/api/attendance/confirm", {
+        subject_id: selectedSubject,
+        date: selectedDate,
+        present_students: presentStudents.map((s) => s.studentId),
+        absent_students: absentStudents.map((s) => s.studentId),
+      });
 
       setAttendanceSubmitted(true);
       toast.success(t('mark_attendance.alerts.success'));
@@ -387,7 +400,12 @@ export default function MarkAttendance() {
           </div>
           <div className="flex flex-col gap-1 w-full sm:w-48">
             <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">{t('mark_attendance.date_label')}</label>
-            <input type="date" className="w-full p-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)]" defaultValue="2025-03-12" />
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full p-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)]" 
+            />
           </div>
         </div>
 

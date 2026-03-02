@@ -32,7 +32,7 @@ from app.api.deps import get_current_teacher
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/reports", tags=["Reports"])
+router = APIRouter(prefix="/reports", tags=["Reports"])
 
 # Maximum number of attendance records to load into memory at once
 MAX_RECORDS = 10000

@@ -11,6 +11,7 @@ from ..utils.email_template import (
     assignment_reminder_template,
     exam_alert_template,
     custom_message_template,
+    device_binding_otp_template,
 )
 
 logger = logging.getLogger(__name__)
@@ -219,6 +220,21 @@ class BrevoEmailService:
             logger.error(f"Failed to send custom message: {e}")
             return {"status": "failed", "error": str(e)}
 
+    @staticmethod
+    async def send_device_binding_otp_email(
+        to_email: str,
+        user_name: str,
+        otp: str,
+    ) -> None:
+        try:
+            await BrevoEmailService._send_email(
+                to_email=to_email,
+                subject="Device Binding Verification - Smart Attendance",
+                html_content=device_binding_otp_template(otp, user_name),
+            )
+        except Exception as e:
+            logger.error(f"Failed to send device binding OTP email: {e}")
+            raise
 
 # def send_verification_email(to_email: str, verification_link: str):
 #     try:

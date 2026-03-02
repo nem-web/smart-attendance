@@ -194,6 +194,75 @@ def otp_email_template(otp: str, user: str) -> str:
 </html>
 """
 
+def device_binding_otp_template(otp: str, user_name: str) -> str:
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Device Verification Required</title>
+    </head>
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 40px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f7f6;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                        
+                        <tr>
+                            <td style="background-color: #2563eb; padding: 30px; text-align: center;">
+                                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 1px;">Smart Attendance</h1>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                <h2 style="color: #1f2937; margin-top: 0; font-size: 20px; font-weight: 600;">Device Verification Required</h2>
+                                
+                                <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                                    Hello <b>{user_name}</b>,
+                                </p>
+                                
+                                <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                                    We detected a login attempt from a new device. To secure your account, please verify this device by entering the One-Time Password (OTP) below:
+                                </p>
+                                
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
+                                    <tr>
+                                        <td align="center" style="background-color: #f3f4f6; border-radius: 6px; padding: 24px;">
+                                            <span style="font-family: monospace; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #111827;">{otp}</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
+                                    This code is valid for <b>10 minutes</b>. Please do not share it with anyone.
+                                </p>
+                                
+                                <hr style="border: none; border-top: 1px solid #e5e7eb; margin-bottom: 24px;">
+                                
+                                <p style="color: #6b7280; font-size: 13px; line-height: 1.5; margin: 0;">
+                                    <b>Didn't request this?</b> If you did not attempt to log in, your credentials may be compromised. Please reset your password immediately and contact support.
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                                    &copy; 2026 Smart Attendance Team. All rights reserved.
+                                </p>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+
 
 def verification_email_template(verification_link: str, user: str) -> str:
     safe_user = html.escape(user)

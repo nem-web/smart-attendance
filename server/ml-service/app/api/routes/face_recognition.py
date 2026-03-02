@@ -31,6 +31,7 @@ from app.core.constants import (
     ERROR_PROCESSING,
 )
 from app.core.security import verify_api_key
+from app.utils.image_validation import validate_and_decode_image
 
 from app.ml.face_detector import detect_faces
 from app.ml.face_encoder import get_face_embedding
@@ -44,8 +45,19 @@ router = APIRouter(
 @router.post("/encode-face", response_model=EncodeFaceResponse)
 async def encode_face(request: EncodeFaceRequest):
     try:
-        image_bytes = base64.b64decode(request.image_base64)
-        image = Image.open(BytesIO(image_bytes)).convert("RGB")
+        # Validate and decode image with size/format checks
+        success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
+            request.image_base64
+        )
+        
+        if not success:
+            return EncodeFaceResponse(
+                success=False,
+                error=error_msg,
+                error_code=error_code
+            )
+        
+        # Convert PIL image to numpy array
         image_np = np.array(image)
 
         faces = detect_faces(image_np)
@@ -100,8 +112,18 @@ async def detect_faces_api(request: DetectFacesRequest):
     start = time.time()
 
     try:
-        image_bytes = base64.b64decode(request.image_base64)
-        image = Image.open(BytesIO(image_bytes)).convert("RGB")
+        # Validate and decode image with size/format checks
+        success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
+            request.image_base64
+        )
+        
+        if not success:
+            return DetectFacesResponse(
+                success=False,
+                error=error_msg
+            )
+        
+        # Convert PIL image to numpy array
         image_np = np.array(image)
 
         faces = detect_faces(image_np)

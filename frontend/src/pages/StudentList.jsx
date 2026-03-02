@@ -9,7 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
-import { fetchMySubjects, fetchSubjectStudents, exportStudentRoster } from "../api/teacher";
+import { fetchMySubjects, fetchSubjectStudents, fetchStudentsTrends, exportStudentRoster } from "../api/teacher";
 
 export default function StudentList() {
   const { t } = useTranslation();
@@ -17,6 +17,7 @@ export default function StudentList() {
   const [subjectsLoading, setSubjectsLoading] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [students, setStudents] = useState([]);
+  const [trends, setTrends] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -34,7 +35,20 @@ export default function StudentList() {
 
   useEffect(() => {
     if(!selectedSubject) return;
-    fetchSubjectStudents(selectedSubject).then(setStudents);
+    
+    // Fetch students and trends in parallel
+    Promise.all([
+      fetchSubjectStudents(selectedSubject),
+      fetchStudentsTrends(selectedSubject)
+    ])
+      .then(([studentsData, trendsData]) => {
+        setStudents(studentsData);
+        setTrends(trendsData);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch student data:", error);
+        toast.error("Failed to load student data");
+      });
   }, [selectedSubject])
 
   const verifiedStudents = students.filter(
@@ -314,11 +328,12 @@ export default function StudentList() {
                   ) : (
                     sortedStudents.map((student) => {
                       const percentage = calculateAttendancePercentage(student);
+                      const studentTrend = trends[student.student_id] || { trend: 0 };
+                      const trend = studentTrend.trend;
 
                     // derive UI-only values (NO design change)
                     let color = "amber";
                     let status = t('students.status.moderate');
-                    let trend = 0;
 
                     if (percentage > 90) {
                       color = "green";
@@ -374,21 +389,22 @@ export default function StudentList() {
                           </div>
                         </td>
 
-                        {/* Trend Column (placeholder, unchanged UI) */}
+                        {/* Trend Column */}
                         <td className="px-6 py-4">
                           {trend > 0 ? (
                             <div className="flex items-center gap-1 text-xs font-semibold text-[var(--success)]">
                               <ArrowUpRight size={14} />
-                              +{trend}% {t('students.trend.vs_last_month')}
+                              <span>+{Math.abs(trend)}%</span>
                             </div>
                           ) : trend < 0 ? (
                             <div className="flex items-center gap-1 text-xs font-semibold text-[var(--danger)]">
                               <ArrowDownRight size={14} />
-                              {trend}% {t('students.trend.vs_last_month')}
+                              <span>-{Math.abs(trend)}%</span>
                             </div>
                           ) : (
-                            <div className="text-xs font-medium text-[var(--text-body)]/70">
-                              {t('students.trend.no_change')}
+                            <div className="flex items-center gap-1 text-xs font-medium text-[var(--text-body)]/70">
+                              <span>—</span>
+                              <span>{t('students.trend.stable')}</span>
                             </div>
                           )}
                         </td>

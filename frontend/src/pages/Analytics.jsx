@@ -68,6 +68,25 @@ export default function Analytics() {
   const [exporting, setExporting] = useState(false);
   const analyticsRef = useRef(null);
 
+  const isSubjectSelected = selectedSubject !== "all";
+
+  const PERFORMANCE_THRESHOLD = 75;
+
+  const filteredBestPerforming = bestPerforming
+    .filter(item => Number(item.score) >= PERFORMANCE_THRESHOLD)
+    .slice(0, 4);
+
+  const filteredNeedingSupport = needingSupport
+    .filter(item => Number(item.score) < PERFORMANCE_THRESHOLD)
+    .slice(0, 4);
+
+  const bestTitle = isSubjectSelected
+    ? t('analytics.lists.best_students', { defaultValue: t('analytics.lists.best') })
+    : t('analytics.lists.best');
+  const supportTitle = isSubjectSelected
+    ? t('analytics.lists.needs_support_students', { defaultValue: t('analytics.lists.needs_support') })
+    : t('analytics.lists.needs_support');
+
   // Handle outside click to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -549,32 +568,42 @@ export default function Analytics() {
             </div>
             {/* Best Performing List */}
             <div className="bg-[var(--bg-card)] p-4 sm:p-5 rounded-xl border border-[var(--border-color)] shadow-sm" data-testid="best-performing-list">
-              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.best')}</h3>
+              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{bestTitle}</h3>
               <div className="space-y-3">
-                {bestPerforming.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
-                        <span className="text-[var(--text-body)]">{c.name}</span>
-                      </div>
-                      <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
-                  </div>
-                ))}
+                {filteredBestPerforming.length > 0 ? (
+                  filteredBestPerforming.map((c, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
+                          <span className="text-[var(--text-body)]">{c.name}</span>
+                        </div>
+                        <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-[var(--text-body)] opacity-60">{t('analytics.lists.no_top_performers')}</p>
+                )}
               </div>
             </div>
              {/* Needs Support List */}
              <div className="bg-[var(--bg-card)] p-4 sm:p-5 rounded-xl border border-[var(--border-color)] shadow-sm" data-testid="needing-support-list">
-              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{t('analytics.lists.needs_support')}</h3>
+              <h3 className="font-semibold text-sm text-[var(--text-main)] mb-3">{supportTitle}</h3>
               <div className="space-y-3">
-                {needingSupport.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
-                        <span className="text-[var(--text-body)]">{c.name}</span>
-                      </div>
-                      <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
-                  </div>
-                ))}
+                {filteredNeedingSupport.length > 0 ? (
+                  filteredNeedingSupport.map((c, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[10px] font-bold">{i+1}</div>
+                          <span className="text-[var(--text-body)]">{c.name}</span>
+                        </div>
+                        <span className="font-bold text-[var(--text-main)]">{c.score}%</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-[var(--text-body)] opacity-60">
+                    {t(selectedSubject === "all" ? "analytics.lists.no_classes_at_risk" : "analytics.lists.no_students_at_risk")}
+                  </p>
+                )}
               </div>
             </div>
           </div>
