@@ -34,7 +34,7 @@ import { logout as apiLogout } from "../api/auth";
 import AddSubjectModal from "../components/AddSubjectModal";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
-import { requestNotificationPermission, getNotificationPermissionState, showSystemNotification } from "../utils/notificationService";
+import { requestNotificationPermission } from "../utils/notificationService";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -301,14 +301,11 @@ export default function Settings() {
     setSaveError(null);
     try {
       const payload = {
-        profile: {
-          name: profile.name,
-          phone: profile.phone,
-          role: profile.role,
-          branch: profile.branch,
-          subjects: profile.subjects,
-          avatarUrl: profile.avatarUrl,
-        },
+        name: profile.name,
+        phone: profile.phone,
+        role: profile.role,
+        branch: profile.branch,
+        avatarUrl: profile.avatarUrl,
         settings: {
           thresholds: {
             warningVal,
@@ -331,6 +328,11 @@ export default function Settings() {
         await loadProfile(serverProfile);
       }
       // optional: show toast success
+      toast.success(
+        t('settings.alerts.save_success', {
+          defaultValue: 'Settings saved successfully!',
+        }),
+      );
     } catch (err) {
       console.error("Save profile failed", err);
       setSaveError(err.message || t('settings.alerts.save_failed'));
