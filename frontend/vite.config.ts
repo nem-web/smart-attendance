@@ -1,4 +1,6 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
+
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -84,13 +86,13 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://smart-attendance-api-i87a.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         secure: false,
       },
       '/static': {
-        target: 'https://smart-attendance-api-i87a.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       }
@@ -108,5 +110,11 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 1000
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/setupTests.js'],
+    css: true,
   }
 })
