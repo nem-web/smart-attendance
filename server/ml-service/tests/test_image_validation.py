@@ -1,11 +1,9 @@
 """
 Tests for image validation in ML service
 """
-import pytest
 import base64
 from io import BytesIO
 from PIL import Image
-import numpy as np
 
 from app.utils.image_validation import validate_and_decode_image
 from app.core.constants import (

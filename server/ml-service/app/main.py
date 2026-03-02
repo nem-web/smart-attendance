@@ -28,7 +28,7 @@ from .api.routes.health import router as health_router
 
 # Setup logging
 setup_logging()
-logger = logging.getLogger(settings.SERVICE_NAME)
+logger = structlog.get_logger()
 
 if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     sentry_sdk.init(

@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Depends
-import base64
-from io import BytesIO
 import time
 import numpy as np
-from PIL import Image
 
 from app.schemas.requests import (
     EncodeFaceRequest,
