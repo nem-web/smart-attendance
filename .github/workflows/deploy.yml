@@ -1,105 +1,40 @@
-name: CI/CD Pipeline (Vercel & Render)
+﻿name: Deploy to Staging
 
 on:
   push:
-    branches: [ main ]
-  release:
-    types: [ published ]
+    tags:
+      - 'v*'
 
 jobs:
-  # ==========================================
-  # 🟡 STAGING DEPLOYMENT (Triggered on Push)
-  # ==========================================
-  deploy-staging:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  deploy:
     runs-on: ubuntu-latest
     environment: staging
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 1. Detect which folders had code changes
-      - name: 🔍 Check for changed files
-        uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            frontend:
-              - 'frontend/**'
-            backend:
-              - 'server/backend-api/**'
-            ml:
-              - 'server/ml-service/**'
-      
-      # 2. Deploy Frontend ONLY if 'frontend' changed
-      - name: 🚀 Deploy Frontend to Vercel (Preview/Staging)
-        if: steps.changes.outputs.frontend == 'true'
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
-          github-comment: true
-
-      # 3. Deploy Backend ONLY if 'server/backend-api' changed
-      - name: ⚙️ Trigger Backend API Staging Deploy on Render
-        if: steps.changes.outputs.backend == 'true'
+      - name: Set up Deployment Tools
         run: |
-          echo "Changes detected in backend-api. Triggering Render Staging Webhook..."
-          curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_STAGING }}"
+          echo "Setting up deployment tools..."
+          # Example: Install SSH client or other CLI tools
+          # sudo apt-get install -y openssh-client
 
-      # 4. Deploy ML Service ONLY if 'server/ml-service' changed
-      - name: 🧠 Trigger ML Service Staging Deploy on Render
-        if: steps.changes.outputs.ml == 'true'
+      - name: Deploy to Staging
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_KEY: ${{ secrets.STAGING_SSH_KEY }}
         run: |
-          echo "Changes detected in ml-service. Triggering Render Staging Webhook..."
-          curl -X POST "${{ secrets.RENDER_ML_DEPLOY_HOOK_STAGING }}"
+          echo "Deploying version ${{ github.ref_name }} to staging environment..."
+          
+          if [ -z "$STAGING_HOST" ]; then
+            echo "Error: STAGING_HOST secret is not set."
+            exit 1
+          fi
 
-  # ==========================================
-  # 🟢 PRODUCTION DEPLOYMENT (Triggered on Release)
-  # ==========================================
-  deploy-production:
-    if: github.event_name == 'release' && github.event.action == 'published'
-    runs-on: ubuntu-latest
-    environment: production
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: 🔍 Check for changed files
-        uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            frontend:
-              - 'frontend/**'
-            backend:
-              - 'server/backend-api/**'
-            ml:
-              - 'server/ml-service/**'
-      
-      - name: 🚀 Deploy Frontend to Vercel (Production)
-        if: steps.changes.outputs.frontend == 'true'
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: ./frontend
-          github-comment: false
-
-      - name: ⚙️ Trigger Backend API Production Deploy on Render
-        if: steps.changes.outputs.backend == 'true'
-        run: |
-          echo "Changes detected in backend-api. Triggering Render Production Webhook..."
-          curl -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_PROD }}"
-
-      - name: 🧠 Trigger ML Service Production Deploy on Render
-        if: steps.changes.outputs.ml == 'true'
-        run: |
-          echo "Changes detected in ml-service. Triggering Render Production Webhook..."
-          curl -X POST "${{ secrets.RENDER_ML_DEPLOY_HOOK_PROD }}"
+          # Example deployment logic (commented out):
+          # echo "$STAGING_KEY" > deploy_key
+          # chmod 600 deploy_key
+          # ssh -i deploy_key -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd /app && git pull && docker-compose up -d"
+          
+          echo "Deployment script executed successfully (Simulation)."
