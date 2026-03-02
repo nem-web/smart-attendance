@@ -6,7 +6,7 @@ import html
 import io
 import csv
 import re
-import logging
+import structlog
 from datetime import datetime
 from typing import Optional
 
@@ -29,8 +29,9 @@ from reportlab.lib.enums import TA_CENTER
 
 from app.db.mongo import db
 from app.api.deps import get_current_teacher
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 

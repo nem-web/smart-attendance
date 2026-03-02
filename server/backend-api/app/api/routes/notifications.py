@@ -3,7 +3,7 @@ API routes for email notifications.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Query
-import logging
+import structlog
 
 from ...schemas.notifications import (
     SendAbsenceNotificationRequest,
@@ -18,7 +18,7 @@ from ...services.notification_service import NotificationService
 from ...core.security import get_current_user
 from ...db.mongo import db
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 

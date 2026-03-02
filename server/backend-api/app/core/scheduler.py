@@ -1,10 +1,10 @@
-import logging
+import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from app.services.attendance_alerts import process_monthly_low_attendance_alerts
 from app.services.attendance_socket_service import flush_attendance_data
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 scheduler = AsyncIOScheduler()
 

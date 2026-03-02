@@ -1,4 +1,4 @@
-import logging
+import structlog
 
 import httpx
 
@@ -14,7 +14,7 @@ from ..utils.email_template import (
     device_binding_otp_template,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 
 

@@ -13,11 +13,11 @@ is embedded to provide replay protection even within the validity window.
 import os
 import time
 import secrets
-import logging
+import structlog
 
 import jwt  # PyJWT — already in requirements.txt
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # ── Configuration ───────────────────────────────────────────────
 # Dedicated secret for QR tokens; falls back to main JWT secret.

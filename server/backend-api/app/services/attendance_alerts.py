@@ -1,9 +1,9 @@
-import logging
+import structlog
 
 from app.db.mongo import db
 from app.core.email import BrevoEmailService
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 async def send_low_attendance_for_teacher(teacher_id, teacher_doc):

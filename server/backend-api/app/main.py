@@ -1,4 +1,3 @@
-import logging
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -8,6 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import socketio
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
+import structlog
 
 from app.api.routes import teacher_settings as settings_router
 from .api.routes.schedule import router as schedule_router
@@ -51,7 +51,7 @@ load_dotenv()
 
 # Setup structured logging
 setup_logging()
-logger = logging.getLogger(APP_NAME)
+logger = structlog.get_logger()
 
 if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     sentry_sdk.init(
@@ -106,9 +106,9 @@ def create_app() -> FastAPI:
     )
 
     # Middleware
-    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(TimingMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     # SessionMiddleware MUST be added before routers so authlib can use request.session reliably # noqa: E501
     app.add_middleware(

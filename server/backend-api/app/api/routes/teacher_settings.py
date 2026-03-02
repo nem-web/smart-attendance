@@ -1,5 +1,5 @@
 # backend/app/routes/settings.py
-import logging
+import structlog
 
 from app.db.mongo import db
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
@@ -16,7 +16,7 @@ from bson import ObjectId, errors as bson_errors
 from app.schemas.schedule import Schedule
 from app.services.attendance_alerts import send_low_attendance_for_teacher
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 

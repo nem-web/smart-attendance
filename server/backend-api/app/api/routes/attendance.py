@@ -1,5 +1,5 @@
 import base64
-import logging
+import structlog
 from datetime import date
 from typing import Dict
 
@@ -25,8 +25,9 @@ from app.services.attendance_socket_service import stop_and_save_session, sio
 # Import WebAuthn verification
 from app.services.webauthn_service import verify_auth_response, get_rp_id
 from webauthn.helpers import parse_authentication_credential_json
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 

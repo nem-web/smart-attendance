@@ -1,6 +1,6 @@
 import os
 import time
-import logging
+import structlog
 from dotenv import load_dotenv
 
 load_dotenv()

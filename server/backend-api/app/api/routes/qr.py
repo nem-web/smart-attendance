@@ -14,7 +14,7 @@ Security
   user so one student cannot mark attendance for another.
 """
 
-import logging
+import structlog
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -28,7 +28,7 @@ from app.schemas.qr import (
 from app.services.qr_service import generate_qr_for_course, validate_qr_and_mark
 from app.utils.qr_token import QR_TOKEN_TTL_SECONDS
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # Two routers — they live under different prefixes.
 qr_router = APIRouter(prefix="/qr", tags=["QR Code"])

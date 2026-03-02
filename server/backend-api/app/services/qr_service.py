@@ -10,7 +10,7 @@ Every validation step is explained inline so future contributors understand
 """
 
 import time
-import logging
+import structlog
 from datetime import datetime, timezone
 
 from bson import ObjectId
@@ -25,7 +25,7 @@ from app.utils.qr_token import (
     QR_TOKEN_TTL_SECONDS,
 )
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # MongoDB collections
 attendance_col = db["attendance"]

@@ -2,7 +2,7 @@
 Notification service for sending and logging emails.
 """
 
-import logging
+import structlog
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict
 from bson import ObjectId
@@ -10,7 +10,7 @@ from bson import ObjectId
 from ..core.email import BrevoEmailService
 from ..db.mongo import db
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class NotificationService:

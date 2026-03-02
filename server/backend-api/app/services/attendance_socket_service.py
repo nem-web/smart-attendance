@@ -1,4 +1,4 @@
-import logging
+import structlog
 from datetime import datetime, date, timezone
 from typing import Dict, List, Any
 
@@ -11,7 +11,7 @@ from app.db.mongo import db
 from app.services.attendance import log_grouped_attendance
 from app.services.attendance_daily import save_daily_summary
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # Initialize Socket.IO server
 # cors_allowed_origins uses the same whitelist as the FastAPI CORS middleware

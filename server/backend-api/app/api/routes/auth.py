@@ -42,9 +42,9 @@ from ...core.email import BrevoEmailService
 from ...core.config import BACKEND_BASE_URL
 from ...db.mongo import db
 from ...core.limiter import limiter
-import logging
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 oauth = OAuth()

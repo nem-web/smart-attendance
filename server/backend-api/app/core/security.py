@@ -1,4 +1,4 @@
-import logging
+import structlog
 import hashlib
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException
@@ -6,7 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 security = HTTPBearer(auto_error=False)
 
 JWT_SECRET = settings.JWT_SECRET

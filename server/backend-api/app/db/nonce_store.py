@@ -17,10 +17,10 @@ removed before the token that carried it has expired.
 """
 
 import os
-import logging
+import structlog
 from datetime import datetime, timezone, timedelta
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 # ── Configuration ───────────────────────────────────────────────
 REDIS_URL: str = os.getenv("REDIS_URL", "")
