@@ -376,7 +376,13 @@ async def mark_attendance(request: Request, payload: Dict):
         decoded = decode_jwt(token)
         user_id = decoded.get("user_id")
         user_role = decoded.get("role")
-    except Exception:
+        
+        if not user_id:
+            logger.error("Token missing user_id")
+            raise ValueError("user_id is required")
+            
+    except Exception as e:
+        logger.error(f"Authentication failed: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid token")
 
     # Check device binding - ONLY for students

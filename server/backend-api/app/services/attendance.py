@@ -1,16 +1,35 @@
+import logging
 from app.db.mongo import db
 from datetime import datetime, timezone
 from bson import ObjectId
 
+logger = logging.getLogger(__name__)
 attendance_col = db["attendance"]
 
+async def ensure_indexes():
+    """Ensure unique indexes for attendance collection."""
+    try:
+        # Create unique index to prevent duplicate attendance for same student, class, date, period
+        # Using compound index: student_id + class_id + date + period
+        await attendance_col.create_index(
+            [("student_id", 1), ("class_id", 1), ("date", 1), ("period", 1)],
+            unique=True,
+            name="unique_student_attendance_idx"
+        )
+        logger.info("Attendance indexes ensured")
+    except Exception as e:
+        logger.error(f"Failed to create attendance indexes: {e}")
 
 async def mark_attendance(payload: dict):
-    payload["created_at"] = datetime.now(timezone.utc).isoformat()
-    res = await attendance_col.insert_one(payload)
-    doc = await attendance_col.find_one({"_id": res.inserted_id})
-    doc["_id"] = str(doc["_id"])
-    return doc
+    try:
+        payload["created_at"] = datetime.now(timezone.utc).isoformat()
+        result = await attendance_col.insert_one(payload)
+        attendance_record = await attendance_col.find_one({"_id": result.inserted_id})
+        attendance_record["_id"] = str(attendance_record["_id"])
+        return attendance_record
+    except Exception as e:
+        logger.error(f"Error marking attendance: {str(e)}")
+        raise
 
 
 async def log_grouped_attendance(
