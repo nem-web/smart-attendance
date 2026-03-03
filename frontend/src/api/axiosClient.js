@@ -2,7 +2,7 @@ import axios from "axios";
 import { getOrCreateDeviceUUID } from "../utils/deviceBinding"; // Update path if needed
 
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true,
 });
 
