@@ -826,7 +826,7 @@ Authorization: Bearer <your-jwt-token>
 ##### Register User
 
 ```http
-POST /api/auth/register
+POST /api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -840,7 +840,7 @@ Content-Type: application/json
 ##### Login
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -883,7 +883,7 @@ GET /auth/google/callback?code=<authorization-code>
 ##### Get All Students
 
 ```http
-GET /api/students
+GET /api/v1/students
 Authorization: Bearer <token>
 ```
 
@@ -905,7 +905,7 @@ Authorization: Bearer <token>
 ##### Add Student
 
 ```http
-POST /api/students
+POST /api/v1/students
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
@@ -920,7 +920,7 @@ Content-Type: multipart/form-data
 ##### Get Student Details
 
 ```http
-GET /api/students/{student_id}
+GET /api/v1/students/{student_id}
 Authorization: Bearer <token>
 ```
 
@@ -929,7 +929,7 @@ Authorization: Bearer <token>
 ##### Mark Attendance
 
 ```http
-POST /api/attendance/mark
+POST /api/v1/attendance/mark
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -968,14 +968,14 @@ Content-Type: application/json
 ##### Get Attendance Records
 
 ```http
-GET /api/attendance?subject_id={id}&date={YYYY-MM-DD}
+GET /api/v1/attendance?subject_id={id}&date={YYYY-MM-DD}
 Authorization: Bearer <token>
 ```
 
 ##### Get Student Attendance
 
 ```http
-GET /api/attendance/student/{student_id}
+GET /api/v1/attendance/student/{student_id}
 Authorization: Bearer <token>
 ```
 
@@ -984,14 +984,14 @@ Authorization: Bearer <token>
 ##### Get All Subjects
 
 ```http
-GET /api/classes
+GET /api/v1/classes
 Authorization: Bearer <token>
 ```
 
 ##### Create Subject
 
 ```http
-POST /api/classes
+POST /api/v1/classes
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -1005,7 +1005,7 @@ Content-Type: application/json
 ##### Get Subject Details
 
 ```http
-GET /api/classes/{subject_id}
+GET /api/v1/classes/{subject_id}
 Authorization: Bearer <token>
 ```
 
@@ -1014,7 +1014,7 @@ Authorization: Bearer <token>
 ##### Upload Student Face
 
 ```http
-POST /api/face/upload
+POST /api/v1/face/upload
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
@@ -1027,7 +1027,7 @@ Content-Type: multipart/form-data
 ##### Verify Face
 
 ```http
-POST /api/face/verify
+POST /api/v1/face/verify
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -1042,14 +1042,14 @@ Content-Type: application/json
 ##### Get Settings
 
 ```http
-GET /api/teacher-settings
+GET /api/v1/teacher-settings
 Authorization: Bearer <token>
 ```
 
 ##### Update Settings
 
 ```http
-PUT /api/teacher-settings
+PUT /api/v1/teacher-settings
 Authorization: Bearer <token>
 Content-Type: application/json
 

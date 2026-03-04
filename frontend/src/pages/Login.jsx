@@ -22,7 +22,7 @@ export default function Login() {
   const navigate = useNavigate();
 
 
-  const apiUrl = `${import.meta.env.VITE_API_URL}/api/v1`;
+  const apiUrl =  `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api/v1`;
 
 
   // Google Login

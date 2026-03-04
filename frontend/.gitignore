@@ -32,3 +32,5 @@ playwright-report
 
 # env files ( Environment Variables )
 .env
+.env.*
+!.env.example
