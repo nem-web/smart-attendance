@@ -717,35 +717,35 @@ async def test_global_stats(client: AsyncClient, db, teacher_token_header):
     data = response.json()
 
     # Verify response structure
-    assert "overall_attendance" in data
-    assert "risk_count" in data
-    assert "top_subjects" in data
+    assert "attendance" in data
+    assert "riskCount" in data
+    assert "topSubjects" in data
 
     # Verify calculations
     # Subject 1 avg: (22+23)/(26+26) * 100 = 45/52 * 100 = 86.54%
     # Subject 2 avg: 18/26 * 100 = 69.23%
     # Subject 3 avg: 24/26 * 100 = 92.31%
     # Overall avg: (86.54 + 69.23 + 92.31) / 3 = 82.69%
-    assert data["overall_attendance"] > 80
-    assert data["overall_attendance"] < 85
+    assert data["attendance"] > 80
+    assert data["attendance"] < 85
 
     # Risk count: subjects with < 75% (only Subject 2)
-    assert data["risk_count"] == 1
+    assert data["riskCount"] == 1
 
     # Top subjects should be sorted by percentage (descending)
-    assert len(data["top_subjects"]) == 3
+    assert len(data["topSubjects"]) == 3
     assert (
-        data["top_subjects"][0]["attendancePercentage"]
-        >= data["top_subjects"][1]["attendancePercentage"]
+        data["topSubjects"][0]["attendancePercentage"]
+        >= data["topSubjects"][1]["attendancePercentage"]
     )
     assert (
-        data["top_subjects"][1]["attendancePercentage"]
-        >= data["top_subjects"][2]["attendancePercentage"]
+        data["topSubjects"][1]["attendancePercentage"]
+        >= data["topSubjects"][2]["attendancePercentage"]
     )
 
     # Verify subject details
-    assert data["top_subjects"][0]["subjectName"] == "Physics"
-    assert data["top_subjects"][0]["attendancePercentage"] == 92.31
+    assert data["topSubjects"][0]["subjectName"] == "Physics"
+    assert data["topSubjects"][0]["attendancePercentage"] == 92.31
 
 
 @pytest.mark.asyncio
@@ -759,10 +759,11 @@ async def test_global_stats_no_subjects(client: AsyncClient, db, teacher_token_h
 
     assert response.status_code == 200
     data = response.json()
+    print(f"DEBUG DATA: {data}")
 
-    assert data["overall_attendance"] == 0.0
-    assert data["risk_count"] == 0
-    assert data["top_subjects"] == []
+    assert data["attendance"] == 0.0
+    assert data["riskCount"] == 0
+    assert data["topSubjects"] == []
 
 
 @pytest.mark.asyncio
@@ -790,9 +791,9 @@ async def test_global_stats_no_attendance_data(
     data = response.json()
 
     # Should return empty stats when no attendance data exists
-    assert data["overall_attendance"] == 0.0
-    assert data["risk_count"] == 0
-    assert data["top_subjects"] == []
+    assert data["attendance"] == 0.0
+    assert data["riskCount"] == 0
+    assert data["topSubjects"] == []
 
 
 @pytest.mark.asyncio
