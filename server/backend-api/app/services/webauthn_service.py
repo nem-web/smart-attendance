@@ -229,7 +229,7 @@ async def verify_auth_response(user: dict, response: AuthenticationCredential, o
     # Update sign count
     await db.users.update_one(
         {"_id": user["_id"], "webauthn_credentials.credential_id": credential["credential_id"]},
-        {"$set": {"webauthn_credentials.$.sign_count": verification.new_sign_count, "current_challenge": ""}} # Clear challenge
+        {"$set": {"webauthn_credentials.$.sign_count": verification.new_sign_count, "current_challenge": None}} # Clear challenge
     )
     # Note: clearing challenge prevents replay but might cause issues if verification fails and we want to retry? 
     # Standard practice is to generate new challenge on retry.
