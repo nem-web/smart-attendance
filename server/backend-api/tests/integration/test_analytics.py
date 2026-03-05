@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 @pytest.mark.asyncio
 async def test_attendance_trend(client: AsyncClient, db, teacher_token_header):
-    """Test GET /api/analytics/attendance-trend endpoint"""
+    """Test GET /analytics/attendance-trend endpoint"""
     teacher_id = ObjectId()
     headers = teacher_token_header(str(teacher_id))
 
@@ -56,7 +56,7 @@ async def test_attendance_trend(client: AsyncClient, db, teacher_token_header):
 
     # Test the endpoint
     response = await client.get(
-        f"/api/analytics/attendance-trend?classId={str(class_id)}&dateFrom={dates[0]}&dateTo={dates[2]}",
+        f"/analytics/attendance-trend?classId={str(class_id)}&dateFrom={dates[0]}&dateTo={dates[2]}",
         headers=headers,
     )
 
@@ -90,7 +90,7 @@ async def test_attendance_trend_invalid_dates(
 
     # Invalid date format
     response = await client.get(
-        f"/api/analytics/attendance-trend?classId={str(class_id)}&dateFrom=invalid&dateTo=2024-01-01",
+        f"/analytics/attendance-trend?classId={str(class_id)}&dateFrom=invalid&dateTo=2024-01-01",
         headers=headers,
     )
     assert response.status_code == 400
@@ -98,7 +98,7 @@ async def test_attendance_trend_invalid_dates(
 
     # dateFrom after dateTo
     response = await client.get(
-        f"/api/analytics/attendance-trend?classId={str(class_id)}&dateFrom=2024-12-31&dateTo=2024-01-01",
+        f"/analytics/attendance-trend?classId={str(class_id)}&dateFrom=2024-12-31&dateTo=2024-01-01",
         headers=headers,
     )
     assert response.status_code == 400
@@ -111,18 +111,26 @@ async def test_attendance_trend_invalid_class_id(
 ):
     """Test attendance trend with invalid classId"""
     teacher_id = ObjectId()
+    # Create a dummy subject so the teacher has subjects and we don't hit the empty subjects check
+    await db.subjects.insert_one(
+        {
+            "name": "Maths",
+            "code": "MATH101",
+            "professor_ids": [teacher_id],
+        }
+    )
     headers = teacher_token_header(str(teacher_id))
     response = await client.get(
-        "/api/analytics/attendance-trend?classId=invalid&dateFrom=2024-01-01&dateTo=2024-12-31",
+        "/analytics/attendance-trend?classId=invalid&dateFrom=2024-01-01&dateTo=2024-12-31",
         headers=headers,
     )
     assert response.status_code == 400
-    assert "Invalid classId" in response.json()["detail"]
+    assert "Invalid classId format" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
 async def test_monthly_summary(client: AsyncClient, db, teacher_token_header):
-    """Test GET /api/analytics/monthly-summary endpoint"""
+    """Test GET /analytics/monthly-summary endpoint"""
     teacher_id = ObjectId()
     headers = teacher_token_header(str(teacher_id))
     class_id = ObjectId()
@@ -168,7 +176,7 @@ async def test_monthly_summary(client: AsyncClient, db, teacher_token_header):
     )
 
     # Test without filter
-    response = await client.get("/api/analytics/monthly-summary", headers=headers)
+    response = await client.get("/analytics/monthly-summary", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert "data" in data
@@ -176,7 +184,7 @@ async def test_monthly_summary(client: AsyncClient, db, teacher_token_header):
 
     # Test with classId filter
     response = await client.get(
-        f"/api/analytics/monthly-summary?classId={str(class_id)}",
+        f"/analytics/monthly-summary?classId={str(class_id)}",
         headers=headers,
     )
     assert response.status_code == 200
@@ -211,7 +219,7 @@ async def test_monthly_summary_invalid_class_id(
     )
 
     response = await client.get(
-        "/api/analytics/monthly-summary?classId=invalid",
+        "/analytics/monthly-summary?classId=invalid",
         headers=headers,
     )
     assert response.status_code == 400
@@ -220,7 +228,7 @@ async def test_monthly_summary_invalid_class_id(
 
 @pytest.mark.asyncio
 async def test_class_risk(client: AsyncClient, db, teacher_token_header):
-    """Test GET /api/analytics/class-risk endpoint"""
+    """Test GET /analytics/class-risk endpoint"""
     teacher_id = ObjectId()
     headers = teacher_token_header(str(teacher_id))
 
@@ -305,7 +313,7 @@ async def test_class_risk(client: AsyncClient, db, teacher_token_header):
     )
 
     # Test the endpoint
-    response = await client.get("/api/analytics/class-risk", headers=headers)
+    response = await client.get("/analytics/class-risk", headers=headers)
     assert response.status_code == 200
     data = response.json()
 
@@ -369,7 +377,7 @@ async def test_class_risk_empty(client: AsyncClient, db, teacher_token_header):
     )
 
     # Test the endpoint
-    response = await client.get("/api/analytics/class-risk", headers=headers)
+    response = await client.get("/analytics/class-risk", headers=headers)
     assert response.status_code == 200
     data = response.json()
 
@@ -381,9 +389,9 @@ async def test_class_risk_empty(client: AsyncClient, db, teacher_token_header):
 @pytest.mark.parametrize(
     "path",
     [
-        "/api/analytics/attendance-trend?classId=507f1f77bcf86cd799439011&dateFrom=2024-01-01&dateTo=2024-01-31",
-        "/api/analytics/monthly-summary",
-        "/api/analytics/class-risk",
+        "/analytics/attendance-trend?classId=507f1f77bcf86cd799439011&dateFrom=2024-01-01&dateTo=2024-01-31",
+        "/analytics/monthly-summary",
+        "/analytics/class-risk",
     ],
 )
 async def test_analytics_requires_auth(client: AsyncClient, db, path):
@@ -395,9 +403,9 @@ async def test_analytics_requires_auth(client: AsyncClient, db, path):
 @pytest.mark.parametrize(
     "path",
     [
-        "/api/analytics/attendance-trend?classId=507f1f77bcf86cd799439011&dateFrom=2024-01-01&dateTo=2024-01-31",
-        "/api/analytics/monthly-summary",
-        "/api/analytics/class-risk",
+        "/analytics/attendance-trend?classId=507f1f77bcf86cd799439011&dateFrom=2024-01-01&dateTo=2024-01-31",
+        "/analytics/monthly-summary",
+        "/analytics/class-risk",
     ],
 )
 async def test_analytics_teacher_only(
@@ -428,7 +436,7 @@ async def test_attendance_trend_forbidden_for_unowned_class(
     )
 
     response = await client.get(
-        f"/api/analytics/attendance-trend?classId={class_id}&dateFrom=2024-01-01&dateTo=2024-01-31",
+        f"/analytics/attendance-trend?classId={class_id}&dateFrom=2024-01-01&dateTo=2024-01-31",
         headers=headers,
     )
 
@@ -464,7 +472,7 @@ async def test_monthly_summary_forbidden_for_unowned_class(
     )
 
     response = await client.get(
-        f"/api/analytics/monthly-summary?classId={class_id}",
+        f"/analytics/monthly-summary?classId={class_id}",
         headers=headers,
     )
 
@@ -529,7 +537,7 @@ async def test_monthly_summary_filters_to_teacher_subjects(
         ]
     )
 
-    response = await client.get("/api/analytics/monthly-summary", headers=headers)
+    response = await client.get("/analytics/monthly-summary", headers=headers)
     assert response.status_code == 200
     data = response.json()["data"]
 
@@ -594,7 +602,7 @@ async def test_class_risk_filters_to_teacher_subjects(
         ]
     )
 
-    response = await client.get("/api/analytics/class-risk", headers=headers)
+    response = await client.get("/analytics/class-risk", headers=headers)
     assert response.status_code == 200
     data = response.json()["data"]
 
@@ -604,7 +612,7 @@ async def test_class_risk_filters_to_teacher_subjects(
 
 @pytest.mark.asyncio
 async def test_global_stats(client: AsyncClient, db, teacher_token_header):
-    """Test GET /api/analytics/global endpoint"""
+    """Test GET /analytics/global endpoint"""
     # Get teacher ID from the token header
     # For this test, we'll use a mock teacher ID
     teacher_id = ObjectId()
@@ -702,42 +710,42 @@ async def test_global_stats(client: AsyncClient, db, teacher_token_header):
 
     # Test the endpoint
     response = await client.get(
-        "/api/analytics/global", headers=teacher_token_header(str(teacher_id))
+        "/analytics/global", headers=teacher_token_header(str(teacher_id))
     )
 
     assert response.status_code == 200
     data = response.json()
 
     # Verify response structure
-    assert "overall_attendance" in data
-    assert "risk_count" in data
-    assert "top_subjects" in data
+    assert "attendance" in data
+    assert "riskCount" in data
+    assert "topSubjects" in data
 
     # Verify calculations
     # Subject 1 avg: (22+23)/(26+26) * 100 = 45/52 * 100 = 86.54%
     # Subject 2 avg: 18/26 * 100 = 69.23%
     # Subject 3 avg: 24/26 * 100 = 92.31%
     # Overall avg: (86.54 + 69.23 + 92.31) / 3 = 82.69%
-    assert data["overall_attendance"] > 80
-    assert data["overall_attendance"] < 85
+    assert data["attendance"] > 80
+    assert data["attendance"] < 85
 
     # Risk count: subjects with < 75% (only Subject 2)
-    assert data["risk_count"] == 1
+    assert data["riskCount"] == 1
 
     # Top subjects should be sorted by percentage (descending)
-    assert len(data["top_subjects"]) == 3
+    assert len(data["topSubjects"]) == 3
     assert (
-        data["top_subjects"][0]["attendancePercentage"]
-        >= data["top_subjects"][1]["attendancePercentage"]
+        data["topSubjects"][0]["attendancePercentage"]
+        >= data["topSubjects"][1]["attendancePercentage"]
     )
     assert (
-        data["top_subjects"][1]["attendancePercentage"]
-        >= data["top_subjects"][2]["attendancePercentage"]
+        data["topSubjects"][1]["attendancePercentage"]
+        >= data["topSubjects"][2]["attendancePercentage"]
     )
 
     # Verify subject details
-    assert data["top_subjects"][0]["subjectName"] == "Physics"
-    assert data["top_subjects"][0]["attendancePercentage"] == 92.31
+    assert data["topSubjects"][0]["subjectName"] == "Physics"
+    assert data["topSubjects"][0]["attendancePercentage"] == 92.31
 
 
 @pytest.mark.asyncio
@@ -746,15 +754,16 @@ async def test_global_stats_no_subjects(client: AsyncClient, db, teacher_token_h
     teacher_id = ObjectId()
 
     response = await client.get(
-        "/api/analytics/global", headers=teacher_token_header(str(teacher_id))
+        "/analytics/global", headers=teacher_token_header(str(teacher_id))
     )
 
     assert response.status_code == 200
     data = response.json()
+    print(f"DEBUG DATA: {data}")
 
-    assert data["overall_attendance"] == 0.0
-    assert data["risk_count"] == 0
-    assert data["top_subjects"] == []
+    assert data["attendance"] == 0.0
+    assert data["riskCount"] == 0
+    assert data["topSubjects"] == []
 
 
 @pytest.mark.asyncio
@@ -775,16 +784,16 @@ async def test_global_stats_no_attendance_data(
     )
 
     response = await client.get(
-        "/api/analytics/global", headers=teacher_token_header(str(teacher_id))
+        "/analytics/global", headers=teacher_token_header(str(teacher_id))
     )
 
     assert response.status_code == 200
     data = response.json()
 
     # Should return empty stats when no attendance data exists
-    assert data["overall_attendance"] == 0.0
-    assert data["risk_count"] == 0
-    assert data["top_subjects"] == []
+    assert data["attendance"] == 0.0
+    assert data["riskCount"] == 0
+    assert data["topSubjects"] == []
 
 
 @pytest.mark.asyncio
@@ -793,7 +802,7 @@ async def test_global_stats_non_teacher(client: AsyncClient, db, student_token_h
     student_id = ObjectId()
 
     response = await client.get(
-        "/api/analytics/global", headers=student_token_header(str(student_id))
+        "/analytics/global", headers=student_token_header(str(student_id))
     )
 
     assert response.status_code == 403

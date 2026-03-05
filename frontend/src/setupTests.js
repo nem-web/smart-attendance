@@ -1,6 +1,18 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, vi, beforeAll, afterAll } from 'vitest';
+import { setupServer } from 'msw/node';
+import { handlers } from './mocks/handlers';
+
+const server = setupServer(...handlers);
+
+beforeAll(() => server.listen());
+afterEach(() => {
+    server.resetHandlers();
+    cleanup();
+});
+afterAll(() => server.close());
+
 
 vi.mock('react-i18next', () => {
     // Define translations inside the factory so they are available
@@ -42,8 +54,7 @@ vi.mock('react-i18next', () => {
         },
         "dashboard": {
             "title": "Dashboard",
-            "welcome": "Welcome back",
-            "overview": "Overview",
+            "welcome": "Welcome back",            "greeting": "Welcome, {{name}}",            "overview": "Overview",
             "total_students": "Total Students",
             "average_attendance": "Average Attendance",
             "reports": "Reports",
@@ -98,7 +109,7 @@ vi.mock('react-i18next', () => {
 
     return {
         useTranslation: () => ({
-            t: (key) => {
+            t: (key, options) => {
                 if (!key) return '';
                 const keys = key.split('.');
                 let result = enTranslations;
@@ -110,7 +121,14 @@ vi.mock('react-i18next', () => {
                         return key;
                     }
                 }
-                if (typeof result === 'object') return key; // return key if it points to an object (incomplete path)
+                if (typeof result === 'object') return key;
+
+                // Simple interpolation for {{variable}}
+                if (options && typeof result === 'string') {
+                    Object.keys(options).forEach(optKey => {
+                        result = result.replace(new RegExp(`{{\\s*${optKey}\\s*}}`, 'g'), options[optKey]);
+                    });
+                }
                 return result;
             },
             i18n: {
@@ -125,9 +143,6 @@ vi.mock('react-i18next', () => {
     };
 });
 
-afterEach(() => {
-  cleanup();
-});
 
 // Mock ResizeObserver if needed by some components (charts etc)
 global.ResizeObserver = class ResizeObserver {
@@ -136,9 +151,26 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
-global.localStorage = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-};
+const localStorageMock = (function () {
+  let store = {};
+  return {
+    getItem: vi.fn((key) => store[key] || null),
+    setItem: vi.fn((key, value) => {
+      store[key] = value.toString();
+    }),
+    removeItem: vi.fn((key) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+  writable: true
+});
+
+// Use vi.stubGlobal for the global scope
+vi.stubGlobal('localStorage', localStorageMock);

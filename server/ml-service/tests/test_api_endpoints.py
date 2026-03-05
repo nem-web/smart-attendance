@@ -90,8 +90,9 @@ def test_encode_face_success():
     b64_img = create_dummy_image_b64()
     # Mock detect_faces using patch.object to ensure we hit the right module reference
     with patch.object(fr_module, "detect_faces") as mock_detect:
-        # Mock must return list of (x,y,w,h) tuples
-        mock_detect.return_value = [(10, 10, 50, 50)]
+        # Mock returns (top, right, bottom, left)
+        # Face of 50x50 at (10,10): top=10, right=60, bottom=60, left=10
+        mock_detect.return_value = [(10, 60, 60, 10)]
 
         response = client.post("/api/ml/encode-face", json={"image_base64": b64_img})
         assert response.status_code == 200
@@ -108,7 +109,8 @@ def test_encode_face_success():
 def test_detect_faces_success():
     b64_img = create_dummy_image_b64()
     with patch.object(fr_module, "detect_faces") as mock_detect:
-        mock_detect.return_value = [(10, 10, 50, 50)]
+        # Mock returns (top, right, bottom, left)
+        mock_detect.return_value = [(10, 60, 60, 10)]
 
         response = client.post("/api/ml/detect-faces", json={"image_base64": b64_img})
         assert response.status_code == 200
@@ -118,5 +120,7 @@ def test_detect_faces_success():
         loc = data["faces"][0]["location"]
         assert loc["top"] == 10
         assert loc["left"] == 10
+        assert loc["right"] == 60
+        assert loc["bottom"] == 60
         assert loc["right"] == 60
         assert loc["bottom"] == 60

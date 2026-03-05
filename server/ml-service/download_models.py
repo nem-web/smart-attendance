@@ -48,7 +48,8 @@ def download_model():
         # Try each URL in order
         success = False
         for i, url in enumerate(MODEL_URLS, 1):
-            if success: break
+            if success:
+                break
             print(f"\n[Attempt {i}/{len(MODEL_URLS)}] Downloading from:")
             print(f"  {url}")
             try:
@@ -64,7 +65,7 @@ def download_model():
                         tmp_target.unlink()
             except Exception as e:
                 print(f"❌ Failed to download from {url}: {e}")
-        
+
         if not success:
             print("❌ Failed to download BlazeFace model from any source.")
             return False
@@ -73,15 +74,19 @@ def download_model():
     if LANDMARKER_TARGET_PATH.exists() and LANDMARKER_TARGET_PATH.stat().st_size > 0:
         print(f"✓ Landmarker model already exists at {LANDMARKER_TARGET_PATH}")
     else:
-        print(f"\nDownloading Face Landmarker from:")
+        print("\nDownloading Face Landmarker from:")
         print(f"  {FACE_LANDMARKER_MODEL_URL}")
         try:
-            tmp_landmarker = LANDMARKER_TARGET_PATH.with_suffix(f"{LANDMARKER_TARGET_PATH.suffix}.tmp")
+            tmp_landmarker = LANDMARKER_TARGET_PATH.with_suffix(
+                f"{LANDMARKER_TARGET_PATH.suffix}.tmp"
+            )
             # from urllib.request import urlretrieve # Removed redundant import
             urllib.request.urlretrieve(FACE_LANDMARKER_MODEL_URL, tmp_landmarker)
             if tmp_landmarker.exists() and tmp_landmarker.stat().st_size > 1024:
                 tmp_landmarker.replace(LANDMARKER_TARGET_PATH)
-                print(f"✓ Successfully downloaded landmarker to {LANDMARKER_TARGET_PATH}")
+                print(
+                    f"✓ Successfully downloaded landmarker to {LANDMARKER_TARGET_PATH}"
+                )
             else:
                 print("❌ Downloaded file is empty, too small, or missing.")
                 if tmp_landmarker.exists():

@@ -1,11 +1,10 @@
 """
 Tests for image validation in ML service
 """
-import pytest
+
 import base64
 from io import BytesIO
 from PIL import Image
-import numpy as np
 
 from app.utils.image_validation import validate_and_decode_image
 from app.core.constants import (
@@ -30,7 +29,7 @@ def test_valid_jpeg_image():
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         image_base64
     )
-    
+
     assert success is True
     assert image_bytes is not None
     assert image is not None
@@ -45,7 +44,7 @@ def test_valid_png_image():
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         image_base64
     )
-    
+
     assert success is True
     assert image is not None
     assert image.format == "PNG"
@@ -55,11 +54,11 @@ def test_image_too_large_base64():
     """Test that oversized base64 string is rejected"""
     # Create a string larger than MAX_BASE64_SIZE
     large_base64 = "A" * 8_000_000  # 8MB base64 string
-    
+
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         large_base64
     )
-    
+
     assert success is False
     assert error_code == ERROR_IMAGE_TOO_LARGE
     assert "too large" in error_msg.lower()
@@ -68,11 +67,11 @@ def test_image_too_large_base64():
 def test_invalid_base64():
     """Test that invalid base64 string is rejected"""
     invalid_base64 = "not-valid-base64!@#$%"
-    
+
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         invalid_base64
     )
-    
+
     assert success is False
     assert error_code == ERROR_INVALID_FORMAT
     assert "invalid base64" in error_msg.lower()
@@ -86,11 +85,11 @@ def test_invalid_image_format():
     img.save(buffer, format="GIF")
     buffer.seek(0)
     image_base64 = base64.b64encode(buffer.read()).decode("utf-8")
-    
+
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         image_base64
     )
-    
+
     assert success is False
     assert error_code == ERROR_INVALID_FORMAT
     assert "invalid image format" in error_msg.lower()
@@ -100,11 +99,11 @@ def test_image_dimensions_too_large():
     """Test that images with dimensions exceeding limit are rejected"""
     # Create image larger than MAX_IMAGE_DIMENSION (4096)
     image_base64 = create_test_image(5000, 5000, "JPEG")
-    
+
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         image_base64
     )
-    
+
     assert success is False
     assert error_code == ERROR_INVALID_DIMENSIONS
     assert "dimensions" in error_msg.lower()
@@ -113,11 +112,11 @@ def test_image_dimensions_too_large():
 def test_image_at_max_dimensions():
     """Test that image at exactly max dimensions is accepted"""
     image_base64 = create_test_image(4096, 4096, "JPEG")
-    
+
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         image_base64
     )
-    
+
     assert success is True
     assert image is not None
 
@@ -126,11 +125,11 @@ def test_corrupted_image_data():
     """Test that corrupted image data is rejected"""
     # Create valid base64 but invalid image data
     corrupted_base64 = base64.b64encode(b"not an image").decode("utf-8")
-    
+
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         corrupted_base64
     )
-    
+
     assert success is False
     assert error_code == ERROR_INVALID_FORMAT
 
@@ -138,7 +137,7 @@ def test_corrupted_image_data():
 def test_empty_base64():
     """Test that empty base64 string is rejected"""
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image("")
-    
+
     assert success is False
     assert error_code == ERROR_INVALID_FORMAT
 
@@ -151,10 +150,10 @@ def test_rgb_conversion():
     img.save(buffer, format="PNG")
     buffer.seek(0)
     image_base64 = base64.b64encode(buffer.read()).decode("utf-8")
-    
+
     success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
         image_base64
     )
-    
+
     assert success is True
     assert image.mode == "RGB"

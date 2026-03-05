@@ -8,9 +8,10 @@ from httpx import AsyncClient
 @pytest.mark.asyncio
 async def test_confirm_attendance_invalid_subject_id_returns_400(client: AsyncClient):
     response = await client.post(
-        "/api/attendance/confirm",
+        "/attendance/confirm",
         json={
             "subject_id": "not-an-object-id",
+            "date": str(date.today()),
             "present_students": [],
             "absent_students": [],
         },
@@ -23,9 +24,10 @@ async def test_confirm_attendance_invalid_subject_id_returns_400(client: AsyncCl
 @pytest.mark.asyncio
 async def test_confirm_attendance_invalid_student_id_returns_400(client: AsyncClient):
     response = await client.post(
-        "/api/attendance/confirm",
+        "/attendance/confirm",
         json={
             "subject_id": str(ObjectId()),
+            "date": str(date.today()),
             "present_students": ["bad-student-id"],
             "absent_students": [],
         },
@@ -43,9 +45,10 @@ async def test_confirm_attendance_invalid_absent_student_id_returns_400(
     client: AsyncClient,
 ):
     response = await client.post(
-        "/api/attendance/confirm",
+        "/attendance/confirm",
         json={
             "subject_id": str(ObjectId()),
+            "date": str(date.today()),
             "present_students": [],
             "absent_students": ["bad-student-id"],
         },
@@ -63,9 +66,10 @@ async def test_confirm_attendance_overlap_students_returns_400(client: AsyncClie
     student_id = ObjectId()
 
     response = await client.post(
-        "/api/attendance/confirm",
+        "/attendance/confirm",
         json={
             "subject_id": str(ObjectId()),
+            "date": str(date.today()),
             "present_students": [str(student_id)],
             "absent_students": [str(student_id)],
         },
@@ -110,9 +114,10 @@ async def test_confirm_attendance_deduplicates_ids_and_writes_summary(
     )
 
     response = await client.post(
-        "/api/attendance/confirm",
+        "/attendance/confirm",
         json={
             "subject_id": str(subject_id),
+            "date": str(date.today()),
             "present_students": [str(present_student), str(present_student)],
             "absent_students": [str(absent_student), str(absent_student)],
         },

@@ -56,7 +56,9 @@ class DetectedFace(BaseModel):
     """A detected face with embedding"""
 
     embedding: List[float] = Field(..., description="Face embedding")
-    is_live: bool = Field(default=True, description="Whether the face was detected as live")
+    is_live: bool = Field(
+        default=True, description="Whether the face was detected as live"
+    )
 
 
 class BatchMatchRequest(BaseModel):

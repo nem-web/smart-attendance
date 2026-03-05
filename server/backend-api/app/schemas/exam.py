@@ -8,7 +8,6 @@ Exams are stored in a dedicated `exams` collection.
 from pydantic import BaseModel, Field
 from typing import List
 import datetime
-from bson import ObjectId
 
 
 class ExamCreate(BaseModel):

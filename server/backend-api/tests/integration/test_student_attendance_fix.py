@@ -54,9 +54,10 @@ async def test_student_attendance_total_and_percentage_updated_on_confirm(
 
     # Confirm first attendance (Mark Present)
     response = await client.post(
-        "/api/attendance/confirm",
+        "/attendance/confirm",
         json={
             "subject_id": str(subject_id),
+            "date": str(date.today()),
             "present_students": [str(student_id)],
             "absent_students": [],
         },
@@ -124,9 +125,10 @@ async def test_student_attendance_percentage_calculated_correctly_present_and_ab
     # Mark as present 3 times
     for _ in range(3):
         response = await client.post(
-            "/api/attendance/confirm",
+            "/attendance/confirm",
             json={
                 "subject_id": str(subject_id),
+                "date": str(date.today()),
                 "present_students": [str(student_id)],
                 "absent_students": [],
             },
@@ -143,9 +145,10 @@ async def test_student_attendance_percentage_calculated_correctly_present_and_ab
     # Mark as absent 2 times
     for _ in range(2):
         response = await client.post(
-            "/api/attendance/confirm",
+            "/attendance/confirm",
             json={
                 "subject_id": str(subject_id),
+                "date": str(date.today()),
                 "present_students": [],
                 "absent_students": [str(student_id)],
             },
@@ -241,9 +244,10 @@ async def test_get_my_subjects_returns_correct_attendance_data(
     # Mark student present 4 times and absent 1 time
     for i in range(4):
         response = await client.post(
-            "/api/attendance/confirm",
+            "/attendance/confirm",
             json={
                 "subject_id": str(subject_id),
+                "date": str(date.today()),
                 "present_students": [str(student_user_id)],  # Fixed: use userId
                 "absent_students": [],
             },
@@ -262,9 +266,10 @@ async def test_get_my_subjects_returns_correct_attendance_data(
 
     # Mark absent once
     response = await client.post(
-        "/api/attendance/confirm",
+        "/attendance/confirm",
         json={
             "subject_id": str(subject_id),
+            "date": str(date.today()),
             "present_students": [],
             "absent_students": [str(student_user_id)],  # Fixed: use userId
         },

@@ -26,6 +26,10 @@ def client(mock_deps):
     from fastapi.testclient import TestClient
     from fastapi import FastAPI
     from app.api.routes.auth import router
+    from app.core.limiter import limiter
+
+    # Disable limiter for these unit tests to prevent 429 errors
+    limiter.enabled = False
 
     sys.modules["app.db.mongo"] = MagicMock()
     sys.modules["app.db.mongo"].db = mock_deps[0]

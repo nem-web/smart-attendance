@@ -77,7 +77,7 @@ def test_get_subject_analytics_success(client):
     mock_cursor.__aiter__.return_value = [student1_doc, student2_doc]
     db.users.find.return_value = mock_cursor
 
-    response = client.get(f"/api/analytics/subject/{subject_id}")
+    response = client.get(f"/analytics/subject/{subject_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -121,5 +121,5 @@ def test_get_subject_analytics_forbidden(client):
 
     db.subjects.find_one = AsyncMock(return_value=subject_doc)
 
-    response = client.get(f"/api/analytics/subject/{subject_id}")
+    response = client.get(f"/analytics/subject/{subject_id}")
     assert response.status_code == 403

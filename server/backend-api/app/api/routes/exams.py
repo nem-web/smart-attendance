@@ -22,7 +22,7 @@ Endpoints:
 
 from bson import ObjectId
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.deps import get_current_teacher
 from app.db.mongo import db
@@ -82,8 +82,10 @@ async def add_exam(
     teacher_oid = teacher["_id"]
     date_str = payload.date.isoformat()
 
-    # Check for duplicate date (optional: if multiple exams can be on same day, remove this check)
-    # The requirement says "Override schedule for exams". Usually implies the WHOLE day is an exam day.
+    # Check for duplicate date (optional: if multiple exams can be on same day,
+    # remove this check)
+    # The requirement says "Override schedule for exams". Usually implies the
+    # WHOLE day is an exam day.
     # So checking for duplicate date makes sense if it's an "Exam Day" concept.
     # However, user example: "Maths Final". What if "Physics Final" is in the afternoon?
     # The requirement says "Exams must override the regular schedule".
@@ -127,7 +129,7 @@ async def update_exam(
     """Update an existing exam."""
     teacher = current["teacher"]
     teacher_oid = teacher["_id"]
-    
+
     if not ObjectId.is_valid(exam_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -135,14 +137,13 @@ async def update_exam(
         )
 
     date_str = payload.date.isoformat()
-    
-    # Check if we are moving the exam to a date that already has an exam (and it's not THIS exam)
-    existing_date = await db.exams.find_one({
-        "teacher_id": teacher_oid, 
-        "date": date_str,
-        "_id": {"$ne": ObjectId(exam_id)}
-    })
-    
+
+    # Check if we are moving the exam to a date that already has an exam (and
+    # it's not THIS exam)
+    existing_date = await db.exams.find_one(
+        {"teacher_id": teacher_oid, "date": date_str, "_id": {"$ne": ObjectId(exam_id)}}
+    )
+
     if existing_date:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -152,7 +153,7 @@ async def update_exam(
     now = datetime.utcnow()
     update_result = await db.exams.update_one(
         {"_id": ObjectId(exam_id), "teacher_id": teacher_oid},
-        {"$set": {"date": date_str, "name": payload.name.strip(), "updatedAt": now}}
+        {"$set": {"date": date_str, "name": payload.name.strip(), "updatedAt": now}},
     )
 
     if update_result.matched_count == 0:
@@ -160,7 +161,7 @@ async def update_exam(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Exam not found",
         )
-        
+
     updated_doc = await db.exams.find_one({"_id": ObjectId(exam_id)})
     return _doc_to_response(updated_doc)
 
@@ -186,7 +187,9 @@ async def delete_exam(
             detail="Invalid exam ID",
         )
 
-    result = await db.exams.delete_one({"_id": ObjectId(exam_id), "teacher_id": teacher_oid})
+    result = await db.exams.delete_one(
+        {"_id": ObjectId(exam_id), "teacher_id": teacher_oid}
+    )
 
     if result.deleted_count == 0:
         raise HTTPException(

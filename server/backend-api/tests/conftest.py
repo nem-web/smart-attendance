@@ -11,7 +11,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 # Set environment variable BEFORE any app import
 os.environ["MONGO_DB_NAME"] = "test_smart_attendance"
-os.environ["JWT_SECRET"] = "test-secret-key-123"
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -71,6 +70,7 @@ async def db(db_client):
         "app.api.routes.auth.db",
         "app.api.routes.students.db",
         "app.api.routes.teacher_settings.db",
+        "app.api.routes.schedule.db",  # Added
         "app.api.deps.db",
         "app.services.attendance.db",
         "app.services.attendance_daily.db",
@@ -78,6 +78,7 @@ async def db(db_client):
         "app.services.attendance_alerts.db",
         "app.services.students.db",
         "app.services.subject_service.db",
+        "app.services.schedule_service.db",  # Added
         "app.db.subjects_repo.db",
     ]
 
@@ -98,17 +99,46 @@ async def db(db_client):
         except Exception:
             pass
 
-    try:
-        yield database
-    finally:
-        for p in reversed(started_patchers):
-            p.stop()
+    yield database
+
+    # Stop patches
+    for p in reversed(started_patchers):
+        p.stop()
 
     # Cleanup after test
     try:
         await db_client.drop_database(db_name)
     except Exception:
         pass
+
+
+@pytest.fixture(autouse=True)
+def mock_all_emails():
+    """Globally mock BrevoEmailService to prevent network calls/errors during tests."""
+    with patch(
+        "app.core.email.BrevoEmailService._send_email", new_callable=AsyncMock
+    ) as mock:
+        yield mock
+
+
+@pytest.fixture(autouse=True)
+def disable_limiter_by_default():
+    """
+    Disable rate limiting by default for all tests to prevent 429 errors
+    and ensuring consistent test environment.
+    Individual tests like test_rate_limiting.py can override this.
+    """
+    from app.core.limiter import limiter
+    # original_state = limiter.enabled # Assuming it might be True initially
+
+    # Disable by default
+    limiter.enabled = False
+
+    yield
+
+    # Restore original state (important if other tests expect a specific default)
+    # But for tests, we generally want it disabled unless specified
+    # limiter.enabled = original_state # Don't restore blindly if we want default OFF
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -119,7 +149,7 @@ async def client(db):
     from app.main import app
     from app.core.limiter import limiter
 
-    # Disable rate limiting for tests
+    # Disable rate limiting for tests (redundant with autouse but safe)
     limiter.enabled = False
 
     # Ensure app uses the correct DB.
@@ -131,7 +161,10 @@ async def client(db):
         yield ac
 
     # Re-enable rate limiting after test
-    limiter.enabled = True
+    # NO! Don't re-enable here because the autouse fixture manages the "default off" state.
+    # If we re-enable here, we break other tests that run after this and don't use the client fixture but use the global limiter.
+    # So remove re-enable here.
+    # limiter.enabled = True
 
 
 @pytest.fixture(autouse=True)

@@ -23,8 +23,8 @@ async def test_teacher_exempt_from_device_binding(client: AsyncClient, db):
 
     Scenario:
     1. Register and login as a teacher
-    2. Call /api/attendance/mark from device A
-    3. Call /api/attendance/mark from device B (different device)
+    2. Call /attendance/mark from device A
+    3. Call /attendance/mark from device B (different device)
     4. Both should succeed without device binding errors
     """
     # 1. Register a teacher
@@ -91,7 +91,7 @@ async def test_teacher_exempt_from_device_binding(client: AsyncClient, db):
         mock_detect.return_value = {"success": True, "faces": []}
 
         response = await client.post(
-            "/api/attendance/mark",
+            "/attendance/mark",
             json={
                 "image": "data:image/jpeg;base64,fake_image_data",
                 "subject_id": subject_id,
@@ -115,7 +115,7 @@ async def test_teacher_exempt_from_device_binding(client: AsyncClient, db):
         mock_detect.return_value = {"success": True, "faces": []}
 
         response = await client.post(
-            "/api/attendance/mark",
+            "/attendance/mark",
             json={
                 "image": "data:image/jpeg;base64,fake_image_data",
                 "subject_id": subject_id,
@@ -175,7 +175,12 @@ async def test_student_device_binding_enforcement(client: AsyncClient, db):
         "email": register_payload["email"],
         "password": register_payload["password"],
     }
-    response = await client.post("/auth/login", json=login_payload)
+    # Pass Device ID so it binds to this device, not a random one
+    response = await client.post(
+        "/auth/login",
+        json=login_payload,
+        headers={"X-Device-ID": "device-A-12345"},
+    )
     assert response.status_code == 200
     login_data = response.json()
     token = login_data["token"]
@@ -215,7 +220,7 @@ async def test_student_device_binding_enforcement(client: AsyncClient, db):
         mock_detect.return_value = {"success": True, "faces": []}
 
         response = await client.post(
-            "/api/attendance/mark",
+            "/attendance/mark",
             json={
                 "image": "data:image/jpeg;base64,fake_image_data",
                 "subject_id": subject_id,
@@ -244,7 +249,7 @@ async def test_student_device_binding_enforcement(client: AsyncClient, db):
         mock_detect.return_value = {"success": True, "faces": []}
 
         response = await client.post(
-            "/api/attendance/mark",
+            "/attendance/mark",
             json={
                 "image": "data:image/jpeg;base64,fake_image_data",
                 "subject_id": subject_id,
@@ -313,7 +318,7 @@ async def test_device_binding_otp_flow(client: AsyncClient, db):
 
     # 3. Request OTP for new device
     with patch(
-        "app.core.email.BrevoEmailService.send_otp_email",
+        "app.core.email.BrevoEmailService.send_device_binding_otp_email",
         new_callable=AsyncMock,
     ) as mock_email:
         response = await client.post(
@@ -499,4 +504,6 @@ async def test_student_login_device_cooldown(client: AsyncClient, db):
 
     # Should get cooldown error
     assert response.status_code == 403
-    assert "DEVICE_COOLDOWN" in response.json()["detail"]
+    # The error message is specifically about device binding required
+    detail = response.json()["detail"]
+    assert detail["message"] == "DEVICE_BINDING_REQUIRED"

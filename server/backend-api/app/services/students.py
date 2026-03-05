@@ -8,13 +8,15 @@ subjects_col = db["subjects"]
 
 
 async def get_student_profile(user_id: str):
+    from app.db.mongo import db
+
     # 1. Get user document
-    user = await users_col.find_one({"_id": ObjectId(user_id)})
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
     if not user:
         return None
 
     # 2. Get student document
-    student = await students_col.find_one({"userId": ObjectId(user_id)})
+    student = await db["students"].find_one({"userId": ObjectId(user_id)})
     if not student:
         return None
 
@@ -26,7 +28,7 @@ async def get_student_profile(user_id: str):
 
     subjects = []
     if subject_ids:
-        subject_cursor = subjects_col.find({"_id": {"$in": subject_ids}})
+        subject_cursor = db["subjects"].find({"_id": {"$in": subject_ids}})
         subjects = [
             {
                 "_id": str(sub["_id"]),
@@ -54,10 +56,12 @@ async def get_student_profile(user_id: str):
         "webauthn_credentials": [
             {
                 "credential_id": cred["credential_id"],
-                "created_at": cred["created_at"].isoformat() if cred.get("created_at") else None,
+                "created_at": cred["created_at"].isoformat()
+                if cred.get("created_at")
+                else None,
             }
             for cred in user.get("webauthn_credentials", [])
-        ]
+        ],
     }
 
     return profile

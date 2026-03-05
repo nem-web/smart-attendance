@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Depends
-import base64
-from io import BytesIO
 import time
 import numpy as np
-from PIL import Image
 
 from app.schemas.requests import (
     EncodeFaceRequest,
@@ -51,14 +48,12 @@ async def encode_face(request: EncodeFaceRequest):
         success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
             request.image_base64
         )
-        
+
         if not success:
             return EncodeFaceResponse(
-                success=False,
-                error=error_msg,
-                error_code=error_code
+                success=False, error=error_msg, error_code=error_code
             )
-        
+
         # Convert PIL image to numpy array
         image_np = np.array(image)
 
@@ -77,7 +72,7 @@ async def encode_face(request: EncodeFaceRequest):
             )
 
         top, right, bottom, left = faces[0]
-        
+
         face_w = right - left
         face_h = bottom - top
 
@@ -117,13 +112,10 @@ async def detect_faces_api(request: DetectFacesRequest):
         success, image_bytes, image, error_msg, error_code = validate_and_decode_image(
             request.image_base64
         )
-        
+
         if not success:
-            return DetectFacesResponse(
-                success=False,
-                error=error_msg
-            )
-        
+            return DetectFacesResponse(success=False, error=error_msg)
+
         # Convert PIL image to numpy array
         image_np = np.array(image)
 
@@ -148,13 +140,13 @@ async def detect_faces_api(request: DetectFacesRequest):
             left = max(0, left)
             bottom = min(h, bottom)
             right = min(w, right)
-            
+
             face_img = image_np[top:bottom, left:right]
 
             # Liveness Check
             live = True
             if settings.ML_LIVENESS_CHECK:
-                 live = is_live(face_img)
+                live = is_live(face_img)
 
             embedding = get_face_embedding(face_img)
 
@@ -165,7 +157,7 @@ async def detect_faces_api(request: DetectFacesRequest):
                         top=top, right=right, bottom=bottom, left=left
                     ),
                     face_area_ratio=face_area / image_area,
-                    is_live=live
+                    is_live=live,
                 )
             )
 

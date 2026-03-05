@@ -38,7 +38,6 @@ class DetectedFaceInfo(BaseModel):
     is_live: bool = True
 
 
-
 class DetectFacesMetadata(BaseModel):
     """Metadata for face detection"""
 
