@@ -43,9 +43,7 @@ async def register_options(
         options = await generate_reg_options(user_doc, rp_id, rp_name)
         return Response(content=options_to_json(options), media_type="application/json")
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("webauthn.register_options.failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -67,9 +65,7 @@ async def register_verify(
         result = await verify_reg_response(user_doc, credential, origin, rp_id)
         return {"status": "success", "credential_id": result["credential_id"]}
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("webauthn.register_verify.failed", error=str(e))
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -88,11 +84,9 @@ async def authenticate_options(
         # Start registration or auth
         options = await generate_auth_options(user_doc, rp_id)
 
-        # Verify persistence immediately for debugging
-        check_user = await db.users.find_one({"_id": user_doc["_id"]})
         logger.debug(
             "webauthn.auth_options_generated",
-            challenge=check_user.get("current_challenge") if check_user else None,
+            challenge_present=True if options.challenge else False,
         )
 
         return Response(content=options_to_json(options), media_type="application/json")

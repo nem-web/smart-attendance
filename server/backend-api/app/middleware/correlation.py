@@ -31,7 +31,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             try:
                 # Decode without verification to just get the sub/user_id for logging
                 # We assume signature verification happens in the actual auth dependency
-                payload = jwt.decode(token, options={"verify_signature": False})
+                payload = jwt.decode(token, options={"verify_signature": False}, algorithms=["HS256"])
                 # Check for various user ID fields depending on token structure
                 user_id = (
                     payload.get("sub") or payload.get("user_id") or payload.get("id")

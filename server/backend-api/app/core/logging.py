@@ -22,7 +22,7 @@ def setup_logging(service_name: str = "backend-api"):
         # Add service name to all logs
         lambda _, __, event_dict: {**event_dict, "service": service_name},
         
-        # Add service name as a static field
+        # Add call-site info (file, function, line number) to all logs
         structlog.processors.CallsiteParameterAdder(
             {
                 structlog.processors.CallsiteParameter.FILENAME,
@@ -59,8 +59,14 @@ def setup_logging(service_name: str = "backend-api"):
     root_logger.setLevel(logging.INFO)
     
     # Silence uvicorn access logs if needed, or let them be formatted
-    logging.getLogger("uvicorn.access").handlers = [handler]
-    logging.getLogger("uvicorn.error").handlers = [handler]
+    # Configure uvicorn loggers to use the same handler but not propagate to root
+    uvicorn_access_logger = logging.getLogger("uvicorn.access")
+    uvicorn_access_logger.handlers = [handler]
+    uvicorn_access_logger.propagate = False
+    
+    uvicorn_error_logger = logging.getLogger("uvicorn.error")
+    uvicorn_error_logger.handlers = [handler]
+    uvicorn_error_logger.propagate = False
     
     # Configure the structlog logger with the service name bound
     log = structlog.get_logger()
