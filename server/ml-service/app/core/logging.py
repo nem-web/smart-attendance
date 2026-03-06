@@ -8,7 +8,7 @@ def setup_logging(service_name: str = "ml-service"):
     Configure structured JSON logging for the application.
     Ensures ALL logs (including standard logging) are JSON formatted.
     """
-    
+
     shared_processors = [
         structlog.contextvars.merge_contextvars,
         # structlog.stdlib.filter_by_level,
@@ -21,7 +21,6 @@ def setup_logging(service_name: str = "ml-service"):
         structlog.processors.UnicodeDecoder(),
         # Add service name to all logs
         lambda _, __, event_dict: {**event_dict, "service": service_name},
-
         # Add call-site info (file, function, line number) to all logs
         structlog.processors.CallsiteParameterAdder(
             {
@@ -33,7 +32,8 @@ def setup_logging(service_name: str = "ml-service"):
     ]
 
     structlog.configure(
-        processors=shared_processors + [
+        processors=shared_processors
+        + [
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),
@@ -51,11 +51,11 @@ def setup_logging(service_name: str = "ml-service"):
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
-    
+
     root_logger = logging.getLogger()
     root_logger.handlers = [handler]
     root_logger.setLevel(logging.INFO)
-    
+
     # Configure the structlog logger with the service name bound
     log = structlog.get_logger()
     # We return a bound logger. Standard logging calls won't have 'service'
@@ -64,4 +64,3 @@ def setup_logging(service_name: str = "ml-service"):
 
 
 logger = structlog.get_logger()
-

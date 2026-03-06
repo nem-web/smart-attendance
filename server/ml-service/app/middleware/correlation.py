@@ -13,9 +13,9 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         correlation_id = request.headers.get("X-Correlation-ID")
         if not correlation_id:
             correlation_id = str(uuid.uuid4())
-        
+
         request.state.correlation_id = correlation_id
-        
+
         # 2. Bind initial context
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(
@@ -31,21 +31,25 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             try:
                 # Decode without verification to just get the sub/user_id for logging
                 # We assume signature verification happens in the actual auth dependency
-                payload = jwt.decode(token, options={"verify_signature": False}, algorithms=["HS256"])
+                payload = jwt.decode(
+                    token, options={"verify_signature": False}, algorithms=["HS256"]
+                )
                 # Check for various user ID fields depending on token structure
-                user_id = payload.get("sub") or payload.get("user_id") or payload.get("id")
+                user_id = (
+                    payload.get("sub") or payload.get("user_id") or payload.get("id")
+                )
                 if user_id:
                     structlog.contextvars.bind_contextvars(user_id=user_id)
             except Exception:
                 pass  # safely ignore logging failures for auth
 
         start_time = time.time()
-        
+
         try:
             response = await call_next(request)
-            
+
             process_time = (time.time() - start_time) * 1000
-            
+
             # Log successful request
             # Filter out health-check logs if desired? No, user didn't ask.
             logger.info(
@@ -53,10 +57,10 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
                 status_code=response.status_code,
                 duration_ms=round(process_time, 2),
             )
-            
+
             response.headers["X-Correlation-ID"] = correlation_id
             return response
-            
+
         except Exception as e:
             process_time = (time.time() - start_time) * 1000
             logger.error(
@@ -65,4 +69,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
                 duration_ms=round(process_time, 2),
             )
             raise e
-
