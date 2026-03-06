@@ -236,6 +236,7 @@ class BrevoEmailService:
             logger.error(f"Failed to send device binding OTP email: {e}")
             raise
 
+
 # def send_verification_email(to_email: str, verification_link: str):
 #     try:
 #         print("SMTP CONFIG:", SMTP_HOST, SMTP_PORT, SMTP_USER)

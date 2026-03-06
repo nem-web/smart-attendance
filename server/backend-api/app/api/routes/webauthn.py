@@ -94,10 +94,11 @@ async def authenticate_options(
             "webauthn.auth_options_generated",
             challenge=check_user.get("current_challenge") if check_user else None,
         )
+        )
 
         return Response(content=options_to_json(options), media_type="application/json")
     except Exception as e:
-        logger.exception("webauthn.auth_options_generation_failed", error=str(e))
+        logger.error("webauthn.auth_options_error", error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -115,15 +116,27 @@ async def authenticate_verify(
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found")
 
+<<<<<<< HEAD
         logger.debug(
             "webauthn.verify_called",
             user_id=str(user_doc["_id"]),
             challenge=user_doc.get("current_challenge"),
+=======
+        print(
+            f"[DEBUG] Verify called for user {user_doc['_id']}. "
+            f"Current Challenge: {user_doc.get('current_challenge')}"
+>>>>>>> upstream/main
         )
 
         credential = parse_authentication_credential_json(body)
         await verify_auth_response(user_doc, credential, origin, rp_id)
         return {"status": "success"}
     except Exception as e:
+<<<<<<< HEAD
         logger.exception("webauthn.verify_failed", error=str(e))
+=======
+        import traceback
+
+        traceback.print_exc()
+>>>>>>> upstream/main
         raise HTTPException(status_code=400, detail=str(e))

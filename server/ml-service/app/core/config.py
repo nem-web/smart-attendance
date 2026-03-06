@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     NUM_JITTERS: int = 5
     MIN_FACE_AREA_RATIO: float = 0.04
 
+    # Liveness Detection (Anti-Spoofing)
+    ML_LIVENESS_CHECK: bool = True
+
     CORS_ORIGINS: Union[str, List[str]] = [
         "https://studentcheck.vercel.app",
         "http://localhost:5173",

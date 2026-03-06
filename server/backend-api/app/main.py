@@ -25,6 +25,7 @@ from .core.config import APP_NAME, ORIGINS
 from app.services.attendance_daily import (
     ensure_indexes as ensure_attendance_daily_indexes,
 )
+from app.services.attendance import ensure_indexes as ensure_attendance_indexes
 from app.services.schedule_service import ensure_indexes as ensure_schedule_indexes
 from app.services.ml_client import ml_client
 from app.services.attendance_socket_service import sio
@@ -66,6 +67,9 @@ async def lifespan(app: FastAPI):
     try:
         await ensure_attendance_daily_indexes()
         logger.info("attendance_daily indexes ensured")
+
+        await ensure_attendance_indexes()
+        logger.info("attendance core indexes ensured")
 
         await ensure_schedule_indexes()
         logger.info("schedule indexes ensured")

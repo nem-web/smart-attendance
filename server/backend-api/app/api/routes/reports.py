@@ -217,7 +217,8 @@ def _add_page_footer(canvas, doc, school_name):
     canvas.drawCentredString(doc.pagesize[0] / 2, 30, timestamp)
 
     canvas.restoreState()
-    
+
+
 def _resolve_student_roll(student_profile: dict) -> str:
     roll = student_profile.get("roll")
 

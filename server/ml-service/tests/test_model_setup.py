@@ -74,6 +74,8 @@ def test_entrypoint_script_exists():
 
     # Verify it's executable
     import stat
+    import sys
 
-    file_stat = entrypoint.stat()
-    assert file_stat.st_mode & stat.S_IXUSR, "entrypoint.sh is not executable"
+    if sys.platform != "win32":
+        file_stat = entrypoint.stat()
+        assert file_stat.st_mode & stat.S_IXUSR, "entrypoint.sh is not executable"

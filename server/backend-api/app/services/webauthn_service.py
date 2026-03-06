@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 from datetime import datetime
 import base64
 import structlog
+=======
+import base64
+>>>>>>> upstream/main
 from webauthn import (
     generate_registration_options,
     verify_registration_response,
@@ -19,8 +23,12 @@ from webauthn.helpers.structs import (
 )
 
 from app.db.mongo import db
+<<<<<<< HEAD
 
 logger = structlog.get_logger()
+=======
+from datetime import datetime
+>>>>>>> upstream/main
 
 
 def get_rp_id(origin: str) -> str:
@@ -66,7 +74,12 @@ async def generate_reg_options(
 
     # Store challenge as string (base64url)
     # options.challenge is bytes in newer versions of webauthn library?
+<<<<<<< HEAD
     # Actually returns PublicKeyCredentialCreationOptions object.
+=======
+    # Actually generate_registration_options returns
+    # PublicKeyCredentialCreationOptions object.
+>>>>>>> upstream/main
     # The challenge is bytes. We need to store it to verify later.
     # We can store the bytes directly if using pymongo binary, or base64 encode it.
     # The `verify_registration_response` expects bytes for `expected_challenge`.
@@ -108,7 +121,8 @@ async def verify_reg_response(
     # Process and encode credential data for storage
     import base64
 
-    # credential_id & credential_public_key are bytes, store as base64url strings
+    # credential_id and credential_public_key are bytes, need to be stored as
+    # base64url strings
     cred_id_b64 = (
         base64.urlsafe_b64encode(verification.credential_id).decode("ascii").rstrip("=")
     )
@@ -149,9 +163,16 @@ async def generate_auth_options(user: dict, rp_id: str):
                 # Convert transports if they exist
                 transports = []
                 if cred.get("transports"):
+<<<<<<< HEAD
                     # Webauthn expects AuthenticatorTransport enum or strings
                     # Library usually handles strings
                     # if passed to AuthenticatorTransport
+=======
+                    # Webauthn expects AuthenticatorTransport enum if possible or
+                    # strings
+                    # The library usually handles strings if passed to
+                    # AuthenticatorTransport
+>>>>>>> upstream/main
                     for t in cred.get("transports"):
                         try:
                             transports.append(AuthenticatorTransport(t))
@@ -171,7 +192,12 @@ async def generate_auth_options(user: dict, rp_id: str):
     if not allow_credentials:
         # If no credentials, we can't authenticate with specific credentials.
         # But maybe we want to allow resident keys?
+<<<<<<< HEAD
         # For this specific flow (attendance), user is logged in, we know who they are.
+=======
+        # For this specific flow (attendance), the user is logged in, so we know
+        # who they are.
+>>>>>>> upstream/main
         # We want to verify *their* registered authenticator.
         raise ValueError("No biometric credentials registered")
 
@@ -187,9 +213,13 @@ async def generate_auth_options(user: dict, rp_id: str):
         base64.urlsafe_b64encode(options.challenge).decode("ascii").rstrip("=")
     )
 
+<<<<<<< HEAD
     logger.info(
         "webauthn.setting_challenge", user_id=str(user["_id"]), challenge=challenge_b64
     )
+=======
+    print(f"DEBUG: Setting challenge for user {user['_id']}: {challenge_b64}")
+>>>>>>> upstream/main
 
     await db.users.update_one(
         {"_id": user["_id"]}, {"$set": {"current_challenge": challenge_b64}}
@@ -201,11 +231,18 @@ async def generate_auth_options(user: dict, rp_id: str):
 async def verify_auth_response(
     user: dict, response: AuthenticationCredential, origin: str, rp_id: str
 ):
+<<<<<<< HEAD
     logger.info(
         "webauthn.verifying_user",
         user_id=str(user["_id"]),
         challenge=user.get("current_challenge"),
         challenge_type=str(type(user.get("current_challenge"))),
+=======
+    print(
+        f"DEBUG: Verifying user {user['_id']}. Challenge in DB: "
+        f"{user.get('current_challenge')} "
+        f"(type: {type(user.get('current_challenge'))})"
+>>>>>>> upstream/main
     )
 
     expected_challenge = user.get("current_challenge")
@@ -214,14 +251,24 @@ async def verify_auth_response(
     if not expected_challenge:
         fresh_user = await db.users.find_one({"_id": user["_id"]})
         if fresh_user:
+<<<<<<< HEAD
             logger.info(
                 "webauthn.found_challenge_in_fresh_fetch",
                 challenge=fresh_user.get("current_challenge"),
+=======
+            print(
+                f"DEBUG: Found challenge in fresh user fetch: "
+                f"{fresh_user.get('current_challenge')}"
+>>>>>>> upstream/main
             )
             expected_challenge = fresh_user.get("current_challenge")
             user = fresh_user  # update reference
         else:
+<<<<<<< HEAD
             logger.warning("webauthn.no_challenge_found_after_refetch")
+=======
+            print("DEBUG: Still no challenge found after re-fetch.")
+>>>>>>> upstream/main
 
     if not expected_challenge:
         # Emergency log to see what the user object actually contains
@@ -278,9 +325,16 @@ async def verify_auth_response(
                 "webauthn_credentials.$.sign_count": verification.new_sign_count,
                 "current_challenge": "",
             }
+<<<<<<< HEAD
         },  # Clear challenge
     )
     # Note: clearing challenge prevents replay.
+=======
+        },
+    )
+    # Note: clearing challenge prevents replay but might cause issues if
+    # verification fails and we want to retry?
+>>>>>>> upstream/main
     # Standard practice is to generate new challenge on retry.
 
     return verification

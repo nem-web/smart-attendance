@@ -7,6 +7,7 @@ import secrets
 import os
 import jwt
 from bson import ObjectId
+from bson.errors import InvalidId
 from app.utils.jwt_token import (
     create_access_token,
     create_refresh_token,
@@ -49,10 +50,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Auth"])
 oauth = OAuth()
 
-# NOTE: Rate limiter uses slowapi's get_remote_address() which extracts IP from request.client
-# For production deployments behind reverse proxies (nginx, load balancer), ensure the proxy
-# forwards the real client IP via X-Forwarded-For header and configure trusted proxy middleware
-# in main.py to parse it correctly. Otherwise, all requests will be rate-limited by proxy IP.
+# NOTE: Rate limiter uses slowapi's get_remote_address() which extracts IP from
+# request.client. For production deployments behind reverse proxies
+# (nginx, load balancer), ensure the proxy forwards the real client IP via
+# X-Forwarded-For header and configure trusted proxy middleware in main.py to
+# parse it correctly. Otherwise, all requests will be rate-limited by proxy IP.
 # See: https://slowapi.readthedocs.io/en/latest/#using-x-forwarded-for
 
 
@@ -205,7 +207,7 @@ async def login(request: Request, payload: LoginRequest):
 
     # 4. DEVICE IDENTIFICATION & GENERATION
     device_id = request.headers.get("X-Device-ID")
-    
+
     # If the frontend didn't send a device ID, generate one now.
     if not device_id:
         device_id = str(uuid.uuid4())
@@ -220,30 +222,30 @@ async def login(request: Request, payload: LoginRequest):
         if not trusted_device_id:
             # Condition 1: First login ever -> Allow & Bind
             update_trusted_device = True
-            
+
         elif trusted_device_id != device_id:
             # Condition 3: Mismatch! Check the 1-hour cooldown
             last_logout_time = user.get("last_logout_time")
-            
+
             if last_logout_time:
                 # Ensure timezone awareness for comparison
                 if last_logout_time.tzinfo is None:
                     last_logout_time = last_logout_time.replace(tzinfo=timezone.utc)
-                
+
                 time_since_logout = datetime.now(timezone.utc) - last_logout_time
-                
+
                 # If they logged out less than 1 hour ago -> Trigger OTP Modal
                 if time_since_logout < timedelta(hours=1):
-                    # We pass the newly generated/provided device_id in the error detail 
+                    # We pass the newly generated/provided device_id in the error detail
                     # so the frontend knows which device ID to request the OTP for.
                     raise HTTPException(
                         status_code=403,
                         detail={
                             "message": "DEVICE_BINDING_REQUIRED",
-                            "device_id": device_id 
-                        }
+                            "device_id": device_id,
+                        },
                     )
-            
+
             # If we get here: They logged out > 1 hour ago or never logged out.
             # Bypass OTP and mark the new device to be updated.
             update_trusted_device = True
@@ -287,6 +289,7 @@ async def login(request: Request, payload: LoginRequest):
         "refresh_token": refresh_token,
         "device_id": device_id,  # <-- NEW: Send back the device ID
     }
+
 
 @router.post("/refresh-token", response_model=UserResponse)
 @limiter.limit("5/minute")
@@ -409,7 +412,7 @@ def _clear_otp_fields() -> dict:
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
 @limiter.limit("5/minute")  # Per IP: 5 OTP requests per minute
-@limiter.limit("10/hour")   # Per IP: 10 OTP requests per hour
+@limiter.limit("10/hour")  # Per IP: 10 OTP requests per hour
 async def forgot_password(
     request: Request,
     payload: ForgotPasswordRequest,
@@ -421,7 +424,7 @@ async def forgot_password(
     Generates a secure OTP, hashes it before storing, and enqueues an email via
     Brevo. Returns the same message whether the email exists or not to avoid
     email enumeration.
-    
+
     Rate Limits:
     - 5 OTP requests per minute per IP
     - 10 OTP requests per hour per IP
@@ -458,14 +461,14 @@ async def forgot_password(
 
 @router.post("/verify-otp", response_model=VerifyOtpResponse)
 @limiter.limit("3/minute")  # Per IP: 3 attempts per minute
-@limiter.limit("10/hour")   # Per IP: 10 attempts per hour
+@limiter.limit("10/hour")  # Per IP: 10 attempts per hour
 async def verify_otp(request: Request, payload: VerifyOtpRequest) -> dict:
     """
     Verify the OTP sent to the user's email.
 
     Returns a generic 400 error for invalid/expired OTP or unknown email to
     prevent enumeration. After 5 failed attempts, the OTP is cleared.
-    
+
     Rate Limits:
     - 3 attempts per minute per IP
     - 10 attempts per hour per IP
@@ -507,7 +510,7 @@ async def verify_otp(request: Request, payload: VerifyOtpRequest) -> dict:
 
 @router.post("/reset-password", response_model=ResetPasswordResponse)
 @limiter.limit("3/minute")  # Per IP: 3 attempts per minute
-@limiter.limit("10/hour")   # Per IP: 10 attempts per hour
+@limiter.limit("10/hour")  # Per IP: 10 attempts per hour
 async def reset_password(request: Request, payload: ResetPasswordRequest) -> dict:
     """
     Set a new password after OTP verification.
@@ -515,7 +518,7 @@ async def reset_password(request: Request, payload: ResetPasswordRequest) -> dic
     Validates the OTP again (hashed comparison), then updates the password
     and clears all OTP-related fields. Returns a generic 400 for any
     validation failure to prevent email enumeration.
-    
+
     Rate Limits:
     - 3 attempts per minute per IP
     - 10 attempts per hour per IP
@@ -779,7 +782,7 @@ async def send_device_binding_otp(
     "/verify-device-binding-otp", response_model=VerifyDeviceBindingOtpResponse
 )
 @limiter.limit("3/minute")  # Per IP: 3 attempts per minute
-@limiter.limit("10/hour")   # Per IP: 10 attempts per hour
+@limiter.limit("10/hour")  # Per IP: 10 attempts per hour
 async def verify_device_binding_otp(
     request: Request,
     payload: VerifyDeviceBindingOtpRequest,
@@ -789,7 +792,7 @@ async def verify_device_binding_otp(
 
     Returns a generic 400 error for invalid/expired OTP or unknown email to
     prevent enumeration. After 5 failed attempts, the OTP is cleared.
-    
+
     Rate Limits:
     - 3 attempts per minute per IP
     - 10 attempts per hour per IP
@@ -901,7 +904,7 @@ async def verify_device_binding_otp(
 async def logout(request: Request):
     """
     Unified logout endpoint for all roles.
-    
+
     - Clears the active session for everyone.
     - Tracks logout time specifically for students (for device binding cooldown).
     """
@@ -913,10 +916,12 @@ async def logout(request: Request):
         token = auth_header.split(" ")[1]
         decoded = decode_jwt(token)
         user_id = decoded.get("user_id")
-        
+
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token payload: missing user_id")
-            
+            raise HTTPException(
+                status_code=401, detail="Invalid token payload: missing user_id"
+            )
+
         try:
             obj_id = ObjectId(user_id)
         except InvalidId:
@@ -935,7 +940,7 @@ async def logout(request: Request):
     try:
         # 1. Fetch the user to determine their role
         user = await db.users.find_one({"_id": obj_id}, {"role": 1})
-        
+
         if not user:
             logger.warning("Logout attempted for non-existent user: %s", user_id)
             raise HTTPException(status_code=404, detail="User not found")
@@ -958,10 +963,11 @@ async def logout(request: Request):
 
         logger.info("User logged out: %s (Role: %s)", user_id, user.get("role"))
         return {"message": "Logged out successfully"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Database error during logout for user %s: %s", user_id, e)
-        raise HTTPException(status_code=500, detail="Internal server error during logout")
-
+        raise HTTPException(
+            status_code=500, detail="Internal server error during logout"
+        )

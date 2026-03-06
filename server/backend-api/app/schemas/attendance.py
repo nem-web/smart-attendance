@@ -23,6 +23,7 @@ class AttendanceConfirm(BaseModel):
     present_students: List[str]
     absent_students: List[str]
 
+
 class QRAttendanceRequest(BaseModel):
     subjectId: str
     date: str

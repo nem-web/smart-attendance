@@ -430,6 +430,7 @@ async def get_subject_students(
 
     return response
 
+
 # GET STUDENT ATTENDANCE TRENDS
 @router.get("/teachers/subjects/{subject_id}/students/trends", response_model=dict)
 async def get_students_attendance_trends(
@@ -466,26 +467,30 @@ async def get_students_attendance_trends(
 
     # Get attendance_daily document for this subject to count total classes
     attendance_doc = await db.attendance_daily.find_one({"subjectId": subj_id})
-    
+
     if not attendance_doc or "daily" not in attendance_doc:
         # No attendance data yet, return zero trends
         return {
-            str(s["student_id"]): {"trend": 0, "current_percentage": 0, "previous_percentage": 0}
+            str(s["student_id"]): {
+                "trend": 0,
+                "current_percentage": 0,
+                "previous_percentage": 0,
+            }
             for s in subject_students
         }
 
     daily_data = attendance_doc.get("daily", {})
-    
+
     # Count classes in each period
     current_week_classes = []
     previous_week_classes = []
-    
+
     for date_str in daily_data.keys():
         try:
             date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
             continue
-        
+
         if date_obj >= current_week_start:
             current_week_classes.append(date_str)
         elif previous_week_start <= date_obj <= previous_week_end:
@@ -498,8 +503,9 @@ async def get_students_attendance_trends(
         student_id_str = str(student_id)
 
         # Query attendance_logs for this student in this subject
-        # attendance_logs schema: { subjectId, date, students: [{ studentId, scanTime, method }] }
-        
+        # attendance_logs schema:
+        # { subjectId, date, students: [{ studentId, scanTime, method }] }
+
         # Current week attendance
         current_week_pipeline = [
             {
@@ -546,7 +552,7 @@ async def get_students_attendance_trends(
             if len(current_week_classes) > 0
             else 0
         )
-        
+
         previous_percentage = (
             round((previous_week_count / len(previous_week_classes)) * 100, 1)
             if len(previous_week_classes) > 0
@@ -559,11 +565,10 @@ async def get_students_attendance_trends(
         trends[student_id_str] = {
             "trend": trend,
             "current_percentage": current_percentage,
-            "previous_percentage": previous_percentage
+            "previous_percentage": previous_percentage,
         }
 
     return trends
-
 
 
 @router.post("/teachers/subjects/{subject_id}/students/{student_id}/verify")

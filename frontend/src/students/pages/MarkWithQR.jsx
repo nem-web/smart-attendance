@@ -14,7 +14,7 @@ import api from "../../api/axiosClient";
 import QRScanner from "../components/QRScanner";
 import DeviceBindingOTPModal from "../../components/DeviceBindingOtpModal";
 import { authenticateDevice } from "../../api/webauthn";
-import { toast } from "react-hot-toast";
+// import { toast } from "react-hot-toast";
 
 export default function MarkWithQR() {
     const navigate = useNavigate();
