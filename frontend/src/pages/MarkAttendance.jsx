@@ -25,7 +25,6 @@ import { saveOfflineAttendance, getOfflineAttendanceCount } from "../utils/offli
 import toast from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
 import { fetchMySubjects, fetchSubjectStudents } from "../api/teacher";
-import { captureAndSend } from "../api/attendance";
 import FaceOverlay from "../components/FaceOverlay";
 import api from "../api/axiosClient";
 import StartAttendanceModal from "../components/attendance/StartAttendanceModal";
@@ -213,8 +212,6 @@ export default function MarkAttendance() {
 
   useEffect(() => {
     if(!selectedSubject) return;
-    setAttendanceSubmitted(false);
-    setDetections([]);
 
     fetchSubjectStudents(selectedSubject).then((data) => {
       setStudents(data);
@@ -448,7 +445,11 @@ export default function MarkAttendance() {
             <label className="text-xs font-semibold text-[var(--text-body)] uppercase tracking-wide">{t('mark_attendance.class_label')}</label>
             <select
                 value={selectedSubject || ""}
-                onChange={(e) => setSelectedSubject(e.target.value)}
+                onChange={(e) => {
+                  setSelectedSubject(e.target.value);
+                  setAttendanceSubmitted(false);
+                  setDetections([]);
+                }}
                 className="w-full p-2.5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg text-[var(--text-main)] outline-none focus:ring-2 focus:ring-[var(--primary)]"
               >
                 <option disabled value="">{t('mark_attendance.select_subject')}</option>
