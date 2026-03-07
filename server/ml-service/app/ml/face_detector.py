@@ -17,9 +17,21 @@ model_path = os.path.join(BASE_DIR, "blaze_face_short_range.tflite")
 _detector = None
 
 
+def _check_model_exists():
+    """Check if the model file exists before attempting to load it."""
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(
+            f"Model file not found: {model_path}. "
+            "Please ensure the model file has been downloaded. "
+            "Run 'python download_models.py' or check Docker volume mounts."
+        )
+
+
 def _get_detector():
     global _detector
     if _detector is None:
+        # Check if model file exists before loading
+        _check_model_exists()
         base_options = python.BaseOptions(model_asset_path=model_path)
         options = vision.FaceDetectorOptions(
             base_options=base_options,
