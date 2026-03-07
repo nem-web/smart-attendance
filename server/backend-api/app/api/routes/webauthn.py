@@ -5,8 +5,8 @@ from app.services.webauthn_service import (
     generate_reg_options,
     verify_reg_response,
     generate_auth_options,
-    verify_auth_response,
     get_rp_id,
+    verify_auth_response,
 )
 from webauthn.helpers import (
     parse_registration_credential_json,

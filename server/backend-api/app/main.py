@@ -9,18 +9,10 @@ import socketio
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from app.api.routes import teacher_settings as settings_router
-from .api.routes.schedule import router as schedule_router
-from .api.routes.holidays import router as holidays_router
-from .api.routes.exams import router as exams_router
-from .api.routes.attendance import router as attendance_router
-from .api.routes.auth import router as auth_router
-from .api.routes.analytics import router as analytics_router
-from .api.routes.notifications import router as notifications_router
-from .api.routes.reports import router as reports_router
-from .api.routes.students import router as students_router
-from .api.routes.health import router as health_router
-from .api.routes.webauthn import router as webauthn_router
+# routers
+from .api.v1.__init__ import router as api_v1_router
+from .api.v1.__init__ import legacyRouter as api_legacy_router
+
 from .core.config import APP_NAME, ORIGINS
 from app.services.attendance_daily import (
     ensure_indexes as ensure_attendance_daily_indexes,
@@ -129,19 +121,11 @@ def create_app() -> FastAPI:
     )
     app.add_exception_handler(Exception, generic_exception_handler)
 
-    # Routers
-    app.include_router(auth_router)
-    app.include_router(students_router)
-    app.include_router(attendance_router)
-    app.include_router(schedule_router)
-    app.include_router(holidays_router)  # ← NEW
-    app.include_router(exams_router)
-    app.include_router(settings_router.router)
-    app.include_router(notifications_router)
-    app.include_router(analytics_router)
-    app.include_router(reports_router)
-    app.include_router(health_router, tags=["Health"])
-    app.include_router(webauthn_router)
+    # Routes Mounting
+    # Legacy routes support Router
+    app.include_router(api_legacy_router)
+    # v1 router
+    app.include_router(api_v1_router)
 
     return app
 

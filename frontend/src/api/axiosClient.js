@@ -1,10 +1,8 @@
 import axios from "axios";
 import { getOrCreateDeviceUUID } from "../utils/deviceBinding"; // Update path if needed
 
-const baseURL = import.meta.env.VITE_API_URL || "/api";
-
 const api = axios.create({
-  baseURL,
+  baseURL:  `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api/v1`,
   withCredentials: true,
 });
 
@@ -114,7 +112,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const res = await axios.post("/api/auth/refresh-token", {
+          const res = await axios.post("/auth/refresh-token", {
             refresh_token: refreshToken,
           });
 

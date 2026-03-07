@@ -28,6 +28,7 @@ def get_rp_id(origin: str) -> str:
 
     if not origin:
         return "localhost"
+
     parsed = urlparse(origin)
     return parsed.hostname or "localhost"
 
@@ -36,6 +37,7 @@ async def generate_reg_options(
     user: dict, rp_id: str, rp_name: str = "Smart Attendance"
 ):
     exclude_credentials = []
+
     if "webauthn_credentials" in user:
         for cred in user["webauthn_credentials"]:
             try:
@@ -89,11 +91,11 @@ async def verify_reg_response(
     user: dict, response: RegistrationCredential, origin: str, rp_id: str
 ):
     expected_challenge = user.get("current_challenge")
+
     if not expected_challenge:
         raise ValueError("No registration challenge found")
 
     try:
-        # Pymongo stores as string, we need bytes for webauthn
         expected_challenge_bytes = base64url_to_bytes(expected_challenge)
 
         verification = verify_registration_response(
@@ -135,21 +137,24 @@ async def verify_reg_response(
             "$unset": {"current_challenge": ""},
         },
     )
+
     return credential_data
 
 
 async def generate_auth_options(user: dict, rp_id: str):
     allow_credentials = []
+
     if "webauthn_credentials" in user:
         for cred in user["webauthn_credentials"]:
             try:
-                # Ensure we have a string for credential_id base64url
                 cid = cred["credential_id"]
+
                 if isinstance(cid, bytes):
                     cid = cid.decode("utf-8")
 
                 # Convert transports if they exist
                 transports = []
+
                 if cred.get("transports"):
                     # Webauthn expects AuthenticatorTransport enum if possible or
                     # strings
@@ -215,9 +220,9 @@ async def verify_auth_response(
 
     expected_challenge = user.get("current_challenge")
 
-    # If expected_challenge is missing, maybe try fetching user directly here to be sure
     if not expected_challenge:
         fresh_user = await db.users.find_one({"_id": user["_id"]})
+
         if fresh_user:
             logger.info(
                 "webauthn.found_challenge_in_fresh_fetch",
@@ -272,7 +277,6 @@ async def verify_auth_response(
     except Exception as e:
         raise ValueError(f"Authentication verification failed: {e}")
 
-    # Update sign count
     await db.users.update_one(
         {
             "_id": user["_id"],

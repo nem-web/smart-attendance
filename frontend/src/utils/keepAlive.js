@@ -8,7 +8,7 @@
  * Silently handles failures without affecting the main application
  */
 export const pingBackend = () => {
-  const backendUrl = import.meta.env.VITE_API_URL;
+   const backendUrl = `${import.meta.env.VITE_API_URL}/api/v1`;
 
   // Skip if no backend URL is configured
   if (!backendUrl) {
