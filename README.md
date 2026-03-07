@@ -1091,8 +1091,7 @@ The API implements rate limiting to prevent abuse and ensure fair usage.
 **Error Response (HTTP 429):**
 ```json
 {
-  "detail": "Rate limit exceeded: 10 per 1 minute",
-  "error_code": "RATE_LIMIT_EXCEEDED"
+  "detail": "Rate limit exceeded: 10 per 1 minute"
 }
 ```
 
