@@ -24,6 +24,8 @@ from app.services.ml_client import ml_client
 from app.services.attendance_socket_service import sio
 from app.db.nonce_store import close_redis
 from app.core.scheduler import start_scheduler, shutdown_scheduler
+from app.db.mongo import db
+from app.db.indexes import create_indexes
 
 # New Imports
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -37,9 +39,8 @@ from .middleware.correlation import CorrelationIdMiddleware
 from .middleware.timing import TimingMiddleware
 from .middleware.security import SecurityHeadersMiddleware
 
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from app.core.limiter import limiter
+from app.core.limiter import limiter, rate_limit_exceeded_handler
 
 load_dotenv()
 
@@ -67,6 +68,9 @@ async def lifespan(app: FastAPI):
 
         await ensure_schedule_indexes()
         logger.info("schedule indexes ensured")
+
+        await create_indexes(db)
+        logger.info("application indexes ensured")
     except Exception as e:
         logger.warning(
             f"Could not connect to MongoDB. Application will continue, but DB features will fail. Error: {e}"
@@ -101,7 +105,7 @@ def create_app() -> FastAPI:
 
     # Rate limiter
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
     # CORS MUST be added FIRST so headers are present even on errors
     app.add_middleware(

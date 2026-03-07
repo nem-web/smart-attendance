@@ -1,15 +1,8 @@
 from app.db.mongo import db
 from bson import ObjectId
 
-students_col = db["students"]
-users_col = db["users"]
-attendance_col = db["attendance"]
-subjects_col = db["subjects"]
-
 
 async def get_student_profile(user_id: str):
-    from app.db.mongo import db
-
     # 1. Get user document
     user = await db["users"].find_one({"_id": ObjectId(user_id)})
     if not user:
@@ -82,15 +75,15 @@ async def build_attendance_summary(student_doc_id: ObjectId):
 
     q = {"student_id": student_doc_id}
 
-    total_classes = await attendance_col.count_documents(q)
-    present = await attendance_col.count_documents({**q, "present": True})
+    total_classes = await db["attendance"].count_documents(q)
+    present = await db["attendance"].count_documents({**q, "present": True})
     absent = total_classes - present
 
     percentage = round((present / total_classes) * 100, 2) if total_classes else 0
     forecasted_score = 2 if percentage < 50 else 5
 
     # Last 5 attendance records
-    recent_cursor = attendance_col.find(q).sort("date", -1).limit(5)
+    recent_cursor = db["attendance"].find(q).sort("date", -1).limit(5)
 
     recent = []
     async for r in recent_cursor:

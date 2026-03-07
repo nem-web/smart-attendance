@@ -9,7 +9,11 @@ from fastapi import APIRouter, HTTPException, Request
 from pymongo import UpdateOne
 
 from geopy.distance import geodesic
-from app.core.config import ML_CONFIDENT_THRESHOLD, ML_UNCERTAIN_THRESHOLD
+from app.core.config import (
+    ML_CONFIDENT_THRESHOLD,
+    ML_UNCERTAIN_THRESHOLD,
+    RATE_LIMIT_ATTENDANCE_MARK,
+)
 from app.db.mongo import db
 from app.services.attendance_daily import save_daily_summary
 from app.services.attendance import log_grouped_attendance
@@ -26,6 +30,9 @@ from app.services.attendance_socket_service import stop_and_save_session, sio
 # Import WebAuthn verification
 from app.services.webauthn_service import verify_auth_response, get_rp_id
 from webauthn.helpers import parse_authentication_credential_json
+
+# Import rate limiter
+from app.core.limiter import limiter, get_teacher_rate_limit_key
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
@@ -97,6 +104,7 @@ def _parse_object_id_list(
 
 
 @router.post("/mark-qr")
+@limiter.limit(RATE_LIMIT_ATTENDANCE_MARK)
 async def mark_attendance_qr(
     payload: QRAttendanceRequest,
     request: Request,
@@ -354,6 +362,11 @@ async def mark_attendance_qr(
 
 
 @router.post("/mark")
+@limiter.limit(
+    RATE_LIMIT_ATTENDANCE_MARK,
+    key_func=get_teacher_rate_limit_key,
+    override_defaults=True,
+)
 async def mark_attendance(request: Request, payload: Dict):
     """
     Mark attendance by detecting faces in classroom image

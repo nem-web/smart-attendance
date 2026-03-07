@@ -129,8 +129,8 @@ class BrevoEmailService:
         subject: str,
         attendance_percentage: float,
         threshold: int,
-        present_count: int,
-        total_count: int,
+        present_count: int = 0,
+        total_count: int = 0,
     ) -> dict:
         """Send low attendance warning to student."""
         try:

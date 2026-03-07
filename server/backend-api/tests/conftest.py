@@ -80,6 +80,12 @@ async def db(db_client):
         "app.services.subject_service.db",
         "app.services.schedule_service.db",  # Added
         "app.db.subjects_repo.db",
+        "app.services.notification_service.db",
+        "app.services.webauthn_service.db",
+        "app.services.attendance_socket_service.db",
+        "app.api.routes.webauthn.db",
+        "app.api.routes.reports.db",
+        "app.api.routes.notifications.db",
     ]
 
     started_patchers = []

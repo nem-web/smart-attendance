@@ -5,13 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.core.config import settings
 from app.api.routes.face_recognition import router as ml_router
+from app.core.security import verify_api_key
 
 # New Imports
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -51,6 +53,23 @@ def create_app() -> FastAPI:
         description="Machine Learning Service for Face Recognition",
     )
 
+    @app.middleware("http")
+    async def enforce_api_key(request: Request, call_next):
+        api_key = request.headers.get("X-API-Key")
+        if not api_key:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "X-API-Key header is missing"},
+                headers={"WWW-Authenticate": "Api-Key"},
+            )
+        if api_key != settings.ML_API_KEY:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid API key"},
+                headers={"WWW-Authenticate": "Api-Key"},
+            )
+        return await call_next(request)
+
     # Middleware
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(TimingMiddleware)
@@ -83,7 +102,7 @@ app = create_app()
 Instrumentator().instrument(app).expose(app)
 
 
-@app.get("/", tags=["Root"])
+@app.get("/", tags=["Root"], dependencies=[Depends(verify_api_key)])
 async def root():
     """Root endpoint"""
     return {
