@@ -1,0 +1,48 @@
+id: multi-cluster-monitor
+namespace: sentinel
+
+variables:
+  clusters: |
+    {{'{"clusters": [' +
+      '{"id": "local", "label": "Local", "endpoint": "http://localhost:4000"}, ' +
+      '{"id": "prod-us", "label": "Production US", "endpoint": "http://sentinel-prod-us:4000"}, ' +
+      '{"id": "prod-eu", "label": "Production EU", "endpoint": "http://sentinel-prod-eu:4000"}' +
+      ']}'}}
+
+tasks:
+  - id: parse-clusters
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      ===== Multi-Cluster Health Monitor =====
+      Clusters: {{ variables.clusters }}
+
+  - id: check-local-cluster
+    type: io.kestra.plugin.core.http.Request
+    uri: http://localhost:4000/api/status
+    timeout: 30000
+    allowFailed: true
+
+  - id: check-prod-us-cluster
+    type: io.kestra.plugin.core.http.Request
+    uri: http://sentinel-prod-us:4000/api/status
+    timeout: 30000
+    allowFailed: true
+
+  - id: check-prod-eu-cluster
+    type: io.kestra.plugin.core.http.Request
+    uri: http://sentinel-prod-eu:4000/api/status
+    timeout: 30000
+    allowFailed: true
+
+  - id: aggregate-status
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      ===== Multi-Cluster Status Summary =====
+      Local: {{ outputs['check-local-cluster'].code ?? 'UNREACHABLE' }}
+      Prod US: {{ outputs['check-prod-us-cluster'].code ?? 'UNREACHABLE' }}
+      Prod EU: {{ outputs['check-prod-eu-cluster'].code ?? 'UNREACHABLE' }}
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "*/5 * * * *"  # Every 5 minutes

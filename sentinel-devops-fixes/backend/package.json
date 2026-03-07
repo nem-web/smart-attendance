@@ -1,0 +1,48 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "start:agent": "node remote-agent.js",
+    "db:migrate": "node db/migrate.js",
+    "db:setup": "node db/migrate.js",
+    "create-admin": "node create-admin.js",
+    "test-rbac": "node test-rbac.js",
+    "quick-setup": "node quick-setup.js",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest --testPathPattern='__tests__' --testNamePattern='Unit'",
+    "test:integration": "jest --testPathPattern='__tests__' --testNamePattern='Integration'"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@slack/web-api": "^7.8.0",
+    "axios": "^1.6.2",
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^12.6.2",
+    "body-parser": "^2.2.1",
+    "cors": "^2.8.5",
+    "discord-webhook-node": "^1.1.8",
+    "dockerode": "^4.0.9",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "js-yaml": "^4.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1",
+    "ws": "^8.19.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "jest": "^30.0.0",
+    "jest-mock-extended": "^4.0.0",
+    "supertest": "^7.0.0"
+  },
+  "overrides": {
+    "cross-spawn": "^7.0.5"
+  }
+}
