@@ -125,9 +125,6 @@ async def mark_attendance_qr(
     if current_user["role"] != "student":
         raise HTTPException(status_code=403, detail="Only students can mark attendance")
 
-    # Set user_id in request.state for rate limiting
-    request.state.user_id = current_user.get("id")
-
     # Fetch full user document for biometrics
     try:
         user_id = ObjectId(current_user["id"])
