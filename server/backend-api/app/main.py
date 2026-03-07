@@ -61,6 +61,28 @@ if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     )
 
 
+def parse_env_bool(env_name: str, default: str = "false") -> bool:
+    raw_value = os.getenv(env_name, default).strip().lower()
+    if raw_value in {"true", "1", "yes", "on"}:
+        return True
+    if raw_value in {"false", "0", "no", "off"}:
+        return False
+    raise RuntimeError(
+        f"Invalid value for {env_name}: {raw_value!r}. Use true/false (or 1/0, yes/no, on/off)."
+    )
+
+
+def parse_session_same_site(default: str = "lax") -> str:
+    same_site = os.getenv("SESSION_COOKIE_SAMESITE", default).strip().lower()
+    allowed = {"lax", "strict", "none"}
+    if same_site not in allowed:
+        raise RuntimeError(
+            "Invalid value for SESSION_COOKIE_SAMESITE: "
+            f"{same_site!r}. Use one of: lax, strict, none."
+        )
+    return same_site
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -85,6 +107,15 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    session_cookie_secure = parse_env_bool("SESSION_COOKIE_SECURE", "false")
+    session_cookie_same_site = parse_session_same_site("lax")
+
+    # Browsers reject SameSite=None cookies unless they are also marked Secure.
+    if session_cookie_same_site == "none" and not session_cookie_secure:
+        raise RuntimeError(
+            "SESSION_COOKIE_SAMESITE='none' requires SESSION_COOKIE_SECURE=true"
+        )
+
     app = FastAPI(
         title=APP_NAME,
         lifespan=lifespan,
@@ -115,8 +146,8 @@ def create_app() -> FastAPI:
         secret_key=os.getenv("SESSION_SECRET_KEY", "temporary-dev-secret-key"),
         session_cookie="session",
         max_age=14 * 24 * 3600,
-        same_site="none",
-        https_only=True,
+        same_site=session_cookie_same_site,
+        https_only=session_cookie_secure,
     )
 
     # Exception Handlers
