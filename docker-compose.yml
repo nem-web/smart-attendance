@@ -1,7 +1,6 @@
-
 services:
   # MongoDB Database
-  mongodb:
+  mongo:
     image: mongo:7.0
     container_name: smart-attendance-mongodb
     restart: unless-stopped
@@ -15,7 +14,22 @@ services:
     networks:
       - backend
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/smart-attendance --quiet
+      test: mongosh --eval 'db.runCommand("ping")'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smart-attendance-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,15 +43,11 @@ services:
     restart: unless-stopped
     ports:
       - "8001:8001"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8001
-      - LOG_LEVEL=info
     env_file:
-      - ./server/ml-service/.env
+      - .env
     volumes:
       - ./server/ml-service:/app
-      - ml_models:/app/models
+      - ml_models:/app/app/ml
     networks:
       - backend
     healthcheck:
@@ -83,24 +93,18 @@ services:
     build:
       context: ./server/backend-api
       dockerfile: Dockerfile
-    # container_name: smart-attendance-backend  # Removed to allow scaling
     restart: unless-stopped
     ports:
       - "8000:8000"
     depends_on:
-      mongodb:
+      mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       ml-service:
         condition: service_healthy
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/smart-attendance
-      - ML_SERVICE_URL=http://ml-service:8001
-      - JWT_SECRET=${JWT_SECRET:-your-secret-key-here}
-      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
-      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
-      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     env_file:
-      - ./server/backend-api/.env
+      - .env
     volumes:
       - ./server/backend-api:/app
     networks:
@@ -124,9 +128,8 @@ services:
       - "5173:5173"
     depends_on:
       - backend-api
-    environment:
-      - VITE_API_URL=http://localhost:8000
-      - VITE_ML_SERVICE_URL=http://localhost:8001
+    env_file:
+      - .env
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -137,7 +140,7 @@ services:
 networks:
   backend:
     driver: bridge
-    internal: false  # Set to true in production to isolate ML service
+    internal: false
   frontend:
     driver: bridge
 

@@ -1,12 +1,20 @@
-
 services:
   backend-api:
     restart: always
     deploy:
       replicas: 1 # Set to 1 because we use host port binding 8000:8000
-    command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
+    command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+    volumes: []
 
-  mongodb:
+  ml-service:
+    restart: always
+    deploy:
+      replicas: 1 
+    command: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
+    volumes:
+      - ml_models:/app/app/ml
+
+  mongo:
     volumes:
       - /data/mongodb:/data/db
 
@@ -15,3 +23,4 @@ services:
       target: production
     restart: always
     command: [] # Uses default CMD from Dockerfile
+    volumes: []

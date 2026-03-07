@@ -616,17 +616,13 @@ We provide a specialized Docker setup for both development and production enviro
 
 For detailed instructions, please see [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
 
-### Quick Start (Development)
+### Quick Start
 
 ```bash
-# Using Makefile
-make dev
-
-# Or using Docker Compose directly
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+cp env.example .env && docker-compose up --build
 ```
 
-### Quick Start (Production)
+### Production Usage
 
 ```bash
 # Using Makefile
@@ -635,6 +631,7 @@ make prod
 # Or using Docker Compose directly
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
+
 
 ---
 
