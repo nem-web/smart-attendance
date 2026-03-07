@@ -35,7 +35,7 @@ def test_websocket_connect_success(client):
             return_value={"_id": user_id, "role": "teacher"}
         )
 
-        with client.websocket_connect(f"/attendance/ws/{session_id}?token={token}"):
+        with client.websocket_connect(f"/api/attendance/ws/{session_id}?token={token}"):
             # Just verify connection is accepted (context manager does this)
             pass
 
@@ -46,15 +46,10 @@ def test_websocket_process_frame(client):
     token = create_token(user_id)
     session_id = "test-session"
 
-    with (
-        patch("app.api.routes.attendance.db") as mock_db,
-        patch(
-            "app.services.ml_client.ml_client.detect_faces", new_callable=AsyncMock
-        ) as mock_detect,
-        patch(
-            "app.services.ml_client.ml_client.match_faces", new_callable=AsyncMock
-        ) as mock_match,
-    ):
+    with patch("app.api.routes.attendance.db") as mock_db, \
+         patch("app.api.routes.attendance.ml_client.detect_faces", new_callable=AsyncMock) as mock_detect, \
+         patch("app.api.routes.attendance.ml_client.match_faces", new_callable=AsyncMock) as mock_match:
+
         # Setup mocks on mock_db
         mock_db.users.find_one = AsyncMock(
             return_value={"_id": user_id, "role": "teacher"}
@@ -88,7 +83,7 @@ def test_websocket_process_frame(client):
         }
 
         with client.websocket_connect(
-            f"/attendance/ws/{session_id}?token={token}"
+            f"/api/attendance/ws/{session_id}?token={token}"
         ) as websocket:
             # Send frame
             websocket.send_json(
