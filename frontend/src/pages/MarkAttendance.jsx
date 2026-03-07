@@ -219,14 +219,81 @@ export default function MarkAttendance() {
     });
   }, [selectedSubject])
 
+  const wsRef = useRef(null);
+
   useEffect(() => {
-    if (!selectedSubject || !webcamRef.current) return;
+    if (!selectedSubject) return;
 
+    // Determine WebSocket URL
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    const wsBase = apiBase.replace(/^http/, "ws");
+    const sessionId = `mk-${Date.now()}`;
+    const token = localStorage.getItem("token");
+    const wsUrl = `${wsBase}/attendance/ws/${sessionId}?token=${token}`;
+
+    console.log("Connecting WS:", wsUrl);
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("WebSocket Connected");
+      setMlStatus("ready");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "processing_started") {
+          setMlStatus("processing");
+          setDetections([]); // Clear previous frame results
+        } else if (data.type === "match_update") {
+          const match = data.match;
+          setDetections((prev) => [...prev, match]);
+
+          if (match.status === "present" && match.student) {
+            setAttendanceMap((prev) => {
+              const id = match.student.id;
+              if (!prev[id]) return prev;
+              const updated = { ...prev };
+              const s = { ...updated[id] };
+              s.count = (s.count || 0) + 1;
+              if (s.count >= 3) s.status = "present";
+              updated[id] = s;
+              return updated;
+            });
+          }
+        } else if (data.type === "complete") {
+          setMlStatus("ready");
+        } else if (data.type === "error") {
+          console.error("WS Error:", data.message);
+        }
+      } catch (err) {
+        console.error("WS Message Parse Error:", err);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket Disconnected");
+    };
+
+    // Send frame periodically via WebSocket
     const interval = setInterval(() => {
-      captureAndSend(webcamRef, selectedSubject, setDetections, currentCoordsRef.current);
-    }, 3000);
+      if (ws.readyState === WebSocket.OPEN && webcamRef.current) {
+        const image = webcamRef.current.getScreenshot();
+        if (image) {
+          ws.send(JSON.stringify({
+            command: "process_frame",
+            image,
+            subject_id: selectedSubject
+          }));
+        }
+      }
+    }, 1000); // 1 second interval
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      ws.close();
+    };
   }, [selectedSubject]);
 
   const presentStudents = Object.values(attendanceMap)
@@ -296,39 +363,7 @@ export default function MarkAttendance() {
     }
   };
 
-  useEffect(() => {
-    if (!detections.length) return;
-    
-    // Wrap in setTimeout to avoid synchronous state update warning (Cascading update)
-    const timeoutId = setTimeout(() => {
-      setAttendanceMap((prev) => {
-        const updated = { ...prev };
-        let hasChanges = false;
 
-        detections.forEach((f) => {
-          if (f.status !== "present" || !f.student) return;
-
-          const id = f.student.id;
-
-          if (!updated[id]) return;
-
-          // increment detection count
-          updated[id].count += 1;
-          
-          hasChanges = true;
-
-          // mark present after 3 confirmations
-          if (updated[id].count >= 3) {
-            updated[id].status = "present";
-          }
-        });
-
-        return hasChanges ? updated : prev;
-      });
-    }, 0);
-    
-    return () => clearTimeout(timeoutId);
-  }, [detections]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8">
