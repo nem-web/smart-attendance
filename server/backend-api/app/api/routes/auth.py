@@ -14,6 +14,7 @@ from app.utils.jwt_token import (
     decode_jwt,
     generate_session_id,
     hash_session_id,
+    hash_refresh_token,
 )
 from urllib.parse import quote
 
@@ -270,7 +271,18 @@ async def login(request: Request, payload: LoginRequest):
         user_id=str(user["_id"]), session_id=session_id
     )
 
-    # 7. Store hashed session ID in database
+    refresh_token_hash = hash_refresh_token(refresh_token)
+    refresh_token_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+    await db.refresh_tokens.insert_one({
+        "user_id": user["_id"],
+        "token_hash": refresh_token_hash,
+        "session_id": session_id,
+        "created_at": datetime.now(timezone.utc),
+        "expires_at": refresh_token_expires_at,
+        "revoked": False,
+    })
+
     update_data = {
         "current_active_session": hash_session_id(session_id),
         "session_created_at": datetime.now(timezone.utc),
@@ -301,7 +313,7 @@ async def login(request: Request, payload: LoginRequest):
 
 @router.post("/refresh-token", response_model=UserResponse)
 @limiter.limit("5/minute")
-async def refresh_token(request: Request, payload: RefreshTokenRequest):
+async def refresh_token_endpoint(request: Request, payload: RefreshTokenRequest):
     try:
         decoded = decode_jwt(payload.refresh_token)
         if decoded.get("type") != "refresh":
@@ -314,7 +326,23 @@ async def refresh_token(request: Request, payload: RefreshTokenRequest):
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
 
-        # Validate session is still active
+        refresh_token_hash = hash_refresh_token(payload.refresh_token)
+        stored_token = await db.refresh_tokens.find_one({
+            "user_id": user["_id"],
+            "token_hash": refresh_token_hash,
+            "revoked": False,
+        })
+
+        if not stored_token:
+            raise HTTPException(status_code=401, detail="Invalid or revoked refresh token")
+
+        if stored_token["expires_at"] < datetime.now(timezone.utc):
+            await db.refresh_tokens.update_one(
+                {"_id": stored_token["_id"]},
+                {"$set": {"revoked": True}}
+            )
+            raise HTTPException(status_code=401, detail="Refresh token expired")
+
         if session_id:
             stored_session_hash = user.get("current_active_session")
             if not stored_session_hash or stored_session_hash != hash_session_id(
@@ -328,7 +356,6 @@ async def refresh_token(request: Request, payload: RefreshTokenRequest):
                     ),
                 )
 
-        # Generate new tokens with the same session ID to maintain session continuity
         access_token = create_access_token(
             user_id=str(user["_id"]),
             role=user["role"],
@@ -338,6 +365,23 @@ async def refresh_token(request: Request, payload: RefreshTokenRequest):
         new_refresh_token = create_refresh_token(
             user_id=str(user["_id"]), session_id=session_id
         )
+
+        new_refresh_token_hash = hash_refresh_token(new_refresh_token)
+        new_refresh_token_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+        await db.refresh_tokens.update_one(
+            {"_id": stored_token["_id"]},
+            {"$set": {"revoked": True}}
+        )
+
+        await db.refresh_tokens.insert_one({
+            "user_id": user["_id"],
+            "token_hash": new_refresh_token_hash,
+            "session_id": session_id,
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": new_refresh_token_expires_at,
+            "revoked": False,
+        })
 
         return {
             "user_id": str(user["_id"]),
@@ -680,7 +724,6 @@ async def google_callback(request: Request):
         logger.info(f"User auto-verified via Google Login: {email}")
         user["is_verified"] = True
 
-    # Generate session ID and tokens (same as normal login)
     session_id = generate_session_id()
     access_token = create_access_token(
         user_id=str(user["_id"]),
@@ -692,8 +735,19 @@ async def google_callback(request: Request):
         user_id=str(user["_id"]), session_id=session_id
     )
 
-    # Store hashed session ID in database (invalidates previous sessions)
+    refresh_token_hash = hash_refresh_token(refresh_token)
+    refresh_token_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+
     try:
+        await db.refresh_tokens.insert_one({
+            "user_id": user["_id"],
+            "token_hash": refresh_token_hash,
+            "session_id": session_id,
+            "created_at": datetime.now(timezone.utc),
+            "expires_at": refresh_token_expires_at,
+            "revoked": False,
+        })
+
         await db.users.update_one(
             {"_id": user["_id"]},
             {
@@ -924,7 +978,8 @@ async def logout(request: Request):
         token = auth_header.split(" ")[1]
         decoded = decode_jwt(token)
         user_id = decoded.get("user_id")
-
+        session_id = decoded.get("session_id")
+        
         if not user_id:
             raise HTTPException(
                 status_code=401, detail="Invalid token payload: missing user_id"
@@ -946,27 +1001,33 @@ async def logout(request: Request):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     try:
-        # 1. Fetch the user to determine their role
         user = await db.users.find_one({"_id": obj_id}, {"role": 1})
 
         if not user:
             logger.warning("Logout attempted for non-existent user: %s", user_id)
             raise HTTPException(status_code=404, detail="User not found")
 
-        # 2. Build the base update query (always remove active session)
+        if session_id:
+            await db.refresh_tokens.update_many(
+                {
+                    "user_id": obj_id,
+                    "session_id": session_id,
+                    "revoked": False
+                },
+                {"$set": {"revoked": True}}
+            )
+
         update_query = {
-            "$unset": {  # nosec B105
+            "$unset": {
                 "current_active_session": 1,
             }
         }
 
-        # 3. Conditionally add the last_logout_time if the role is 'student'
         if user.get("role") == "student":
             update_query["$set"] = {
                 "last_logout_time": datetime.now(timezone.utc),
             }
 
-        # 4. Execute the update
         await db.users.update_one({"_id": obj_id}, update_query)
 
         logger.info("User logged out: %s (Role: %s)", user_id, user.get("role"))

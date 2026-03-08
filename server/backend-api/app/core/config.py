@@ -44,6 +44,12 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+if not settings.JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET environment variable is not set. "
+        "Please set it in your .env file or environment variables."
+    )
+
 # SMTP_HOST = os.getenv("SMTP_HOST")
 # SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 # SMTP_USER = os.getenv("SMTP_USER")
