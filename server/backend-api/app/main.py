@@ -1,5 +1,5 @@
-import logging
 import os
+import structlog
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -9,27 +9,23 @@ import socketio
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from app.api.routes import teacher_settings as settings_router
-from .api.routes.schedule import router as schedule_router
-from .api.routes.holidays import router as holidays_router
-from .api.routes.exams import router as exams_router
-from .api.routes.attendance import router as attendance_router
-from .api.routes.auth import router as auth_router
-from .api.routes.analytics import router as analytics_router
-from .api.routes.notifications import router as notifications_router
-from .api.routes.reports import router as reports_router
-from .api.routes.students import router as students_router
-from .api.routes.health import router as health_router
-from .api.routes.webauthn import router as webauthn_router
+# routers
+from .api.v1.__init__ import router as api_v1_router
+from .api.v1.__init__ import legacyRouter as api_legacy_router
+
 from .core.config import APP_NAME, ORIGINS
 from app.services.attendance_daily import (
     ensure_indexes as ensure_attendance_daily_indexes,
 )
+from app.services.attendance import ensure_indexes as ensure_attendance_indexes
 from app.services.schedule_service import ensure_indexes as ensure_schedule_indexes
+from app.db.init_indexes import create_indexes as create_refresh_token_indexes
 from app.services.ml_client import ml_client
 from app.services.attendance_socket_service import sio
 from app.db.nonce_store import close_redis
 from app.core.scheduler import start_scheduler, shutdown_scheduler
+from app.db.mongo import db
+from app.db.indexes import create_indexes
 
 # New Imports
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -43,15 +39,13 @@ from .middleware.correlation import CorrelationIdMiddleware
 from .middleware.timing import TimingMiddleware
 from .middleware.security import SecurityHeadersMiddleware
 
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from app.core.limiter import limiter
+from app.core.limiter import limiter, rate_limit_exceeded_handler
 
 load_dotenv()
 
-# Setup structured logging
-setup_logging()
-logger = logging.getLogger(APP_NAME)
+setup_logging(service_name="backend-api")
+logger = structlog.get_logger()
 
 if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     sentry_sdk.init(
@@ -68,13 +62,22 @@ async def lifespan(app: FastAPI):
         await ensure_attendance_daily_indexes()
         logger.info("attendance_daily indexes ensured")
 
+        await ensure_attendance_indexes()
+        logger.info("attendance core indexes ensured")
+
         await ensure_schedule_indexes()
         logger.info("schedule indexes ensured")
+
+        await create_refresh_token_indexes()
+        logger.info("refresh_tokens indexes ensured")
+
+        await create_indexes(db)
+        logger.info("application indexes ensured")
 
         start_scheduler()
     except Exception as e:
         logger.warning(
-            f"Could not connect to MongoDB. Application will continue, but DB features will fail. Error: {e}"  # noqa: E501
+            f"Could not connect to MongoDB. Application will continue, but DB features will fail. Error: {e}"
         )
         logger.warning("Please check your MONGO_URI in .env")
 
@@ -93,7 +96,7 @@ def create_app() -> FastAPI:
 
     # Rate limiter
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
     # CORS MUST be added FIRST so headers are present even on errors
     app.add_middleware(
@@ -126,19 +129,11 @@ def create_app() -> FastAPI:
     )
     app.add_exception_handler(Exception, generic_exception_handler)
 
-    # Routers
-    app.include_router(auth_router)
-    app.include_router(students_router)
-    app.include_router(attendance_router)
-    app.include_router(schedule_router)
-    app.include_router(holidays_router)  # ← NEW
-    app.include_router(exams_router)
-    app.include_router(settings_router.router)
-    app.include_router(notifications_router)
-    app.include_router(analytics_router)
-    app.include_router(reports_router)
-    app.include_router(health_router, tags=["Health"])
-    app.include_router(webauthn_router)
+    # Routes Mounting
+    # Legacy routes support Router
+    app.include_router(api_legacy_router)
+    # v1 router
+    app.include_router(api_v1_router)
 
     return app
 

@@ -112,7 +112,7 @@ const getStatusColor = (color) => {
         ? a[sortConfig.key] - b[sortConfig.key]
         : b[sortConfig.key] - a[sortConfig.key];
     });
-  }, [enhancedStudents, sortConfig]);
+  }, [sortConfig, filteredStudents]);
 
   // Reset page when subject changes or rowsPerPage changes
 useEffect(() => {
@@ -456,6 +456,8 @@ toast.error(t('reports.export_failed'));
 )}
         </div>
       </div>
- 
+
+
+
   );
 }

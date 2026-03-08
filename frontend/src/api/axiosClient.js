@@ -2,7 +2,7 @@ import axios from "axios";
 import { getOrCreateDeviceUUID } from "../utils/deviceBinding"; // Update path if needed
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL:  `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api/v1`,
   withCredentials: true,
 });
 
@@ -10,6 +10,13 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Add Correlation ID for tracing
+  const existingCorrelationId =
+    config.headers["X-Correlation-ID"] ?? config.headers["x-correlation-id"];
+  if (!existingCorrelationId && typeof crypto !== "undefined" && crypto.randomUUID) {
+    config.headers["X-Correlation-ID"] = crypto.randomUUID();
   }
 
   // Ensure every request has the Device ID attached
@@ -105,7 +112,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const res = await axios.post("/api/auth/refresh-token", {
+          const res = await axios.post("/auth/refresh-token", {
             refresh_token: refreshToken,
           });
 

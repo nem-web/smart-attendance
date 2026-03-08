@@ -770,6 +770,36 @@ smart-attendance/
 
 ## 📡 API Documentation
 
+## 🔄 API Versioning & Legacy Route Support
+
+This project uses versioned API routes under the `/api/v1` prefix.
+
+Example:
+
+POST /api/v1/auth/login
+
+### Backward Compatibility
+
+To ensure stability for existing clients, legacy routes are still supported without redirection.
+
+Example:
+
+POST /api/auth/login → internally handled as /api/v1/auth/login
+
+⚠️ Note:
+Redirect-based middleware was avoided because it interferes with CORS preflight (`OPTIONS`) requests in browsers.
+
+Instead of using HTTP redirects (301/302), legacy routes are explicitly mapped to the new versioned routes to prevent CORS issues and maintain compatibility.
+
+### Recommendation for Developers
+
+New integrations should always use the versioned routes:
+
+/api/v1/...
+
+Legacy routes may be removed in future major releases.
+
+
 ### Base URL
 
 ```text
@@ -796,7 +826,7 @@ Authorization: Bearer <your-jwt-token>
 ##### Register User
 
 ```http
-POST /api/auth/register
+POST /api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -810,7 +840,7 @@ Content-Type: application/json
 ##### Login
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -853,7 +883,7 @@ GET /auth/google/callback?code=<authorization-code>
 ##### Get All Students
 
 ```http
-GET /api/students
+GET /api/v1/students
 Authorization: Bearer <token>
 ```
 
@@ -875,7 +905,7 @@ Authorization: Bearer <token>
 ##### Add Student
 
 ```http
-POST /api/students
+POST /api/v1/students
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
@@ -890,7 +920,7 @@ Content-Type: multipart/form-data
 ##### Get Student Details
 
 ```http
-GET /api/students/{student_id}
+GET /api/v1/students/{student_id}
 Authorization: Bearer <token>
 ```
 
@@ -899,7 +929,7 @@ Authorization: Bearer <token>
 ##### Mark Attendance
 
 ```http
-POST /api/attendance/mark
+POST /api/v1/attendance/mark
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -938,14 +968,14 @@ Content-Type: application/json
 ##### Get Attendance Records
 
 ```http
-GET /api/attendance?subject_id={id}&date={YYYY-MM-DD}
+GET /api/v1/attendance?subject_id={id}&date={YYYY-MM-DD}
 Authorization: Bearer <token>
 ```
 
 ##### Get Student Attendance
 
 ```http
-GET /api/attendance/student/{student_id}
+GET /api/v1/attendance/student/{student_id}
 Authorization: Bearer <token>
 ```
 
@@ -954,14 +984,14 @@ Authorization: Bearer <token>
 ##### Get All Subjects
 
 ```http
-GET /api/classes
+GET /api/v1/classes
 Authorization: Bearer <token>
 ```
 
 ##### Create Subject
 
 ```http
-POST /api/classes
+POST /api/v1/classes
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -975,7 +1005,7 @@ Content-Type: application/json
 ##### Get Subject Details
 
 ```http
-GET /api/classes/{subject_id}
+GET /api/v1/classes/{subject_id}
 Authorization: Bearer <token>
 ```
 
@@ -984,7 +1014,7 @@ Authorization: Bearer <token>
 ##### Upload Student Face
 
 ```http
-POST /api/face/upload
+POST /api/v1/face/upload
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
@@ -997,7 +1027,7 @@ Content-Type: multipart/form-data
 ##### Verify Face
 
 ```http
-POST /api/face/verify
+POST /api/v1/face/verify
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -1012,14 +1042,14 @@ Content-Type: application/json
 ##### Get Settings
 
 ```http
-GET /api/teacher-settings
+GET /api/v1/teacher-settings
 Authorization: Bearer <token>
 ```
 
 ##### Update Settings
 
 ```http
-PUT /api/teacher-settings
+PUT /api/v1/teacher-settings
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -1065,6 +1095,59 @@ Content-Type: application/json
 ```
 
 ---
+
+### Rate Limiting
+
+The API implements rate limiting to prevent abuse and ensure fair usage.
+
+- `POST /auth/login`: 10 requests/minute per client IP
+- `POST /auth/register`: 5 requests/minute per client IP
+- `POST /api/attendance/mark`: 30 requests/minute per teacher (teacher ID from JWT)
+- All other endpoints: 100 requests/minute per authenticated user (fallback to IP for unauthenticated requests)
+
+| Endpoint | Limit | Description |
+|----------|-------|-------------|
+| `POST /auth/login` | 10 requests/minute | Login attempts per IP |
+| `POST /auth/register` | 5 requests/minute | Registration attempts per IP |
+| `POST /api/attendance/mark` | 30 requests/minute | Attendance marking per teacher |
+| All other endpoints | 100 requests/minute | Default limit per user |
+
+**Rate Limit Headers:**
+- `X-RateLimit-Limit`: Maximum requests allowed
+- `X-RateLimit-Remaining`: Remaining requests in current window
+- `X-RateLimit-Reset`: Unix timestamp when the limit resets
+- `Retry-After`: Seconds to wait before retrying (on 429 responses)
+
+**Error Response (HTTP 429):**
+```json
+{
+  "detail": "Rate limit exceeded: 10 per 1 minute"
+}
+```
+
+### ML Service Authentication
+
+All ML service routes require API key authentication via the `X-API-Key` header and validate it against the `ML_API_KEY` environment variable.
+
+```http
+GET /health
+X-API-Key: your-ml-service-api-key
+```
+
+**Error Response (HTTP 401):**
+```json
+{
+  "detail": "X-API-Key header is missing"
+}
+```
+or
+```json
+{
+  "detail": "Invalid API key"
+}
+```
+
+Configure the ML service API key using the `ML_API_KEY` environment variable.
 
 ## 📸 Screenshots
 

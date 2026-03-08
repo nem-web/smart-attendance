@@ -44,6 +44,12 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+if not settings.JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET environment variable is not set. "
+        "Please set it in your .env file or environment variables."
+    )
+
 # SMTP_HOST = os.getenv("SMTP_HOST")
 # SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 # SMTP_USER = os.getenv("SMTP_USER")
@@ -64,6 +70,17 @@ brevo_settings = BrevoSettings()
 ML_SERVICE_URL = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
 ML_SERVICE_TIMEOUT = float(os.getenv("ML_SERVICE_TIMEOUT", "30"))
 ML_SERVICE_MAX_RETRIES = int(os.getenv("ML_SERVICE_MAX_RETRIES", "3"))
+ML_API_KEY = os.getenv("ML_API_KEY")
+
+# Rate Limiting Configuration
+RATE_LIMIT_LOGIN = os.getenv("RATE_LIMIT_LOGIN", "10/minute")
+RATE_LIMIT_REGISTER = os.getenv("RATE_LIMIT_REGISTER", "5/minute")
+RATE_LIMIT_ATTENDANCE_MARK = os.getenv("RATE_LIMIT_ATTENDANCE_MARK", "30/minute")
+RATE_LIMIT_DEFAULT = os.getenv("RATE_LIMIT_DEFAULT", "100/minute")
+
+# Trusted Proxies for X-Forwarded-For parsing
+# Comma-separated list of IP addresses that are trusted proxies
+TRUSTED_PROXIES = os.getenv("TRUSTED_PROXIES", "")
 
 # ML Thresholds
 ML_CONFIDENT_THRESHOLD = float(os.getenv("ML_CONFIDENT_THRESHOLD", "0.50"))

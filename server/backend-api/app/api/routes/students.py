@@ -129,12 +129,14 @@ async def upload_image_url(
 
     # 1. Read image bytes
     image_bytes = await file.read()
-    
+
     # 2. Validate file size (return 413 for payload too large)
     if len(image_bytes) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=413,
-            detail=f"Image too large. Maximum size is {MAX_FILE_SIZE // 1024 // 1024}MB"
+            detail=(
+                f"Image too large. Maximum size is {MAX_FILE_SIZE // 1024 // 1024}MB"
+            ),
         )
 
     # 3. Convert to base64 for ML service
@@ -150,22 +152,38 @@ async def upload_image_url(
         )
 
         if not ml_response.get("success"):
-            error_code = ml_response.get('error_code', '')
-            
+            error_code = ml_response.get("error_code", "")
+
             # Map ML error codes to user-friendly messages and HTTP status codes
             error_mapping = {
-                "IMAGE_TOO_LARGE": (413, "Image file is too large. Please upload an image smaller than 5MB"),
-                "INVALID_FORMAT": (400, "Invalid image format. Please upload a JPEG or PNG image"),
-                "INVALID_DIMENSIONS": (400, "Image dimensions are too large. Maximum size is 4096x4096 pixels"),
-                "NO_FACE_FOUND": (400, "No face detected in the image. Please upload a clear photo of your face"),
-                "MULTIPLE_FACES_FOUND": (400, "Multiple faces detected. Please upload a photo with only your face"),
+                "IMAGE_TOO_LARGE": (
+                    413,
+                    "Image file is too large. Please upload an image smaller than 5MB",
+                ),
+                "INVALID_FORMAT": (
+                    400,
+                    "Invalid image format. Please upload a JPEG or PNG image",
+                ),
+                "INVALID_DIMENSIONS": (
+                    400,
+                    "Image dimensions are too large. Maximum size is 4096x4096 pixels",
+                ),
+                "NO_FACE_FOUND": (
+                    400,
+                    "No face detected in the image. Please upload a clear photo of "
+                    "your face",
+                ),
+                "MULTIPLE_FACES_FOUND": (
+                    400,
+                    "Multiple faces detected. Please upload a photo with only your "
+                    "face",
+                ),
             }
-            
+
             status_code, detail = error_mapping.get(
-                error_code,
-                (400, "Face encoding failed. Please try another image")
+                error_code, (400, "Face encoding failed. Please try another image")
             )
-            
+
             raise HTTPException(status_code=status_code, detail=detail)
 
         embedding = ml_response.get("embedding")
@@ -407,6 +425,7 @@ async def remove_subject(
 
     return {"message": "Subject removed successfully"}
 
+
 @router.get("/export/roster/pdf")
 async def export_student_roster_pdf(
     subject_id: str = None,
@@ -415,7 +434,6 @@ async def export_student_roster_pdf(
     import html
     import io
     from datetime import datetime
-    from fastapi import Query
     from fastapi.responses import StreamingResponse
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -488,7 +506,9 @@ async def export_student_roster_pdf(
     elements.append(Spacer(1, 10))
 
     teacher = await db.users.find_one({"_id": teacher_id})
-    teacher_name = teacher.get("name", "Unknown Teacher") if teacher else "Unknown Teacher"
+    teacher_name = (
+        teacher.get("name", "Unknown Teacher") if teacher else "Unknown Teacher"
+    )
 
     if subject_id:
         try:
@@ -505,9 +525,13 @@ async def export_student_roster_pdf(
         professor_ids = [str(pid) for pid in subject.get("professor_ids", [])]
         subject_teacher = str(subject.get("teacher_id", ""))
         if str(teacher_id) not in professor_ids and str(teacher_id) != subject_teacher:
-            raise HTTPException(status_code=403, detail="Access denied for this subject")
+            raise HTTPException(
+                status_code=403, detail="Access denied for this subject"
+            )
 
-        subject_students = [s for s in subject.get("students", []) if s.get("verified", False)]
+        subject_students = [
+            s for s in subject.get("students", []) if s.get("verified", False)
+        ]
         student_user_ids = [s["student_id"] for s in subject_students]
 
         students_cursor = db.students.find({"userId": {"$in": student_user_ids}})
@@ -519,14 +543,25 @@ async def export_student_roster_pdf(
         metadata_data = [
             [
                 Paragraph(f"<b>Teacher:</b> {html.escape(teacher_name)}", header_style),
-                Paragraph(f"<b>Subject:</b> {html.escape(subject.get('name', 'Unknown'))}", header_style),
+                Paragraph(
+                    f"<b>Subject:</b> {html.escape(subject.get('name', 'Unknown'))}",
+                    header_style,
+                ),
             ],
             [
-                Paragraph(f"<b>Subject Code:</b> {html.escape(subject.get('code', 'N/A'))}", header_style),
-                Paragraph(f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}", header_style),
+                Paragraph(
+                    f"<b>Subject Code:</b> {html.escape(subject.get('code', 'N/A'))}",
+                    header_style,
+                ),
+                Paragraph(
+                    f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                    header_style,
+                ),
             ],
             [
-                Paragraph(f"<b>Total Students:</b> {len(subject_students)}", header_style),
+                Paragraph(
+                    f"<b>Total Students:</b> {len(subject_students)}", header_style
+                ),
                 Paragraph("", header_style),
             ],
         ]
@@ -579,7 +614,12 @@ async def export_student_roster_pdf(
                         ("TOPPADDING", (0, 1), (-1, -1), 6),
                         ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#e5e7eb")),
                         ("LINEBELOW", (0, 0), (-1, 0), 2, colors.HexColor("#1e40af")),
-                        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
+                        (
+                            "ROWBACKGROUNDS",
+                            (0, 1),
+                            (-1, -1),
+                            [colors.white, colors.HexColor("#f9fafb")],
+                        ),
                         ("ALIGN", (0, 1), (0, -1), "LEFT"),
                     ]
                 )
@@ -594,7 +634,9 @@ async def export_student_roster_pdf(
                 textColor=colors.gray,
                 spaceBefore=40,
             )
-            elements.append(Paragraph("No verified students found for this subject.", no_data_style))
+            elements.append(
+                Paragraph("No verified students found for this subject.", no_data_style)
+            )
 
         doc.build(
             elements,
@@ -626,7 +668,10 @@ async def export_student_roster_pdf(
         metadata_data = [
             [
                 Paragraph(f"<b>Teacher:</b> {html.escape(teacher_name)}", header_style),
-                Paragraph(f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}", header_style),
+                Paragraph(
+                    f"<b>Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                    header_style,
+                ),
             ],
             [
                 Paragraph(f"<b>Total Subjects:</b> {len(subjects)}", header_style),
@@ -659,9 +704,16 @@ async def export_student_roster_pdf(
                 spaceAfter=10,
                 fontName="Helvetica-Bold",
             )
-            elements.append(Paragraph(f"{html.escape(subject_name)} ({html.escape(subject_code)})", subject_title_style))
+            elements.append(
+                Paragraph(
+                    f"{html.escape(subject_name)} ({html.escape(subject_code)})",
+                    subject_title_style,
+                )
+            )
 
-            subject_students = [s for s in subject.get("students", []) if s.get("verified", False)]
+            subject_students = [
+                s for s in subject.get("students", []) if s.get("verified", False)
+            ]
             student_user_ids = [s["student_id"] for s in subject_students]
 
             students_cursor = db.students.find({"userId": {"$in": student_user_ids}})
@@ -704,8 +756,19 @@ async def export_student_roster_pdf(
                             ("BOTTOMPADDING", (0, 1), (-1, -1), 8),
                             ("TOPPADDING", (0, 1), (-1, -1), 6),
                             ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#e5e7eb")),
-                            ("LINEBELOW", (0, 0), (-1, 0), 2, colors.HexColor("#1e40af")),
-                            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
+                            (
+                                "LINEBELOW",
+                                (0, 0),
+                                (-1, 0),
+                                2,
+                                colors.HexColor("#1e40af"),
+                            ),
+                            (
+                                "ROWBACKGROUNDS",
+                                (0, 1),
+                                (-1, -1),
+                                [colors.white, colors.HexColor("#f9fafb")],
+                            ),
                             ("ALIGN", (0, 1), (0, -1), "LEFT"),
                         ]
                     )
@@ -721,7 +784,9 @@ async def export_student_roster_pdf(
                     spaceBefore=10,
                     spaceAfter=10,
                 )
-                elements.append(Paragraph("No verified students in this subject.", no_data_style))
+                elements.append(
+                    Paragraph("No verified students in this subject.", no_data_style)
+                )
 
             elements.append(Spacer(1, 20))
 
@@ -732,11 +797,12 @@ async def export_student_roster_pdf(
         )
 
         buffer.seek(0)
-        filename = f"student_roster_all_subjects_{datetime.now().strftime('%Y%m%d')}.pdf"
+        filename = (
+            f"student_roster_all_subjects_{datetime.now().strftime('%Y%m%d')}.pdf"
+        )
 
         return StreamingResponse(
             buffer,
             media_type="application/pdf",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
-

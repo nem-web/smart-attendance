@@ -58,6 +58,13 @@ def detect_faces(image: np.ndarray) -> list[tuple[int, int, int, int]]:
         x2 = x1 + w_box
         y2 = y1 + h_box
 
+        # Ensure coordinates are within image bounds
+        h, w = image.shape[:2]
+        x1 = max(0, min(x1, w))
+        y1 = max(0, min(y1, h))
+        x2 = max(0, min(x2, w))
+        y2 = max(0, min(y2, h))
+
         faces.append((y1, x2, y2, x1))
 
     return faces

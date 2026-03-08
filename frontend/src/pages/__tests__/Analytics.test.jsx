@@ -107,7 +107,7 @@ describe('Analytics Page', () => {
         await waitFor(() => expect(fetchMySubjects).toHaveBeenCalled());
 
         // Find the select dropdown
-        const select = screen.getByRole('combobox');
+        const select = await screen.findByRole('combobox');
         
         // Change selection to a subject (e.g., Math with id '1')
         fireEvent.change(select, { target: { value: '1' } });

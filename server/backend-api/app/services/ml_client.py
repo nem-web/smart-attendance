@@ -1,24 +1,43 @@
 import httpx
-import os
 from typing import Optional, List, Dict, Any
+
+from app.core.config import (
+    ML_API_KEY,
+    ML_SERVICE_MAX_RETRIES,
+    ML_SERVICE_TIMEOUT,
+    ML_SERVICE_URL,
+)
 
 
 class MLClient:
     """HTTP client for communicating with ML Service"""
 
     def __init__(self):
-        self.base_url = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
-        self.api_key = os.getenv("ML_API_KEY", "your-secret-api-key-here")
-        self.timeout = float(os.getenv("ML_SERVICE_TIMEOUT", "30"))
-        self.max_retries = int(os.getenv("ML_SERVICE_MAX_RETRIES", "3"))
+        self.base_url = ML_SERVICE_URL
+        self.api_key = ML_API_KEY
+        self.timeout = ML_SERVICE_TIMEOUT
+        self.max_retries = ML_SERVICE_MAX_RETRIES
 
-        # Create httpx client with connection pooling
-        self.client = httpx.AsyncClient(
-            base_url=self.base_url,
-            headers={"X-API-KEY": self.api_key},
-            timeout=self.timeout,
-            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
-        )
+        # Create httpx client with connection pooling.
+        # Only attach API key header when configured.
+        # Missing key is validated lazily.
+        client_kwargs = {
+            "base_url": self.base_url,
+            "timeout": self.timeout,
+            "limits": httpx.Limits(max_keepalive_connections=5, max_connections=10),
+        }
+        if self.api_key:
+            client_kwargs["headers"] = {"X-API-Key": self.api_key}
+
+        self.client = httpx.AsyncClient(**client_kwargs)
+
+    def _ensure_ml_api_key_configured(self) -> None:
+        """Fail only when ML functionality is actually invoked."""
+        if not self.api_key:
+            raise RuntimeError(
+                "ML_API_KEY is not configured. "
+                "Set ML_API_KEY to use ML-powered endpoints."
+            )
 
     async def close(self):
         """Close the HTTP client"""
@@ -34,6 +53,8 @@ class MLClient:
         """
         Make HTTP request to ML service with retry logic
         """
+        self._ensure_ml_api_key_configured()
+
         try:
             response = await self.client.request(
                 method=method, url=endpoint, json=json_data

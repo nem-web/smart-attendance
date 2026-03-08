@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, date, timezone
+from datetime import datetime, date
 from typing import Dict, List, Any
 
 import socketio
@@ -10,6 +10,7 @@ from app.core.config import ORIGINS
 from app.db.mongo import db
 from app.services.attendance import log_grouped_attendance
 from app.services.attendance_daily import save_daily_summary
+from app.utils.geo import calculate_distance
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +251,7 @@ async def flush_attendance_data():
                             "isProxy": scan["isProxy"],
                         }
                     )
-                
+
                 updated_logs = None
                 if log_students_data:
                     updated_logs = await log_grouped_attendance(
@@ -312,7 +313,9 @@ async def stop_and_save_session(session_id: str):
                     unique_scans = {s["studentId"]: s for s in scans}.values()
 
                     # Grouped Logs & Analytics
-                    subject_doc = await db.subjects.find_one({"_id": ObjectId(subject_id)})
+                    subject_doc = await db.subjects.find_one(
+                        {"_id": ObjectId(subject_id)}
+                    )
                     teacher_id = (
                         subject_doc["professor_ids"][0]
                         if subject_doc and subject_doc.get("professor_ids")

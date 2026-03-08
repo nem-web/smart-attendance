@@ -129,8 +129,8 @@ class BrevoEmailService:
         subject: str,
         attendance_percentage: float,
         threshold: int,
-        present_count: int,
-        total_count: int,
+        present_count: int = 0,
+        total_count: int = 0,
     ) -> dict:
         """Send low attendance warning to student."""
         try:
@@ -235,6 +235,7 @@ class BrevoEmailService:
         except Exception as e:
             logger.error(f"Failed to send device binding OTP email: {e}")
             raise
+
 
 # def send_verification_email(to_email: str, verification_link: str):
 #     try:

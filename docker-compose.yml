@@ -35,6 +35,13 @@ services:
       - LOG_LEVEL=info
     env_file:
       - ./server/ml-service/.env
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ID}}"
+        labels: "service"
+    labels:
+      service: "ml-service"
     volumes:
       - ./server/ml-service:/app
       - ml_models:/app/models
@@ -101,6 +108,13 @@ services:
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     env_file:
       - ./server/backend-api/.env
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ID}}"
+        labels: "service"
+    labels:
+      service: "backend-api"
     volumes:
       - ./server/backend-api:/app
     networks:

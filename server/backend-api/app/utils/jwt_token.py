@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 
@@ -31,6 +31,19 @@ def hash_session_id(session_id: str) -> str:
         SHA256 hash of the session ID.
     """
     return hashlib.sha256(session_id.encode()).hexdigest()
+
+
+def hash_refresh_token(token: str) -> str:
+    """
+    Hash a refresh token for secure storage in the database.
+
+    Args:
+        token: The refresh token to hash.
+
+    Returns:
+        SHA256 hash of the refresh token.
+    """
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 def extract_session_id(token: str) -> str | None:

@@ -309,6 +309,18 @@ async def get_attendance_trend(
     subjects = await _get_teacher_subjects(teacher_oid)
     subject_ids = [s["_id"] for s in subjects]
 
+    if classId:
+        try:
+            class_oid = ObjectId(classId)
+            if class_oid not in subject_ids:
+                raise HTTPException(
+                    status_code=403, detail="You do not have access to this class"
+                )
+        except Exception as e:
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(status_code=400, detail="Invalid classId format")
+
     if not subject_ids:
         return {
             "classId": classId,
@@ -320,15 +332,9 @@ async def get_attendance_trend(
     match_filter = {"subjectId": {"$in": subject_ids}}
 
     if classId:
-        try:
-            class_oid = ObjectId(classId)
-            if class_oid not in subject_ids:
-                raise HTTPException(
-                    status_code=403, detail="You do not have access to this class"
-                )
-            match_filter["subjectId"] = class_oid
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid classId format")
+        # class_oid is already validated to be in subject_ids above
+        class_oid = ObjectId(classId)
+        match_filter["subjectId"] = class_oid
 
     # Aggregate by date
     pipeline = [
@@ -609,9 +615,14 @@ async def get_global_stats(
 
     if not subjects:
         return {
-            "overall_attendance": 0.0,
-            "risk_count": 0,
-            "top_subjects": [],
+            "attendance": 0.0,
+            "riskCount": 0,
+            "topSubjects": [],
+            "avgLate": 0.0,
+            "lateTime": "09:00 AM",
+            "totalPresent": 0,
+            "totalAbsent": 0,
+            "totalLate": 0,
         }
 
     subject_ids = [s["_id"] for s in subjects]
