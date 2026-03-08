@@ -46,7 +46,7 @@ router = APIRouter(
 async def encode_face(request: EncodeFaceRequest):
     try:
         # Validate and decode image directly to NumPy array (more efficient)
-        success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        success, _image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
             request.image_base64
         )
         
