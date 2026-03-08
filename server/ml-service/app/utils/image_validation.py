@@ -1,6 +1,8 @@
 """Image validation utilities for ML service"""
 
 import base64
+import cv2
+import numpy as np
 from io import BytesIO
 from PIL import Image
 from typing import Tuple, Optional
@@ -106,3 +108,78 @@ def validate_and_decode_image(
             "Failed to process image",
             ERROR_INVALID_FORMAT,
         )
+
+
+def validate_and_decode_image_to_numpy(
+    image_base64: str,
+) -> Tuple[bool, Optional[bytes], Optional[np.ndarray], Optional[str], Optional[str]]:
+    """
+    Validate and decode base64 image directly to NumPy array using cv2.imdecode.
+    This is more efficient than PIL -> NumPy conversion as it avoids redundant format conversions.
+    
+    Args:
+        image_base64: Base64 encoded image string
+        
+    Returns:
+        Tuple of (success, image_bytes, image_np, error_message, error_code)
+    """
+    # 1. Validate base64 string length (before decoding to save memory)
+    if len(image_base64) > MAX_BASE64_SIZE:
+        return (
+            False,
+            None,
+            None,
+            f"Image too large. Maximum size is {MAX_IMAGE_SIZE_BYTES // 1024 // 1024}MB",
+            ERROR_IMAGE_TOO_LARGE,
+        )
+    
+    # 2. Decode base64 with strict validation
+    try:
+        image_bytes = base64.b64decode(image_base64, validate=True)
+    except Exception:
+        return (
+            False,
+            None,
+            None,
+            "Invalid base64 encoding",
+            ERROR_INVALID_FORMAT,
+        )
+    
+    # 3. Validate decoded image size
+    if len(image_bytes) > MAX_IMAGE_SIZE_BYTES:
+        return (
+            False,
+            None,
+            None,
+            f"Image size {len(image_bytes) // 1024 // 1024}MB exceeds maximum {MAX_IMAGE_SIZE_BYTES // 1024 // 1024}MB",
+            ERROR_IMAGE_TOO_LARGE,
+        )
+    
+    # 4. Decode image directly to NumPy array using cv2.imdecode
+    # cv2.imdecode returns None if the image cannot be decoded
+    image_np = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+    
+    if image_np is None:
+        return (
+            False,
+            None,
+            None,
+            "Failed to decode image. Invalid image format or corrupted data",
+            ERROR_INVALID_FORMAT,
+        )
+    
+    # 5. Validate dimensions
+    height, width = image_np.shape[:2]
+    if width > MAX_IMAGE_DIMENSION or height > MAX_IMAGE_DIMENSION:
+        return (
+            False,
+            None,
+            None,
+            f"Image dimensions {width}x{height} exceed maximum {MAX_IMAGE_DIMENSION}x{MAX_IMAGE_DIMENSION}",
+            ERROR_INVALID_DIMENSIONS,
+        )
+    
+    # Convert BGR (OpenCV default) to RGB for consistency with ML models
+    image_rgb = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
+    
+    return (True, image_bytes, image_rgb, None, None)

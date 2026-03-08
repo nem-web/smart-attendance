@@ -6,7 +6,11 @@ import base64
 from io import BytesIO
 from PIL import Image
 
-from app.utils.image_validation import validate_and_decode_image
+from app.utils import image_validation
+from app.utils.image_validation import (
+    validate_and_decode_image,
+    validate_and_decode_image_to_numpy,
+)
 from app.core.constants import (
     ERROR_IMAGE_TOO_LARGE,
     ERROR_INVALID_FORMAT,
@@ -157,3 +161,134 @@ def test_rgb_conversion():
 
     assert success is True
     assert image.mode == "RGB"
+
+
+def test_valid_png_image_to_numpy():
+    """Test that valid PNG image decodes to numpy array"""
+    image_base64 = create_test_image(500, 500, "PNG")
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        image_base64
+    )
+
+    assert success is True
+    assert image_bytes is not None
+    assert image_np is not None
+    assert isinstance(image_np, np.ndarray)
+    assert image_np.shape == (500, 500, 3)
+    assert error_msg is None
+    assert error_code is None
+
+
+def test_image_too_large_base64_to_numpy(monkeypatch):
+    """Test that oversized base64 strings are rejected before decoding"""
+    monkeypatch.setattr(image_validation, "MAX_BASE64_SIZE", 10)
+    image_base64 = "A" * 11
+
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        image_base64
+    )
+
+    assert success is False
+    assert image_bytes is None
+    assert image_np is None
+    assert error_code == ERROR_IMAGE_TOO_LARGE
+    assert "too large" in error_msg.lower()
+
+
+def test_image_too_large_decoded_bytes_to_numpy(monkeypatch):
+    """Test that decoded image bytes exceeding max are rejected"""
+    image_base64 = create_test_image(100, 100, "PNG")
+    decoded_size = len(base64.b64decode(image_base64, validate=True))
+    monkeypatch.setattr(image_validation, "MAX_IMAGE_SIZE_BYTES", decoded_size - 1)
+
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        image_base64
+    )
+
+    assert success is False
+    assert image_bytes is None
+    assert image_np is None
+    assert error_code == ERROR_IMAGE_TOO_LARGE
+    assert "exceeds maximum" in error_msg.lower()
+
+
+def test_invalid_base64_to_numpy():
+    """Test that invalid base64 string is rejected"""
+    invalid_base64 = "not-valid-base64!@#$%"
+
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        invalid_base64
+    )
+
+    assert success is False
+    assert image_bytes is None
+    assert image_np is None
+    assert error_code == ERROR_INVALID_FORMAT
+    assert "invalid base64" in error_msg.lower()
+
+
+def test_invalid_image_format_to_numpy():
+    """Test that non-image bytes are rejected by cv2.imdecode"""
+    invalid_image_base64 = base64.b64encode(b"not an image").decode("utf-8")
+
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        invalid_image_base64
+    )
+
+    assert success is False
+    assert image_bytes is None
+    assert image_np is None
+    assert error_code == ERROR_INVALID_FORMAT
+    assert "failed to decode image" in error_msg.lower()
+
+
+def test_image_dimensions_too_large_to_numpy():
+    """Test that images with dimensions exceeding limit are rejected"""
+    image_base64 = create_test_image(5000, 5000, "PNG")
+
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        image_base64
+    )
+
+    assert success is False
+    assert image_bytes is None
+    assert image_np is None
+    assert error_code == ERROR_INVALID_DIMENSIONS
+    assert "dimensions" in error_msg.lower()
+
+
+def test_image_at_max_dimensions_to_numpy(monkeypatch):
+    """Test that image at exactly max dimensions is accepted"""
+    monkeypatch.setattr(image_validation, "MAX_IMAGE_DIMENSION", 64)
+    image_base64 = create_test_image(64, 64, "PNG")
+
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        image_base64
+    )
+
+    assert success is True
+    assert image_bytes is not None
+    assert image_np is not None
+    assert image_np.shape == (64, 64, 3)
+    assert error_msg is None
+    assert error_code is None
+
+
+def test_bgr_to_rgb_conversion_to_numpy():
+    """Test that OpenCV BGR output is converted to RGB"""
+    img = Image.new("RGB", (1, 1), color=(255, 0, 0))
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+    success, image_bytes, image_np, error_msg, error_code = validate_and_decode_image_to_numpy(
+        image_base64
+    )
+
+    assert success is True
+    assert image_bytes is not None
+    assert image_np is not None
+    assert error_msg is None
+    assert error_code is None
+    assert tuple(image_np[0, 0]) == (255, 0, 0)
