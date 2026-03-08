@@ -1,5 +1,7 @@
 import base64
+import base64
 import logging
+import time
 from datetime import date
 from typing import Dict
 
@@ -95,6 +97,9 @@ async def websocket_endpoint(
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
+    last_process_time = 0
+    min_process_interval = 0.5  # Limit to ~2 FPS per client to prevent flooding
+
     try:
         while True:
             # 2. Receive JSON command
@@ -108,6 +113,16 @@ async def websocket_endpoint(
 
             # 3. Process Frame
             if command == "process_frame":
+                current_time = time.time()
+                if current_time - last_process_time < min_process_interval:
+                    # Drop frame if sending too fast
+                    # Send completion so client clears in-flight flag
+                    await websocket.send_json(
+                        {"type": "complete", "status": "ignored"}
+                    )
+                    continue
+                last_process_time = current_time
+
                 image_b64 = data.get("image")
                 subject_id = data.get("subject_id")
                 matched_results = []
@@ -214,13 +229,15 @@ async def websocket_endpoint(
                                 "student_id": str(s["userId"]),
                                 "embeddings": s["face_embeddings"],
                             }
-                        )
+                        )# Use UNCERTAIN threshold so we can detect "uncertain" matches 
+                            # (between confident and uncertain thresholds)
+                            threshold=ML_UNCERTAIN
 
                     for i, face in enumerate(faces):
                         match_resp = await ml_client.match_faces(
                             query_embedding=face["embedding"],
                             candidate_embeddings=candidate_embeddings,
-                            threshold=ML_CONFIDENT_THRESHOLD,
+                            threshold=ML_UNCERTAIN_THRESHOLD,
                         )
 
                         if not match_resp.get("success"):
