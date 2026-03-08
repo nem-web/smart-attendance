@@ -1,20 +1,15 @@
 from app.db.mongo import db
 from bson import ObjectId
 
-students_col = db["students"]
-users_col = db["users"]
-attendance_col = db["attendance"]
-subjects_col = db["subjects"]
-
 
 async def get_student_profile(user_id: str):
     # 1. Get user document
-    user = await users_col.find_one({"_id": ObjectId(user_id)})
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
     if not user:
         return None
 
     # 2. Get student document
-    student = await students_col.find_one({"userId": ObjectId(user_id)})
+    student = await db["students"].find_one({"userId": ObjectId(user_id)})
     if not student:
         return None
 
@@ -26,7 +21,7 @@ async def get_student_profile(user_id: str):
 
     subjects = []
     if subject_ids:
-        subject_cursor = subjects_col.find({"_id": {"$in": subject_ids}})
+        subject_cursor = db["subjects"].find({"_id": {"$in": subject_ids}})
         subjects = [
             {
                 "_id": str(sub["_id"]),
@@ -54,10 +49,12 @@ async def get_student_profile(user_id: str):
         "webauthn_credentials": [
             {
                 "credential_id": cred["credential_id"],
-                "created_at": cred["created_at"].isoformat() if cred.get("created_at") else None,
+                "created_at": cred["created_at"].isoformat()
+                if cred.get("created_at")
+                else None,
             }
             for cred in user.get("webauthn_credentials", [])
-        ]
+        ],
     }
 
     return profile
@@ -78,15 +75,15 @@ async def build_attendance_summary(student_doc_id: ObjectId):
 
     q = {"student_id": student_doc_id}
 
-    total_classes = await attendance_col.count_documents(q)
-    present = await attendance_col.count_documents({**q, "present": True})
+    total_classes = await db["attendance"].count_documents(q)
+    present = await db["attendance"].count_documents({**q, "present": True})
     absent = total_classes - present
 
     percentage = round((present / total_classes) * 100, 2) if total_classes else 0
     forecasted_score = 2 if percentage < 50 else 5
 
     # Last 5 attendance records
-    recent_cursor = attendance_col.find(q).sort("date", -1).limit(5)
+    recent_cursor = db["attendance"].find(q).sort("date", -1).limit(5)
 
     recent = []
     async for r in recent_cursor:

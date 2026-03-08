@@ -22,7 +22,7 @@ class DetectFacesRequest(BaseModel):
 
     image_base64: str = Field(..., description="Base64 encoded image string")
     min_face_area_ratio: float = Field(
-        default=0.04, description="Minimum face area ratio"
+        default=0.01, description="Minimum face area ratio"
     )
     num_jitters: int = Field(
         default=3, description="Number of times to re-sample face for encoding"
@@ -56,6 +56,9 @@ class DetectedFace(BaseModel):
     """A detected face with embedding"""
 
     embedding: List[float] = Field(..., description="Face embedding")
+    is_live: bool = Field(
+        default=True, description="Whether the face was detected as live"
+    )
 
 
 class BatchMatchRequest(BaseModel):

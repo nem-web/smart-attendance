@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-export default function FaceOverlay({ faces, videoRef }) {
+export default function FaceOverlay({ faces, videoRef, mirrored = false }) {
   const [videoDimensions, setVideoDimensions] = useState(null);
 
   useEffect(() => {
@@ -24,14 +24,36 @@ export default function FaceOverlay({ faces, videoRef }) {
         return prev;
       });
     }
-  }, [faces, videoRef]); // Re-check when faces change or videoRef changes
+  }, [videoRef]); 
+  
+  const { width: videoWidth, height: videoHeight, displayWidth, displayHeight } = videoDimensions || {};
 
-  if (!videoDimensions) return null;
+  if (!videoWidth) return null;
 
-  const { width: videoWidth, height: videoHeight, displayWidth, displayHeight } = videoDimensions;
+  // Assuming object-contain:
+  // Calculate the actual rendered video size (letterboxed/pillarboxed)
+  const videoAspect = videoWidth / videoHeight;
+  const containerAspect = displayWidth / displayHeight;
+  
+  let renderWidth, renderHeight, offsetX, offsetY;
 
-  const scaleX = displayWidth / videoWidth;
-  const scaleY = displayHeight / videoHeight;
+  if (containerAspect > videoAspect) {
+     // Container is wider than video (black bars left/right)
+     renderHeight = displayHeight;
+     renderWidth = renderHeight * videoAspect;
+     offsetY = 0;
+     offsetX = (displayWidth - renderWidth) / 2;
+  } else {
+     // Container is taller than video (black bars top/bottom)
+     renderWidth = displayWidth;
+     renderHeight = displayWidth / videoAspect;
+     offsetX = 0;
+     offsetY = (displayHeight - renderHeight) / 2;
+  }
+  
+  // Scale factors from Video Pixels -> Screen Pixels
+  const scaleX = renderWidth / videoWidth;
+  const scaleY = renderHeight / videoHeight;
 
   return (
     <div
@@ -44,22 +66,31 @@ export default function FaceOverlay({ faces, videoRef }) {
         const boxWidth = (right - left) * scaleX;
         const boxHeight = (bottom - top) * scaleY;
 
-        // ✅ correct mirror handling
-        const x = (videoWidth - right) * scaleX;
-        const y = top * scaleY;
+        let x;
+        if (mirrored) {
+          x = offsetX + (videoWidth - right) * scaleX;
+        } else {
+          x = offsetX + left * scaleX;
+        }
 
+        const y = offsetY + top * scaleY;
+        
         const color =
           f.status === "present"
             ? "var(--success)"
             : f.status === "uncertain"
             ? "var(--warning)"
-            : "var(--danger)";
+            : f.status === "spoof"
+            ? "var(--danger)" // Use danger color for spoof/fake
+            : "var(--text-body)"; // Muted for unknown
 
         const label =
           f.status === "present"
             ? `${f.student?.name} (${Math.round(f.confidence * 100)}%)`
             : f.status === "uncertain"
             ? "Check ID"
+            : f.status === "spoof"
+            ? "FAKE/SPOOF"
             : "Unknown";
 
         return (

@@ -178,12 +178,6 @@ export default function StudentDashboard() {
                 <>
                   {/* Hero Card (Attendance) */}
                   <div className="bg-[var(--action-info-bg)] rounded-3xl p-6 text-[var(--text-on-primary)] shadow-lg shadow-[var(--primary)]/20 relative overflow-hidden">
-                    {/* Background Decor */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--bg-card)] opacity-10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-[var(--primary-hover)] opacity-20 rounded-full -ml-5 -mb-5 blur-xl"></div>
-
-              {/* Hero Card (Attendance) */}
-              <div className="bg-[var(--action-info-bg)] rounded-3xl p-6 text-[var(--text-on-primary)] shadow-lg shadow-[var(--primary)]/20 relative overflow-hidden">
                 {/* Background Decor */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--bg-card)] opacity-10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-[var(--primary-hover)] opacity-20 rounded-full -ml-5 -mb-5 blur-xl"></div>
@@ -252,6 +246,9 @@ export default function StudentDashboard() {
                   </div>
                 </div>
               )}
+                </>
+              )}
+            </div>
 
             {/* RIGHT COLUMN: Schedule List */}
             <div>

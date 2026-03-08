@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   QrCode,
   Wifi,
-  WifiOff
+  WifiOff,
+  Radio
 } from "lucide-react";
 import { saveOfflineAttendance, getOfflineAttendanceCount } from "../utils/offlineStorage";
 import toast from 'react-hot-toast';
@@ -52,9 +53,18 @@ export default function MarkAttendance() {
     return `${year}-${month}-${day}`;
   });
   
-  const [_currentCoords, setCurrentCoords] = useState(null);
+
+
+  // const [_currentCoords, setCurrentCoords] = useState(null);
+
   const [showQRModal, setShowQRModal] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  
+  const videoConstraints = {
+    width: 1280,
+    height: 720,
+    facingMode: "user"
+  };
   
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
@@ -435,21 +445,41 @@ export default function MarkAttendance() {
                 audio={false}
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
+                videoConstraints={videoConstraints}
+                width={1280}
+                height={720}
                 mirrored={true}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
 
               {/* REAL FACE OVERLAY */}
-              <FaceOverlay faces={detections} videoRef={webcamRef} />
+              <FaceOverlay faces={detections} videoRef={webcamRef} mirrored={false} />
+
+              {/* Overlay for "Select Subject" */}
+              {!selectedSubject && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 z-20 backdrop-blur-sm animate-in fade-in">
+                  <div className="bg-[var(--bg-card)]/80 p-6 rounded-2xl flex flex-col items-center gap-2 border border-[var(--border-color)]">
+                     <AlertCircle size={32} className="text-[var(--text-body)]" />
+                     <p className="font-bold text-[var(--text-main)]">Select a subject first</p>
+                     <p className="text-xs text-[var(--text-body)]">Face recognition will start automatically</p>
+                  </div>
+                </div>
+              )}
 
               {/* Bottom Camera Controls */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/60 to-transparent flex justify-between items-end">
-                <div className="text-[var(--text-on-primary)]/70 text-xs">
-                  <p>{t('mark_attendance.camera_overlay.recognition_running')}</p>
-                  <p className="opacity-70">{t('mark_attendance.camera_overlay.tip')}</p>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-end">
+                <div className="text-white/80 text-xs font-medium">
+                  {selectedSubject ? (
+                      <>
+                        <p className="flex items-center gap-1.5"><Radio size={12} className="text-green-400 animate-pulse" /> Recognition Active</p>
+                        <p className="opacity-70 mt-0.5">Liveness Check Enabled</p>
+                      </>
+                  ) : (
+                      <p className="opacity-50">Waiting for subject selection...</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
-                   <button className="p-2 bg-[var(--bg-card)]/10 hover:bg-[var(--bg-card)]/20 text-[var(--text-on-primary)] rounded-lg transition backdrop-blur-md">
+                   <button className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition backdrop-blur-md">
                      <Grid size={20} />
                    </button>
                 </div>

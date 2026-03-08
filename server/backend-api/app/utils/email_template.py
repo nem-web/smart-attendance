@@ -194,6 +194,7 @@ def otp_email_template(otp: str, user: str) -> str:
 </html>
 """
 
+
 def device_binding_otp_template(otp: str, user_name: str) -> str:
     return f"""
     <!DOCTYPE html>

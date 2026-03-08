@@ -35,6 +35,7 @@ class DetectedFaceInfo(BaseModel):
     embedding: List[float]
     location: FaceLocation
     face_area_ratio: float
+    is_live: bool = True
 
 
 class DetectFacesMetadata(BaseModel):
@@ -85,7 +86,8 @@ class BatchMatchResult(BaseModel):
     face_index: int
     student_id: Optional[str] = None
     distance: float
-    status: str  # "present", "unknown"
+    status: str  # "present", "unknown", "spoof"
+    liveness: bool = True
 
 
 class BatchMatchResponse(BaseModel):
