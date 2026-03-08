@@ -677,7 +677,7 @@ async def resend_verification_email(email: str, background_tasks: BackgroundTask
     
     # Generate new token if expired or missing
     verification_token = secrets.token_urlsafe(32)
-    verification_expiry = datetime.now(UTC) + timedelta(hours=24)
+    verification_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
     
     await db.users.update_one(
         {"_id": user["_id"]},
