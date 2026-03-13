@@ -118,13 +118,31 @@ REDIS_URL = os.getenv("REDIS_URL", "")
 
 # Configure limiter with dynamic key function and Redis storage if available
 if REDIS_URL:
-    limiter = Limiter(
-        key_func=_get_rate_limit_key_func(),
-        storage_uri=REDIS_URL,
-        default_limits=[RATE_LIMIT_DEFAULT],
-        headers_enabled=True,
-    )
-    logger.info("Rate limiter configured with Redis backend")
+    try:
+        import redis as _redis_lib
+
+        _redis_client = _redis_lib.from_url(
+            REDIS_URL, socket_connect_timeout=2, socket_timeout=2
+        )
+        _redis_client.ping()
+        _redis_client.close()
+        limiter = Limiter(
+            key_func=_get_rate_limit_key_func(),
+            storage_uri=REDIS_URL,
+            default_limits=[RATE_LIMIT_DEFAULT],
+            headers_enabled=True,
+        )
+        logger.info("Rate limiter configured with Redis backend")
+    except Exception as exc:
+        logger.warning(
+            "Redis unavailable. Falling back to in-memory rate limiting. Error: %s",
+            exc,
+        )
+        limiter = Limiter(
+            key_func=_get_rate_limit_key_func(),
+            default_limits=[RATE_LIMIT_DEFAULT],
+            headers_enabled=True,
+        )
 else:
     limiter = Limiter(
         key_func=_get_rate_limit_key_func(),

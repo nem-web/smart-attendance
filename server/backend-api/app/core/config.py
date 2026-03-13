@@ -15,6 +15,7 @@ APP_NAME = "Smart Attendance API"
 
 # CORS origins (can override via env as comma-separated in production)
 DEFAULT_ORIGINS = [
+    "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:4173",
     "https://sa-gl.vercel.app",
