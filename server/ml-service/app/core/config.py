@@ -1,7 +1,10 @@
 import json
+import logging
 from pydantic_settings import BaseSettings
 from pydantic import model_validator
 from typing import List, Union
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -41,14 +44,14 @@ class Settings(BaseSettings):
     def validate_api_keys(self) -> "Settings":
         """
         Validate API keys with legacy fallback logic.
-        Prefers ML_API_KEY then API_KEY, raises ValueError if neither is set.
+        Prefers ML_API_KEY then API_KEY, falls back to a development key if neither is set.
         """
         api_key = self.ML_API_KEY or self.API_KEY
         if not api_key:
-            raise ValueError(
-                "ML_API_KEY environment variable is required. "
-                "Set ML_API_KEY (or legacy API_KEY) "
-                "to configure the ML service API key."
+            api_key = "dev-ml-key"
+            logger.warning(
+                "ML_API_KEY is not set. Using insecure development fallback key. "
+                "Set ML_API_KEY in production environments."
             )
         # Keep both fields in sync for legacy and current access paths
         self.ML_API_KEY = api_key

@@ -3,6 +3,7 @@ Rate limiting utilities for file uploads and other sensitive operations.
 Implements sliding window rate limiting with Redis backend.
 """
 
+import os
 import time
 import logging
 from typing import Optional, Dict, Any
@@ -16,16 +17,20 @@ logger = logging.getLogger(__name__)
 class RateLimiter:
     """Redis-based rate limiter with sliding window algorithm."""
     
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
-        try:
-            self.redis_client = redis.from_url(redis_url, decode_responses=True)
-            # Test connection
-            self.redis_client.ping()
-            logger.info("Connected to Redis for rate limiting")
-        except Exception as e:
-            logger.warning(f"Redis connection failed: {e}. Using in-memory fallback.")
-            self.redis_client = None
-            self._memory_store = {}
+    def __init__(self, redis_url: str = ""):
+        self.redis_client = None
+        self._memory_store = {}
+        if redis_url:
+            try:
+                self.redis_client = redis.from_url(redis_url, decode_responses=True)
+                # Test connection
+                self.redis_client.ping()
+                logger.info("Connected to Redis for rate limiting")
+            except Exception as e:
+                logger.warning(f"Redis connection failed: {e}. Using in-memory fallback.")
+                self.redis_client = None
+        else:
+            logger.info("Redis not configured. Using in-memory cache.")
     
     def _get_key(self, identifier: str, operation: str) -> str:
         """Generate Redis key for rate limiting."""
@@ -217,7 +222,7 @@ async def enforce_upload_rate_limit(
         user_id: User identifier
         operation: Operation type (must be in RATE_LIMIT_CONFIGS)
         request: FastAPI request object
-        rate_limiter: RateLimiter instance (creates new if None)
+        rate_limiter: RateLimiter instance (uses global upload_rate_limiter if None)
         
     Raises:
         HTTPException: If rate limit is exceeded
@@ -229,7 +234,7 @@ async def enforce_upload_rate_limit(
     config = RATE_LIMIT_CONFIGS[operation]
     
     if rate_limiter is None:
-        rate_limiter = RateLimiter()
+        rate_limiter = upload_rate_limiter
     
     result = await rate_limiter.check_rate_limit(
         identifier=user_id,
@@ -263,4 +268,4 @@ async def enforce_upload_rate_limit(
 
 
 # Global rate limiter instance
-upload_rate_limiter = RateLimiter()
+upload_rate_limiter = RateLimiter(redis_url=os.getenv("REDIS_URL", ""))

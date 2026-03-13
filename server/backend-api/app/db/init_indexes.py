@@ -1,3 +1,5 @@
+import os
+from urllib.parse import urlparse
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 import asyncio
@@ -7,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 async def create_indexes():
     client = AsyncIOMotorClient(settings.MONGO_URI)
-    db = client.get_database(settings.MONGO_DB)
+    db_name = urlparse(settings.MONGO_URI).path.lstrip("/") or os.getenv("MONGO_DB_NAME", "smart-attendance")
+    db = client[db_name]
     
     try:
         await db.refresh_tokens.create_index(

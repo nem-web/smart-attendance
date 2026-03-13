@@ -111,9 +111,7 @@ async def lifespan(app: FastAPI):
         await create_refresh_token_indexes()
         logger.info("refresh_tokens indexes ensured")
     except Exception as e:
-        logger.error(f"Failed to create refresh token indexes: {e}")
-        import sys
-        sys.exit(1)
+        logger.error("Failed to create refresh token indexes", exc_info=True)
 
     try:
         start_scheduler()
