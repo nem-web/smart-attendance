@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Request
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Request, Response
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from datetime import datetime, timedelta, timezone
@@ -66,7 +66,7 @@ oauth = OAuth()
     override_defaults=True,
 )
 async def register(
-    request: Request, payload: RegisterRequest, background_tasks: BackgroundTasks
+    request: Request, response: Response, payload: RegisterRequest, background_tasks: BackgroundTasks
 ):
     # Check existing user
     existing = await db.users.find_one({"email": payload.email})
@@ -196,7 +196,7 @@ async def register(
     key_func=get_client_ip_for_rate_limit,
     override_defaults=True,
 )
-async def login(request: Request, payload: LoginRequest):
+async def login(request: Request, response: Response, payload: LoginRequest):
     logger.info(f"Login request received for email: {payload.email}")
     email = payload.email
 
@@ -313,7 +313,7 @@ async def login(request: Request, payload: LoginRequest):
 
 @router.post("/refresh-token", response_model=UserResponse)
 @limiter.limit("5/minute")
-async def refresh_token_endpoint(request: Request, payload: RefreshTokenRequest):
+async def refresh_token_endpoint(request: Request, response: Response, payload: RefreshTokenRequest):
     try:
         decoded = decode_jwt(payload.refresh_token)
         if decoded.get("type") != "refresh":
@@ -467,6 +467,7 @@ def _clear_otp_fields() -> dict:
 @limiter.limit("10/hour")  # Per IP: 10 OTP requests per hour
 async def forgot_password(
     request: Request,
+    response: Response,
     payload: ForgotPasswordRequest,
     background_tasks: BackgroundTasks,
 ) -> dict:
@@ -514,7 +515,7 @@ async def forgot_password(
 @router.post("/verify-otp", response_model=VerifyOtpResponse)
 @limiter.limit("3/minute")  # Per IP: 3 attempts per minute
 @limiter.limit("10/hour")  # Per IP: 10 attempts per hour
-async def verify_otp(request: Request, payload: VerifyOtpRequest) -> dict:
+async def verify_otp(request: Request, response: Response, payload: VerifyOtpRequest) -> dict:
     """
     Verify the OTP sent to the user's email.
 
@@ -563,7 +564,7 @@ async def verify_otp(request: Request, payload: VerifyOtpRequest) -> dict:
 @router.post("/reset-password", response_model=ResetPasswordResponse)
 @limiter.limit("3/minute")  # Per IP: 3 attempts per minute
 @limiter.limit("10/hour")  # Per IP: 10 attempts per hour
-async def reset_password(request: Request, payload: ResetPasswordRequest) -> dict:
+async def reset_password(request: Request, response: Response, payload: ResetPasswordRequest) -> dict:
     """
     Set a new password after OTP verification.
 
@@ -839,6 +840,7 @@ async def google_callback(request: Request):
 @limiter.limit("5/hour")
 async def send_device_binding_otp(
     request: Request,
+    response: Response,
     payload: SendDeviceBindingOtpRequest,
     background_tasks: BackgroundTasks,
 ):
@@ -892,6 +894,7 @@ async def send_device_binding_otp(
 @limiter.limit("10/hour")  # Per IP: 10 attempts per hour
 async def verify_device_binding_otp(
     request: Request,
+    response: Response,
     payload: VerifyDeviceBindingOtpRequest,
 ) -> dict:
     """

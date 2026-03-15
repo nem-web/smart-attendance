@@ -11,6 +11,7 @@ from fastapi import (
     APIRouter,
     HTTPException,
     Request,
+    Response,
     WebSocket,
     WebSocketDisconnect,
     Query,
@@ -417,6 +418,7 @@ def _parse_object_id_list(
 async def mark_attendance_qr(
     payload: QRAttendanceRequest,
     request: Request,
+    response: Response,
     current_user: dict = Depends(get_current_user),
 ):
     """
@@ -676,7 +678,7 @@ async def mark_attendance_qr(
     key_func=get_teacher_rate_limit_key,
     override_defaults=True,
 )
-async def mark_attendance(request: Request, payload: Dict):
+async def mark_attendance(request: Request, response: Response, payload: Dict):
     """
     Mark attendance by detecting faces in classroom image
 
