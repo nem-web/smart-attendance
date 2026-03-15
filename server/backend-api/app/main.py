@@ -1,5 +1,4 @@
 import os
-import asyncio
 import structlog
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -15,9 +14,8 @@ from .api.v1.__init__ import router as api_v1_router
 from .api.v1.__init__ import legacyRouter as api_legacy_router
 
 from .core.config import APP_NAME, ORIGINS
-from app.services.attendance_daily import (
-    ensure_indexes as ensure_attendance_daily_indexes,
-)
+
+from app.services.attendance_daily import ensure_indexes as ensure_attendance_daily_indexes
 from app.services.attendance import ensure_indexes as ensure_attendance_indexes
 from app.services.schedule_service import ensure_indexes as ensure_schedule_indexes
 from app.db.init_indexes import create_indexes as create_refresh_token_indexes
@@ -28,28 +26,26 @@ from app.core.scheduler import start_scheduler, shutdown_scheduler
 from app.db.mongo import db, verify_db_connection
 from app.db.indexes import create_indexes
 
-# New Imports
 from prometheus_fastapi_instrumentator import Instrumentator
 from .core.logging import setup_logging
-from .core.error_handlers import (
-    smart_attendance_exception_handler,
-    generic_exception_handler,
-)
+from .core.error_handlers import smart_attendance_exception_handler, generic_exception_handler
 from .core.exceptions import SmartAttendanceException
+
 from .middleware.correlation import CorrelationIdMiddleware
 from .middleware.timing import TimingMiddleware
 from .middleware.security import SecurityHeadersMiddleware
 
-# Security imports
-from app.core.security_config import security_config, log_security_event
-
 from slowapi.errors import RateLimitExceeded
 from app.core.limiter import limiter, rate_limit_exceeded_handler
+
 
 load_dotenv()
 
 setup_logging(service_name="backend-api")
 logger = structlog.get_logger()
+
+
+# ------------------ SENTRY ------------------
 
 if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     sentry_sdk.init(
@@ -60,35 +56,14 @@ if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     )
 
 
-def parse_env_bool(env_name: str, default: str = "false") -> bool:
-    raw_value = os.getenv(env_name, default).strip().lower()
-    if raw_value in {"true", "1", "yes", "on"}:
-        return True
-    if raw_value in {"false", "0", "no", "off"}:
-        return False
-    raise RuntimeError(
-        f"Invalid value for {env_name}: {raw_value!r}. "
-        "Use true/false (or 1/0, yes/no, on/off)."
-    )
-
-
-def parse_session_same_site(default: str = "lax") -> str:
-    same_site = os.getenv("SESSION_COOKIE_SAMESITE", default).strip().lower()
-    allowed = {"lax", "strict", "none"}
-    if same_site not in allowed:
-        raise RuntimeError(
-            "Invalid value for SESSION_COOKIE_SAMESITE: "
-            f"{same_site!r}. Use one of: lax, strict, none."
-        )
-    return same_site
-
+# ------------------ LIFESPAN ------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
     try:
-        # Verify database connection with retry logic
         await verify_db_connection()
-        
+
         await ensure_attendance_daily_indexes()
         logger.info("attendance_daily indexes ensured")
 
@@ -100,64 +75,52 @@ async def lifespan(app: FastAPI):
 
         await create_indexes(db)
         logger.info("application indexes ensured")
+
     except Exception as e:
         logger.warning(
-            "Could not connect to MongoDB. Application will continue, "
-            f"but DB features will fail. Error: {e}"
+            "MongoDB connection failed. DB features may not work.",
+            error=str(e)
         )
-        logger.warning("Please check your MONGO_URI in .env")
 
     try:
         await create_refresh_token_indexes()
         logger.info("refresh_tokens indexes ensured")
-    except Exception as e:
+
+    except Exception:
         logger.error("Failed to create refresh token indexes", exc_info=True)
 
     try:
         start_scheduler()
-    except Exception as e:
-        logger.exception(f"Failed to start scheduler: {e}")
+        logger.info("Scheduler started")
+
+    except Exception:
+        logger.exception("Scheduler failed to start")
 
     yield
+
     await ml_client.close()
-    logger.info("ML client closed")
     await close_redis()
     shutdown_scheduler()
 
+    logger.info("Application shutdown complete")
+
+
+# ------------------ APP CREATION ------------------
 
 def create_app() -> FastAPI:
-    session_cookie_secure = parse_env_bool("SESSION_COOKIE_SECURE", "false")
-    session_cookie_same_site = parse_session_same_site("lax")
-    # Warn if insecure session cookies are used outside of development.
-    environment = os.getenv("ENVIRONMENT", "development")
-    if (
-        not session_cookie_secure
-        and environment.lower() not in ("development", "dev", "local")
-    ):
-        logger.warning(
-            (
-                "SESSION_COOKIE_SECURE is false while ENVIRONMENT=%s; "
-                "session cookies will not be marked Secure. "
-                "This is unsafe for production deployments."
-            ),
-            environment,
-        )
-    # Browsers reject SameSite=None cookies unless they are also marked Secure.
-    if session_cookie_same_site == "none" and not session_cookie_secure:
-        raise RuntimeError(
-            "SESSION_COOKIE_SAMESITE='none' requires SESSION_COOKIE_SECURE=true"
-        )
 
     app = FastAPI(
         title=APP_NAME,
         lifespan=lifespan,
     )
 
-    # Rate limiter
+    # ------------------ RATE LIMITER ------------------
+
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
-    # CORS MUST be added FIRST so headers are present even on errors
+    # ------------------ CORS (FIRST MIDDLEWARE) ------------------
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=ORIGINS,
@@ -166,53 +129,82 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Backward-compatibility: rewrite /api/v1/... to /api/... transparently
+    # ------------------ FIX V1 ROUTE REDIRECT ------------------
+
     @app.middleware("http")
     async def redirect_v1_routes(request: Request, call_next):
+
+        # Allow preflight requests without modification
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         if request.url.path.startswith("/api/v1"):
             request.scope["path"] = request.url.path.replace("/api/v1", "/api", 1)
+
         return await call_next(request)
 
-    # Middleware
+    # ------------------ SECURITY MIDDLEWARE ------------------
+
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(TimingMiddleware)
 
-    # SessionMiddleware MUST be added before routers so authlib can use request.session reliably # noqa: E501
+    # ------------------ SESSION MIDDLEWARE ------------------
+
     app.add_middleware(
         SessionMiddleware,
-        secret_key=os.getenv("SESSION_SECRET_KEY", "temporary-dev-secret-key"),
+        secret_key=os.getenv("SESSION_SECRET_KEY", "dev-secret-key"),
         session_cookie="session",
         max_age=14 * 24 * 3600,
-        same_site=session_cookie_same_site,
-        https_only=session_cookie_secure,
+        same_site="lax",
+        https_only=False,
     )
 
-    # Exception Handlers
+    # ------------------ EXCEPTION HANDLERS ------------------
+
     app.add_exception_handler(
-        SmartAttendanceException, smart_attendance_exception_handler
+        SmartAttendanceException,
+        smart_attendance_exception_handler
     )
-    app.add_exception_handler(Exception, generic_exception_handler)
 
-    # Routes Mounting
-    # Legacy routes support Router
+    app.add_exception_handler(
+        Exception,
+        generic_exception_handler
+    )
+
+    # ------------------ ROUTES ------------------
+
     app.include_router(api_legacy_router)
-    async def startup_db_client():
-        await verify_db_connection()
+
+    # Optional health route
+    @app.get("/")
+    async def root():
+        return {"status": "Smart Attendance API running"}
 
     return app
 
 
+# ------------------ CREATE APP ------------------
+
 app = create_app()
 
-# Instrumentator
+# ------------------ PROMETHEUS METRICS ------------------
+
 Instrumentator().instrument(app).expose(app)
 
-# Wrap FastAPI app with Socket.IO as the outermost ASGI layer
+# ------------------ SOCKET.IO ------------------
+
 app = socketio.ASGIApp(sio, app)
 
+
+# ------------------ LOCAL RUN ------------------
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)  # nosec
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
