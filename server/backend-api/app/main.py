@@ -2,39 +2,53 @@ import os
 import structlog
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from starlette.middleware.sessions import SessionMiddleware
+
 import socketio
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-# routers
-from .api.v1.__init__ import router as api_v1_router
-from .api.v1.__init__ import legacyRouter as api_legacy_router
+# Routers
+from .api.v1 import router as api_v1_router
+from .api.v1 import legacyRouter as api_legacy_router
 
+# Config
 from .core.config import APP_NAME, ORIGINS
 
+# Services
 from app.services.attendance_daily import ensure_indexes as ensure_attendance_daily_indexes
 from app.services.attendance import ensure_indexes as ensure_attendance_indexes
 from app.services.schedule_service import ensure_indexes as ensure_schedule_indexes
-from app.db.init_indexes import create_indexes as create_refresh_token_indexes
 from app.services.ml_client import ml_client
 from app.services.attendance_socket_service import sio
-from app.db.nonce_store import close_redis
-from app.core.scheduler import start_scheduler, shutdown_scheduler
+
+# DB
 from app.db.mongo import db, verify_db_connection
 from app.db.indexes import create_indexes
+from app.db.init_indexes import create_indexes as create_refresh_token_indexes
+from app.db.nonce_store import close_redis
 
+# Scheduler
+from app.core.scheduler import start_scheduler, shutdown_scheduler
+
+# Logging
 from prometheus_fastapi_instrumentator import Instrumentator
 from .core.logging import setup_logging
+
+# Exceptions
 from .core.error_handlers import smart_attendance_exception_handler, generic_exception_handler
 from .core.exceptions import SmartAttendanceException
 
+# Middleware
 from .middleware.correlation import CorrelationIdMiddleware
 from .middleware.timing import TimingMiddleware
 from .middleware.security import SecurityHeadersMiddleware
 
+# Rate Limiter
 from slowapi.errors import RateLimitExceeded
 from app.core.limiter import limiter, rate_limit_exceeded_handler
 
@@ -45,7 +59,7 @@ setup_logging(service_name="backend-api")
 logger = structlog.get_logger()
 
 
-# ------------------ SENTRY ------------------
+# ---------------- SENTRY ----------------
 
 if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     sentry_sdk.init(
@@ -56,7 +70,7 @@ if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     )
 
 
-# ------------------ LIFESPAN ------------------
+# ---------------- LIFESPAN ----------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -78,8 +92,8 @@ async def lifespan(app: FastAPI):
 
     except Exception as e:
         logger.warning(
-            "MongoDB connection failed. DB features may not work.",
-            error=str(e)
+            "MongoDB connection failed, continuing without DB features",
+            error=str(e),
         )
 
     try:
@@ -105,7 +119,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application shutdown complete")
 
 
-# ------------------ APP CREATION ------------------
+# ---------------- CREATE APP ----------------
 
 def create_app() -> FastAPI:
 
@@ -114,12 +128,23 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # ------------------ RATE LIMITER ------------------
+    # ---------------- RATE LIMITER ----------------
 
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
-    # ------------------ CORS (FIRST MIDDLEWARE) ------------------
+    # ---------------- PREVENT CORS PREFLIGHT FAILURE ----------------
+    # Browser sends OPTIONS request before POST
+
+    @app.middleware("http")
+    async def allow_preflight(request: Request, call_next):
+
+        if request.method == "OPTIONS":
+            return Response(status_code=200)
+
+        return await call_next(request)
+
+    # ---------------- CORS ----------------
 
     app.add_middleware(
         CORSMiddleware,
@@ -129,54 +154,50 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # ------------------ FIX V1 ROUTE REDIRECT ------------------
+    # ---------------- API VERSION REDIRECT ----------------
 
     @app.middleware("http")
     async def redirect_v1_routes(request: Request, call_next):
-
-        # Allow preflight requests without modification
-        if request.method == "OPTIONS":
-            return await call_next(request)
 
         if request.url.path.startswith("/api/v1"):
             request.scope["path"] = request.url.path.replace("/api/v1", "/api", 1)
 
         return await call_next(request)
 
-    # ------------------ SECURITY MIDDLEWARE ------------------
+    # ---------------- SECURITY MIDDLEWARE ----------------
 
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(TimingMiddleware)
 
-    # ------------------ SESSION MIDDLEWARE ------------------
+    # ---------------- SESSION ----------------
 
     app.add_middleware(
         SessionMiddleware,
-        secret_key=os.getenv("SESSION_SECRET_KEY", "dev-secret-key"),
+        secret_key=os.getenv("SESSION_SECRET_KEY", "dev-secret"),
         session_cookie="session",
         max_age=14 * 24 * 3600,
         same_site="lax",
         https_only=False,
     )
 
-    # ------------------ EXCEPTION HANDLERS ------------------
+    # ---------------- EXCEPTION HANDLERS ----------------
 
     app.add_exception_handler(
         SmartAttendanceException,
-        smart_attendance_exception_handler
+        smart_attendance_exception_handler,
     )
 
     app.add_exception_handler(
         Exception,
-        generic_exception_handler
+        generic_exception_handler,
     )
 
-    # ------------------ ROUTES ------------------
+    # ---------------- ROUTES ----------------
 
     app.include_router(api_legacy_router)
 
-    # Optional health route
+    # Optional health check
     @app.get("/")
     async def root():
         return {"status": "Smart Attendance API running"}
@@ -184,27 +205,30 @@ def create_app() -> FastAPI:
     return app
 
 
-# ------------------ CREATE APP ------------------
+# ---------------- APP INSTANCE ----------------
 
 app = create_app()
 
-# ------------------ PROMETHEUS METRICS ------------------
+
+# ---------------- METRICS ----------------
 
 Instrumentator().instrument(app).expose(app)
 
-# ------------------ SOCKET.IO ------------------
+
+# ---------------- SOCKET.IO ----------------
 
 app = socketio.ASGIApp(sio, app)
 
 
-# ------------------ LOCAL RUN ------------------
+# ---------------- LOCAL RUN ----------------
 
 if __name__ == "__main__":
+
     import uvicorn
 
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True
+        reload=True,
     )
