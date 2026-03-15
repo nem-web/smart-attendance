@@ -164,7 +164,7 @@ async def client(db):
     # app.db.mongo.db should point to 'test_smart_attendance' because of env var.
 
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test/api/v1"
+        transport=ASGITransport(app=app), base_url="http://test/api"
     ) as ac:
         yield ac
 

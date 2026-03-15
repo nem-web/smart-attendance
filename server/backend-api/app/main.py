@@ -3,7 +3,7 @@ import asyncio
 import structlog
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 import socketio
@@ -165,6 +165,13 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Backward-compatibility: rewrite /api/v1/... to /api/... transparently
+    @app.middleware("http")
+    async def redirect_v1_routes(request: Request, call_next):
+        if request.url.path.startswith("/api/v1"):
+            request.scope["path"] = request.url.path.replace("/api/v1", "/api", 1)
+        return await call_next(request)
 
     # Middleware
     app.add_middleware(SecurityHeadersMiddleware)

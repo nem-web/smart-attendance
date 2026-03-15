@@ -1,21 +1,22 @@
 import pytest
-from httpx import AsyncClient
+import pytest_asyncio
+from httpx import AsyncClient, ASGITransport
 from datetime import datetime, timedelta, timezone
 from bson import ObjectId
 from app.main import create_app
 from app.core.security import hash_password
 from app.utils.jwt_token import hash_refresh_token, decode_jwt
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def app():
     return create_app()
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(app):
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(db):
     user_doc = {
         "name": "Test User",
@@ -37,7 +38,7 @@ async def test_user(db):
 @pytest.mark.asyncio
 async def test_login_creates_refresh_token(client, test_user, db):
     response = await client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"email": test_user["email"], "password": "password123"}
     )
     
@@ -56,14 +57,14 @@ async def test_login_creates_refresh_token(client, test_user, db):
 @pytest.mark.asyncio
 async def test_refresh_token_generates_new_tokens(client, test_user, db):
     login_response = await client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"email": test_user["email"], "password": "password123"}
     )
     
     old_refresh_token = login_response.json()["refresh_token"]
     
     refresh_response = await client.post(
-        "/auth/refresh-token",
+        "/api/auth/refresh-token",
         json={"refresh_token": old_refresh_token}
     )
     
@@ -80,19 +81,19 @@ async def test_refresh_token_generates_new_tokens(client, test_user, db):
 @pytest.mark.asyncio
 async def test_refresh_with_revoked_token_fails(client, test_user):
     login_response = await client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"email": test_user["email"], "password": "password123"}
     )
     
     refresh_token = login_response.json()["refresh_token"]
     
     await client.post(
-        "/auth/refresh-token",
+        "/api/auth/refresh-token",
         json={"refresh_token": refresh_token}
     )
     
     second_refresh = await client.post(
-        "/auth/refresh-token",
+        "/api/auth/refresh-token",
         json={"refresh_token": refresh_token}
     )
     
@@ -102,7 +103,7 @@ async def test_refresh_with_revoked_token_fails(client, test_user):
 @pytest.mark.asyncio
 async def test_logout_revokes_refresh_tokens(client, test_user, db):
     login_response = await client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"email": test_user["email"], "password": "password123"}
     )
     
@@ -110,7 +111,7 @@ async def test_logout_revokes_refresh_tokens(client, test_user, db):
     refresh_token = login_response.json()["refresh_token"]
     
     logout_response = await client.post(
-        "/auth/logout",
+        "/api/auth/logout",
         headers={"Authorization": f"Bearer {access_token}"}
     )
     
@@ -123,7 +124,7 @@ async def test_logout_revokes_refresh_tokens(client, test_user, db):
 @pytest.mark.asyncio
 async def test_expired_refresh_token_fails(client, test_user, db):
     login_response = await client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"email": test_user["email"], "password": "password123"}
     )
     
@@ -136,7 +137,7 @@ async def test_expired_refresh_token_fails(client, test_user, db):
     )
     
     refresh_response = await client.post(
-        "/auth/refresh-token",
+        "/api/auth/refresh-token",
         json={"refresh_token": refresh_token}
     )
     
@@ -146,7 +147,7 @@ async def test_expired_refresh_token_fails(client, test_user, db):
 @pytest.mark.asyncio
 async def test_invalid_refresh_token_fails(client):
     response = await client.post(
-        "/auth/refresh-token",
+        "/api/auth/refresh-token",
         json={"refresh_token": "invalid.token.here"}
     )
     
@@ -155,14 +156,14 @@ async def test_invalid_refresh_token_fails(client):
 @pytest.mark.asyncio
 async def test_access_token_type_validation(client, test_user):
     login_response = await client.post(
-        "/auth/login",
+        "/api/auth/login",
         json={"email": test_user["email"], "password": "password123"}
     )
     
     access_token = login_response.json()["token"]
     
     response = await client.post(
-        "/auth/refresh-token",
+        "/api/auth/refresh-token",
         json={"refresh_token": access_token}
     )
     

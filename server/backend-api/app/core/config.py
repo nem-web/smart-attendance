@@ -22,6 +22,9 @@ DEFAULT_ORIGINS = [
     "https://studentcheck.vercel.app",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:4173",
+    "https://studentcheck-o25q.onrender.com",
+    "https://smart-attendance-gsm7.onrender.com",
+    "https://studentcheck-ml.onrender.com",
 ]
 
 raw_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]

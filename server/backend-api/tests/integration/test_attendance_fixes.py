@@ -32,7 +32,7 @@ def test_mark_attendance_missing_user_id_in_token():
         # We need to post some data.
         # The route /attendance/mark first checks headers (Device ID, Auth) before payload validation
         response = client.post(
-            "/attendance/mark", json={"some": "data"}, headers=headers
+            "/api/attendance/mark", json={"some": "data"}, headers=headers
         )
 
         # If decode_jwt returns dict without 'user_id', code raises ValueError -> caught -> HTTPException 401
