@@ -1,16 +1,19 @@
 import logging
+import time
 from datetime import datetime, date
 from typing import Dict, List, Any
 
 import socketio
 from bson import ObjectId
+from bson import errors as bson_errors
 from pymongo import UpdateOne
 
-from app.core.config import ORIGINS
+from app.core.config import ORIGINS, ML_CONFIDENT_THRESHOLD, ML_UNCERTAIN_THRESHOLD
 from app.db.mongo import db
 from app.services.attendance import log_grouped_attendance
 from app.services.attendance_daily import save_daily_summary
 from app.utils.geo import calculate_distance
+from app.utils.jwt_token import decode_jwt
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,11 @@ active_sessions: Dict[str, List[Dict[str, Any]]] = {}
 # Value: { lat: float, lon: float, subjectIdx: str }
 session_locations: Dict[str, Dict[str, Any]] = {}
 
+# Per-connection rate limiting for process_frame
+# Key: sid, Value: last_process_time (float)
+_frame_last_processed: Dict[str, float] = {}
+_MIN_FRAME_INTERVAL = 0.5  # ~2 FPS per client
+
 
 @sio.event
 async def connect(sid, environ):
@@ -41,6 +49,7 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     logger.info(f"Socket disconnected: {sid}")
+    _frame_last_processed.pop(sid, None)
 
 
 @sio.on("join_session")
@@ -158,6 +167,259 @@ async def handle_scan_qr(sid, data):
 
     # Acknowledge to student
     await sio.emit("scan_ack", {"status": "recorded", "isProxy": is_proxy}, room=sid)
+
+
+@sio.on("process_frame")
+async def handle_process_frame(sid, data):
+    """
+    Teacher emits webcam frame for ML face recognition.
+    Data: { session_id, image (base64), subject_id, token }
+    """
+    from app.services.ml_client import ml_client  # local import to avoid circular
+
+    token = data.get("token")
+    image_b64 = data.get("image")
+    subject_id = data.get("subject_id")
+
+    # 1. Authenticate
+    if not token:
+        await sio.emit("ml_error", {"message": "Missing token"}, room=sid)
+        return
+
+    try:
+        payload = decode_jwt(token)
+        if payload.get("type") != "access":
+            await sio.emit("ml_error", {"message": "Unauthorized"}, room=sid)
+            return
+
+        user_id = payload.get("user_id")
+        if not user_id:
+            await sio.emit("ml_error", {"message": "Unauthorized"}, room=sid)
+            return
+
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user or user.get("role") not in ["teacher", "admin"]:
+            await sio.emit("ml_error", {"message": "Forbidden"}, room=sid)
+            return
+
+    except Exception as exc:
+        logger.error(f"process_frame auth error: {exc}")
+        await sio.emit("ml_error", {"message": "Auth failed"}, room=sid)
+        return
+
+    if not image_b64 or not subject_id:
+        await sio.emit("ml_error", {"message": "Missing image or subject_id"}, room=sid)
+        return
+
+    # 2. Rate limiting
+    now = time.time()
+    last = _frame_last_processed.get(sid, 0.0)
+    if now - last < _MIN_FRAME_INTERVAL:
+        await sio.emit("frame_skipped", {"status": "rate_limited"}, room=sid)
+        return
+    _frame_last_processed[sid] = now
+
+    matched_results = []
+    unmatched_results = []
+
+    try:
+        # Strip data URL header if present
+        if "," in image_b64:
+            _, image_b64 = image_b64.split(",", 1)
+
+        # Detect faces
+        ml_response = await ml_client.detect_faces(
+            image_base64=image_b64,
+            min_face_area_ratio=0.01,
+            num_jitters=3,
+            model="hog",
+        )
+
+        if not ml_response.get("success"):
+            await sio.emit(
+                "ml_error",
+                {"message": ml_response.get("error", "ML Error")},
+                room=sid,
+            )
+            return
+
+        faces = ml_response.get("faces", [])
+        count = len(faces)
+
+        await sio.emit(
+            "processing_started",
+            {"status": "processing", "matched": [], "pending": count},
+            room=sid,
+        )
+
+        if count == 0:
+            await sio.emit(
+                "complete",
+                {
+                    "type": "complete",
+                    "status": "complete",
+                    "matched": [],
+                    "unmatched": [],
+                },
+                room=sid,
+            )
+            return
+
+        # Fetch subject and enrolled students
+        try:
+            subject_oid = ObjectId(subject_id)
+            subject = await db.subjects.find_one(
+                {"_id": subject_oid}, {"students": 1, "professor_ids": 1}
+            )
+        except bson_errors.InvalidId:
+            subject = None
+
+        if not subject:
+            await sio.emit("ml_error", {"message": "Subject not found"}, room=sid)
+            return
+
+        if user.get("role") != "admin" and ObjectId(user_id) not in subject.get(
+            "professor_ids", []
+        ):
+            await sio.emit("ml_error", {"message": "Forbidden"}, room=sid)
+            return
+
+        student_user_ids = [
+            s["student_id"]
+            for s in subject.get("students", [])
+            if s.get("verified", False)
+        ]
+
+        students_cursor = db.students.find(
+            {
+                "userId": {"$in": student_user_ids},
+                "verified": True,
+                "face_embeddings": {"$exists": True, "$ne": []},
+            }
+        )
+        students_list = await students_cursor.to_list(length=500)
+
+        candidate_embeddings = [
+            {
+                "student_id": str(s["userId"]),
+                "embeddings": s["face_embeddings"],
+            }
+            for s in students_list
+        ]
+
+        for i, face in enumerate(faces):
+            match_resp = await ml_client.match_faces(
+                query_embedding=face["embedding"],
+                candidate_embeddings=candidate_embeddings,
+                threshold=ML_UNCERTAIN_THRESHOLD,
+            )
+
+            if not match_resp.get("success"):
+                raise RuntimeError(match_resp.get("error", "ML match failed"))
+
+            match_data = match_resp.get("match") or {}
+            best_student_id = match_data.get("student_id")
+            distance = match_data.get("distance", 1.0)
+            confidence = match_data.get("confidence", 0.0)
+
+            status_str = "unknown"
+            student_details = None
+
+            if best_student_id:
+                if distance < ML_CONFIDENT_THRESHOLD:
+                    status_str = "present"
+                elif distance < ML_UNCERTAIN_THRESHOLD:
+                    status_str = "uncertain"
+
+                if status_str in ("present", "uncertain"):
+                    matched_student = next(
+                        (
+                            s
+                            for s in students_list
+                            if str(s["userId"]) == best_student_id
+                        ),
+                        None,
+                    )
+                    if matched_student:
+                        user_info = await db.users.find_one(
+                            {"_id": matched_student["userId"]}, {"name": 1, "roll": 1}
+                        )
+                        student_details = {
+                            "id": str(matched_student["userId"]),
+                            "name": matched_student.get("name")
+                            or (user_info.get("name") if user_info else "Unknown"),
+                            "roll": user_info.get("roll") if user_info else "",
+                        }
+
+            is_live = face.get("is_live")
+            if is_live is False:
+                status_str = "spoof"
+                student_details = None
+            elif is_live is None:
+                status_str = "unknown"
+                student_details = None
+                logger.warning(f"Face live check returned None (index {i})")
+
+            result_item = {
+                "box": {
+                    "top": face["location"].get("top"),
+                    "right": face["location"].get("right"),
+                    "bottom": face["location"].get("bottom"),
+                    "left": face["location"].get("left"),
+                },
+                "status": status_str,
+                "distance": round(distance, 4) if best_student_id else None,
+                "confidence": round(confidence, 3) if best_student_id else None,
+                "student": student_details,
+            }
+
+            if status_str in ("present", "uncertain"):
+                matched_results.append(result_item)
+            else:
+                unmatched_results.append(result_item)
+
+            await sio.emit(
+                "match_update",
+                {"match": result_item, "pending": count - (i + 1)},
+                room=sid,
+            )
+
+        await sio.emit(
+            "complete",
+            {
+                "type": "complete",
+                "status": "complete",
+                "matched": matched_results,
+                "unmatched": unmatched_results,
+            },
+            room=sid,
+        )
+
+    except Exception as exc:
+        logger.error(f"Error processing frame for {sid}: {exc}", exc_info=True)
+        await sio.emit("ml_error", {"message": f"Processing failed: {exc}"}, room=sid)
+        await sio.emit(
+            "complete",
+            {
+                "type": "complete",
+                "status": "failed",
+                "matched": matched_results,
+                "unmatched": unmatched_results,
+            },
+            room=sid,
+        )
+
+
+@sio.on("end_session")
+async def handle_end_session(sid, data):
+    """
+    Teacher ends an attendance session.
+    Data: { sessionId }
+    """
+    session_id = data.get("sessionId")
+    if session_id:
+        logger.info(f"end_session requested for {session_id} by {sid}")
+        await stop_and_save_session(session_id)
 
 
 async def flush_attendance_data():
