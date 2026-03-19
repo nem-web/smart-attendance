@@ -13,9 +13,19 @@ import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 # Routers
-from api.auth import router as auth_router
-from api.students import router as student_router
-from api.webauthn import router as webauthn_router
+from app.api.routes.auth import router as auth_router
+from app.api.routes.students import router as student_router
+from app.api.routes.webauthn import router as webauthn_router
+from app.api.routes.attendance import router as attendance_router
+from app.api.routes.analytics import router as analytics_router
+from app.api.routes.exams import router as exams_router
+from app.api.routes.health import router as health_router
+from app.api.routes.holidays import router as holidays_router
+from app.api.routes.notifications import router as notifications_router
+from app.api.routes.qr import qr_router, qr_attendance_router
+from app.api.routes.reports import router as reports_router
+from app.api.routes.schedule import router as schedule_router
+from app.api.routes.teacher_settings import router as teacher_settings_router
 
 # Config
 from .core.config import APP_NAME, ORIGINS
@@ -190,6 +200,17 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api")
     app.include_router(student_router, prefix="/api")
     app.include_router(webauthn_router, prefix="/api")
+    app.include_router(attendance_router, prefix="/api")
+    app.include_router(analytics_router, prefix="/api")
+    app.include_router(exams_router, prefix="/api")
+    app.include_router(health_router)
+    app.include_router(holidays_router, prefix="/api")
+    app.include_router(notifications_router, prefix="/api")
+    app.include_router(qr_router, prefix="/api")
+    app.include_router(qr_attendance_router, prefix="/api")
+    app.include_router(reports_router, prefix="/api")
+    app.include_router(schedule_router, prefix="/api")
+    app.include_router(teacher_settings_router, prefix="/api")
 
     # Optional health check
     @app.get("/")

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import socket from "../../socket";
 import RotatingQR from "./RotatingQR";
 import { 
   X, 
@@ -43,7 +43,6 @@ const formatTimeAgo = (timestamp) => {
 };
 
 export default function LiveAttendanceModal({ sessionId, subjectId, onClose, subjectName = "Attendance Session", initialLocation = null }) {
-  const socketRef = React.useRef(null);
   const [scannedStudents, setScannedStudents] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
   const [teacherLocation, setTeacherLocation] = useState(initialLocation);
@@ -121,32 +120,35 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
   }, [sessionId, subjectId]);
 
 
+
   // Socket connection
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_API_URL, {
-        withCredentials: true,
-        transports: ["websocket", "polling"], // explicit transports
-    });
-
-    newSocket.on("connect", () => {
-      console.log("Socket connected:", newSocket.id);
+    const onConnect = () => {
+      console.log("Socket connected:", socket.id);
       const payload = { sessionId, subjectId };
       if (teacherLocation) {
           payload.latitude = teacherLocation.latitude;
           payload.longitude = teacherLocation.longitude;
       }
-      newSocket.emit("join_session", payload);
-    });
+      socket.emit("join_session", payload);
+    };
 
-    newSocket.on("student_scanned", (data) => {
-      // data: { student: { name, roll, avatar }, timestamp, location: { lat, lon } }
+    const onStudentScanned = (data) => {
       setScannedStudents((prev) => {
-        // Deduplicate using roll number or ID if available
         if (prev.some(s => s.student.roll === data.student.roll)) return prev;
-        return [data, ...prev]; 
+        return [data, ...prev];
       });
-    });
-    
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("student_scanned", onStudentScanned);
+
+    if (socket.connected) {
+      onConnect();
+    } else {
+      socket.connect();
+    }
+
     // Safety warning on refresh/close
     const handleBeforeUnload = (e) => {
         e.preventDefault();
@@ -154,17 +156,16 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    socketRef.current = newSocket;
-
     return () => {
-      newSocket.disconnect();
+      socket.off("connect", onConnect);
+      socket.off("student_scanned", onStudentScanned);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [sessionId, subjectId, teacherLocation]);
 
   const handleStopAndSave = async () => {
-    if (socketRef.current) {
-        socketRef.current.emit("end_session", { sessionId });
+    if (socket.connected) {
+        socket.emit("end_session", { sessionId });
     }
     
     const toastId = toast.loading("Saving attendance data...");
