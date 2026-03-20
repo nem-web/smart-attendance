@@ -42,7 +42,7 @@ import MarkWithQR from "./students/pages/MarkWithQR";
 function RedirectToHome() {
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
-  // console.log("RedirectToHome user:", user);
+  
 
   if (!user || !user.role) return <Navigate to={"/login"} />;
 

@@ -41,7 +41,6 @@ export default function AddStudents() {
     fetchSubjectStudents(selectedSubject).then(setStudents);
   }, [selectedSubject]);
 
-  // console.log(students)
 
   const filteredStudents = students
     .filter((s) => {

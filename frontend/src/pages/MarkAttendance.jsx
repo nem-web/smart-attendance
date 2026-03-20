@@ -253,14 +253,14 @@ export default function MarkAttendance() {
     }
 
     const onConnect = () => {
-      console.log("Socket connected for ML processing");
+      
       setMlStatus("ready");
     };
 
     const onDisconnect = () => {
       frameInFlightRef.current = false;
       setMlStatus("checking");
-      console.log("Socket disconnected");
+     
     };
 
     const onProcessingStarted = () => {
