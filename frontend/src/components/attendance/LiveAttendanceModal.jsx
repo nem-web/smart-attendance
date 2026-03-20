@@ -124,7 +124,6 @@ export default function LiveAttendanceModal({ sessionId, subjectId, onClose, sub
   // Socket connection
   useEffect(() => {
     const onConnect = () => {
-      console.log("Socket connected:", socket.id);
       const payload = { sessionId, subjectId };
       if (teacherLocation) {
           payload.latitude = teacherLocation.latitude;

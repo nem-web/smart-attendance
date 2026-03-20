@@ -237,7 +237,7 @@ export default function Settings() {
         setLoaded(false);
         const data = await getSettings(); // your API helper
 
-        console.log("GET /api/settings response:", data);
+     
 
         if (!mounted) return;
 
@@ -292,7 +292,7 @@ export default function Settings() {
   }, [setTheme]);
 
   useEffect(() => {
-    if (loaded) console.log("Profile loaded:", profile);
+ 
   }, [loaded, profile]);
 
   // called when Save changes is pressed

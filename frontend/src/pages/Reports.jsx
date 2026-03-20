@@ -44,7 +44,7 @@ export default function Reports() {
     if (!selectedSubject) return;
     //fetchSubjectStudents(selectedSubject).then(setStudents);
     fetchSubjectStudents(selectedSubject).then(data => {
-   console.log("Students API response:", data);
+
     setStudents(data);
   });
  }, [selectedSubject, startDate, endDate]);

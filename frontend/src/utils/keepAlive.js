@@ -34,7 +34,7 @@ export const pingBackend = () => {
       .then((response) => {
         clearTimeout(timeoutId);
         if (response.ok) {
-          console.log('[KeepAlive] Backend ping successful');
+          
         } else {
           console.warn(
             `[KeepAlive] Backend ping returned status ${response.status}`

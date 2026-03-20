@@ -6,7 +6,7 @@ export const captureAndSend = async (
   setDetections,
   currentCoords
 ) => {
-  console.log("captureAndSend triggered");
+  
   const image = webcamRef.current?.getScreenshot();
   if (!image || !selectedSubject) return;
 
@@ -23,7 +23,7 @@ export const captureAndSend = async (
 
     const res = await api.post("/attendance/mark", payload);
 
-    console.log("Attendance response:", res.data);
+    
     setDetections(res.data.faces);
   } catch (err) {
     console.error(

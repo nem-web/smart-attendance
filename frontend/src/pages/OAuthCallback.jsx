@@ -28,7 +28,6 @@ export default function OAuthCallback() {
     const name =
       hashParams.get("name") || queryParams.get("name") || null;
 
-    // console.log(token,email,userId,name,role);
 
     if (!token || !role) {
       // Nothing to do — go back to login (or show error)
